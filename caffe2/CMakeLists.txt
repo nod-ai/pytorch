@@ -71,6 +71,7 @@ if(INTERN_BUILD_ATEN_OPS)
   list(APPEND Caffe2_GPU_CU_SRCS ${ATen_CUDA_CU_SRCS})
   list(APPEND Caffe2_GPU_CU_SRCS_W_SORT_BY_KEY ${ATen_CUDA_CU_SRCS_W_SORT_BY_KEY})
   list(APPEND Caffe2_HIP_SRCS ${ATen_HIP_SRCS})
+  list(APPEND Caffe2_ZOOM_SRCS ${ATen_ZOOM_SRCS})
   list(APPEND Caffe2_MPS_SRCS ${ATen_MPS_SRCS})
   list(APPEND Caffe2_XPU_SRCS ${ATen_XPU_SRCS})
   list(APPEND Caffe2_HIP_SRCS ${ATen_HIP_SRCS_W_SORT_BY_KEY})
@@ -84,6 +85,7 @@ if(INTERN_BUILD_ATEN_OPS)
   list(APPEND Caffe2_CPU_INCLUDE ${ATen_CPU_INCLUDE})
   list(APPEND Caffe2_GPU_INCLUDE ${ATen_CUDA_INCLUDE})
   list(APPEND Caffe2_HIP_INCLUDE ${ATen_HIP_INCLUDE})
+  list(APPEND Caffe2_ZOOM_INCLUDE ${ATen_ZOOM_INCLUDE})
   list(APPEND Caffe2_XPU_INCLUDE ${ATen_XPU_INCLUDE})
   list(APPEND Caffe2_VULKAN_INCLUDE ${ATen_VULKAN_INCLUDE})
   list(APPEND Caffe2_DEPENDENCY_LIBS ${ATen_CPU_DEPENDENCY_LIBS})
@@ -128,6 +130,7 @@ if(CAFFE2_ALLOWLISTED_FILES)
   caffe2_do_allowlist(Caffe2_GPU_CU_SRCS CAFFE2_ALLOWLISTED_FILES)
   caffe2_do_allowlist(Caffe2_GPU_CU_SRCS_W_SORT_BY_KEY CAFFE2_ALLOWLISTED_FILES)
   caffe2_do_allowlist(Caffe2_HIP_SRCS CAFFE2_ALLOWLISTED_FILES)
+  caffe2_do_allowlist(Caffe2_ZOOM_SRCS CAFFE2_ALLOWLISTED_FILES)
 endif()
 
 if(PRINT_CMAKE_DEBUG_INFO)
@@ -178,6 +181,11 @@ if(PRINT_CMAKE_DEBUG_INFO)
 
   message(STATUS "HIP sources: ")
   foreach(tmp ${Caffe2_HIP_SRCS})
+    message(STATUS "  " ${tmp})
+  endforeach()
+
+  message(STATUS "ZOOM sources: ")
+  foreach(tmp ${Caffe2_ZOOM_SRCS})
     message(STATUS "  " ${tmp})
   endforeach()
 
@@ -920,6 +928,11 @@ if(USE_ROCM)
   set_source_files_properties(${__caffe2_hip_srcs_cpp} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
 endif()
 
+if(USE_ZOOM)
+  # filter_list(__caffe2_hip_srcs_cpp Caffe2_HIP_SRCS "\\.(cu|hip)$")
+  set_source_files_properties(${Caffe2_ZOOM_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+endif()
+
 # Compile exposed libraries.
 if(USE_ROCM)
   set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
@@ -941,6 +954,13 @@ if(USE_ROCM)
     target_precompile_headers(torch_hip PRIVATE
         "$<$<COMPILE_LANGUAGE:CXX>:ATen/core/ATen_pch.h>")
   endif()
+elseif(USE_ZOOM)
+  set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
+  # list(APPEND Caffe2_ZOOM_SRCS ${GENERATED_CXX_TORCH_CUDA})
+
+  hip_add_library(torch_zoom ${Caffe2_ZOOM_SRCS})
+  set(CUDA_LINK_LIBRARIES_KEYWORD)
+  torch_compile_options(torch_zoom)  # see cmake/public/utils.cmake
 elseif(USE_CUDA)
   set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   list(APPEND Caffe2_GPU_SRCS ${GENERATED_CXX_TORCH_CUDA})
@@ -1348,6 +1368,41 @@ if(USE_ROCM)
   endif()
 endif()
 
+if(USE_ZOOM)
+  target_compile_definitions(torch_zoom PRIVATE
+    USE_ZOOM
+    __HIP_PLATFORM_AMD__
+    )
+  # NB: Massive hack.  torch/csrc/jit/codegen/fuser/codegen.cpp includes
+  # torch/csrc/jit/codegen/fuser/cuda/resource_strings.h which changes the
+  # strings depending on if you're __HIP_PLATFORM_AMD__ or not.
+  # But that file is in torch_cpu!  So, against all odds, this macro
+  # has to be set on torch_cpu too.  I also added it to torch for
+  # better luck
+  target_compile_definitions(torch_cpu PRIVATE
+    USE_ZOOM
+    __HIP_PLATFORM_AMD__
+    )
+  target_compile_definitions(torch PRIVATE
+    USE_ZOOM
+    __HIP_PLATFORM_AMD__
+    )
+
+  if(NOT ROCM_SOURCE_DIR)
+    set(ROCM_SOURCE_DIR "$ENV{ROCM_SOURCE_DIR}")
+  endif()
+  if($ROCM_SOURCE_DIR STREQUAL "")
+    set(ROCM_SOURCE_DIR "/opt/rocm")
+  endif()
+  message(INFO "caffe2 ROCM_SOURCE_DIR = ${ROCM_SOURCE_DIR}")
+  target_include_directories(torch_zoom PRIVATE
+    ${ROCM_SOURCE_DIR}/include
+    ${ROCM_SOURCE_DIR}/hcc/include
+    ${ROCM_SOURCE_DIR}/rocblas/include
+    ${ROCM_SOURCE_DIR}/hipsparse/include
+    )
+endif()
+
 if(BUILD_LITE_INTERPRETER)
   target_compile_definitions(torch_cpu PRIVATE BUILD_LITE_INTERPRETER)
   # Enable template selective build only when SELECTED_OP_LIST is provided.
@@ -1453,6 +1508,8 @@ if(USE_CUDA)
   target_compile_definitions(torch_cuda PRIVATE TORCH_CUDA_BUILD_MAIN_LIB)
 elseif(USE_ROCM)
   target_compile_definitions(torch_hip PRIVATE TORCH_HIP_BUILD_MAIN_LIB)
+elseif(USE_ZOOM)
+  target_compile_definitions(torch_zoom PRIVATE TORCH_HIP_BUILD_MAIN_LIB)
 endif()
 
 if(USE_XPU)
@@ -1546,6 +1603,8 @@ if(USE_CUDA)
   caffe2_interface_library(torch_cuda torch_cuda_library)
 elseif(USE_ROCM)
   caffe2_interface_library(torch_hip torch_hip_library)
+elseif(USE_ZOOM)
+  caffe2_interface_library(torch_zoom torch_zoom_library)
 elseif(USE_XPU)
   caffe2_interface_library(torch_xpu torch_xpu_library)
 endif()
@@ -1558,6 +1617,8 @@ if(USE_CUDA)
   install(TARGETS torch_cuda torch_cuda_library EXPORT Caffe2Targets DESTINATION "${TORCH_INSTALL_LIB_DIR}")
 elseif(USE_ROCM)
   install(TARGETS torch_hip torch_hip_library EXPORT Caffe2Targets DESTINATION "${TORCH_INSTALL_LIB_DIR}")
+elseif(USE_ZOOM)
+  install(TARGETS torch_zoom torch_zoom_library EXPORT Caffe2Targets DESTINATION "${TORCH_INSTALL_LIB_DIR}")
 elseif(USE_XPU)
   install(TARGETS torch_xpu torch_xpu_library EXPORT Caffe2Targets DESTINATION "${TORCH_INSTALL_LIB_DIR}")
 endif()
@@ -1570,6 +1631,8 @@ if(USE_CUDA)
   target_link_libraries(torch PUBLIC torch_cuda_library)
 elseif(USE_ROCM)
   target_link_libraries(torch PUBLIC torch_hip_library)
+elseif(USE_ZOOM)
+  target_link_libraries(torch PUBLIC torch_zoom_library)
 endif()
 
 if(USE_XPU)
@@ -1713,6 +1776,36 @@ if(USE_ROCM)
   # Since PyTorch files contain HIP headers, this is also needed to capture the includes.
   target_include_directories(torch_hip PRIVATE ${Caffe2_HIP_INCLUDE})
   target_include_directories(torch_hip INTERFACE $<INSTALL_INTERFACE:include>)
+endif()
+
+# ---[ Caffe2 ZOOM HIP sources.
+if(USE_ZOOM)
+  # Call again since Caffe2_ZOOM_INCLUDE is extended with ATen include dirs.
+  # Get Compile Definitions from the directory (FindHIP.cmake bug)
+  get_directory_property(MY_DEFINITIONS COMPILE_DEFINITIONS)
+  if(MY_DEFINITIONS)
+    foreach(_item ${MY_DEFINITIONS})
+      list(APPEND HIP_CLANG_FLAGS "-D${_item}")
+    endforeach()
+  endif()
+
+  # Call again since Caffe2_ZOOM_INCLUDE is extended with ATen include dirs.
+  hip_include_directories(${Caffe2_ZOOM_INCLUDE})
+
+  # Since PyTorch files contain HIP headers, these flags are required for the necessary definitions to be added.
+  target_compile_options(torch_zoom PUBLIC ${HIP_CXX_FLAGS})  # experiment
+  # target_link_libraries(torch_zoom PUBLIC c10_zoom)
+  target_link_libraries(torch_zoom PUBLIC c10)
+
+  # this is where lib amdhip64 is actually linked (e.g. HIP symbols)
+  target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
+
+  target_link_libraries(torch_zoom PUBLIC torch_cpu_library)# ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
+  # target_link_libraries(torch_zoom PRIVATE ${Caffe2_HIP_DEPENDENCY_LIBS})
+
+  # Since PyTorch files contain HIP headers, this is also needed to capture the includes.
+  target_include_directories(torch_zoom PRIVATE ${Caffe2_ZOOM_INCLUDE})
+  target_include_directories(torch_zoom INTERFACE $<INSTALL_INTERFACE:include>)
 endif()
 
 if(BUILD_STATIC_RUNTIME_BENCHMARK)
