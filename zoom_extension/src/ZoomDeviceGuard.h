@@ -28,7 +28,7 @@ namespace c10::zoom {
         }
         at::Device getDevice() const override {
             // writes the default device id for the calling thread to curr_device
-            int curr_device;
+            int curr_device = -1;
             HIP_ASSERT(hipGetDevice(&curr_device));
             return at::Device(at::DeviceType::PrivateUse1, curr_device);
         }
