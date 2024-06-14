@@ -1090,7 +1090,8 @@ def CUDAExtension(name, sources, *args, **kwargs):
 
     include_dirs = kwargs.get('include_dirs', [])
 
-    if IS_HIP_EXTENSION:
+    # (Arham): disable hipify
+    if False and IS_HIP_EXTENSION:
         build_dir = os.getcwd()
         hipify_result = hipify_python.hipify(
             project_directory=build_dir,
@@ -1691,7 +1692,8 @@ def _jit_compile(name,
         try:
             if version != old_version:
                 with GeneratedFileCleaner(keep_intermediates=keep_intermediates) as clean_ctx:
-                    if IS_HIP_EXTENSION and (with_cuda or with_cudnn):
+                    # (Arham): to disable hipifying for testing the zoom extension
+                    if False and IS_HIP_EXTENSION and (with_cuda or with_cudnn):
                         hipify_result = hipify_python.hipify(
                             project_directory=build_directory,
                             output_directory=build_directory,
