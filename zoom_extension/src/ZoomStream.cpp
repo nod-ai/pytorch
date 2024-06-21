@@ -1,6 +1,6 @@
 #include <c10/core/impl/GPUTrace.h>
 #include "ZoomFunctions.h"
-#include "ZoomDeviceGuard.h"
+#include "ZoomGuard.h"
 #include "ZoomStream.h"
 #include <c10/util/CallOnce.h>
 #include <c10/util/Exception.h>
@@ -215,7 +215,7 @@ static void initSingleStream(int p, DeviceIndex device_index, int i) {
 static void initDeviceStreamState(DeviceIndex device_index) {
   // Switches to the requested device so streams are properly associated
   // with it.
-  ZoomDeviceGuardImpl device_guard{device_index};
+  ZoomGuard device_guard{device_index};
   for (const auto i : c10::irange(kStreamsPerPool)) {
     for (const auto p : c10::irange(max_stream_priorities)) {
       initSingleStream(p, device_index, i);

@@ -169,7 +169,7 @@ std::optional<DeviceIndex> getDeviceIndexWithPrimaryContext() {
 
 namespace _internal {
 bool dummyHasPrimaryContext(C10_UNUSED DeviceIndex device_index) {
-  TORCH_CHECK(false, "Should never been called");
+  TORCH_CHECK(false, "Should never been called - did you remember to lazyInitPrivateUse1()?");
 }
 bool (*hasPrimaryContext)(DeviceIndex) = dummyHasPrimaryContext;
 

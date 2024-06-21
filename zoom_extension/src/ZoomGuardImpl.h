@@ -5,26 +5,26 @@
 #include <c10/macros/Macros.h>
 #include <c10/util/Exception.h>
 
-#include "ZoomAllocator.h"
-#include "ZoomAllocator.h"
+#include "ZoomCachingAllocator.h"
+#include "ZoomException.h"
 #include "ZoomFunctions.h"
 #include "ZoomStream.h"
-#include "ZoomDefines.h"
 
 #include <c10/core/Device.h>
 #include <c10/core/DeviceType.h>
 #include <c10/core/Stream.h>
 #include <c10/core/impl/PyInterpreter.h>
 #include <c10/util/Optional.h>
+#include <hip/hip_runtime.h>
 #include <cstdint>
 
-namespace c10::zoom {
+namespace c10::zoom::impl {
 
-struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
+struct ZoomGuardImpl final : public c10::impl::DeviceGuardImplInterface {
   static constexpr DeviceType static_type = DeviceType::PrivateUse1;
 
-  ZoomDeviceGuardImpl() = default;
-  explicit ZoomDeviceGuardImpl(DeviceType t) {
+  ZoomGuardImpl() = default;
+  explicit ZoomGuardImpl(DeviceType t) {
     TORCH_INTERNAL_ASSERT(t == DeviceType::PrivateUse1);
   }
   DeviceType type() const override {
@@ -82,7 +82,7 @@ struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
 
   // Event-related functions
   void createEvent(hipEvent_t* zoom_event, const EventFlag flag) const {
-    // Maps PyTorch's Event::Flag to CUDA flag
+    // Maps PyTorch's Event::Flag to HIP flag
     auto hip_flag = hipEventDefault;
     switch (flag) {
       case EventFlag::PYTORCH_DEFAULT:
@@ -144,7 +144,7 @@ struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
     if (!zoom_event)
       createEvent(&zoom_event, flag);
     C10_ZOOM_CHECK(hipEventRecord(zoom_event, zoom_stream));
-    // Makes the void* point to the (possibly just allocated) CUDA event
+    // Makes the void* point to the (possibly just allocated) HIP event
     *event = zoom_event;
     const c10::impl::PyInterpreter* interp = c10::impl::GPUTrace::get_trace();
     if (C10_UNLIKELY(interp)) {
@@ -222,7 +222,7 @@ struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
   void recordDataPtrOnStream(const c10::DataPtr& data_ptr, const Stream& stream)
       const override {
     ZoomStream zoom_stream{stream};
-    ZoomAllocator::recordStream(data_ptr, zoom_stream);
+    ZoomCachingAllocator::recordStream(data_ptr, zoom_stream);
   }
 
   double elapsedTime(void* event1, void* event2, const DeviceIndex device_index)
@@ -230,8 +230,8 @@ struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
     TORCH_CHECK(
         event1 && event2,
         "Both events must be recorded before calculating elapsed time.");
-    // Even though hipEventElapsedTime can be safely called from any device, if
-    // the current device is not initialized, it will create a new cuda context,
+    // Even though zoomEventElapsedTime can be safely called from any device, if
+    // the current device is not initialized, it will create a new zoom context,
     // which will consume a lot of memory.
     DeviceIndex orig_device{-1};
     C10_ZOOM_CHECK(c10::zoom::GetDevice(&orig_device));
@@ -246,4 +246,4 @@ struct ZoomDeviceGuardImpl final : public c10::impl::DeviceGuardImplInterface {
   }
 };
 
-} // namespace c10::zoom
+} // namespace c10::zoom::impl

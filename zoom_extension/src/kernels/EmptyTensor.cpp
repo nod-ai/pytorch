@@ -6,10 +6,10 @@ namespace at::detail {
         const auto device = device_or_default(device_opt);
         TORCH_INTERNAL_ASSERT(device.is_privateuseone());
         const DeviceGuard device_guard(device);
-        auto allocator = c10::zoom::ZoomAllocator();
+        auto allocator = c10::zoom::ZoomCachingAllocator::get();
         constexpr c10::DispatchKeySet zoom_dks(c10::DispatchKey::PrivateUse1);
         return at::detail::empty_generic(
-            size, &allocator, zoom_dks, dtype, memory_format_opt);
+            size, allocator, zoom_dks, dtype, memory_format_opt);
     }
 
     Tensor zoom_empty_memory_format(IntArrayRef size, ::std::optional<ScalarType> dtype_opt, ::std::optional<Layout> layout_opt, ::std::optional<Device> device_opt, ::std::optional<bool> pin_memory_opt, ::std::optional<MemoryFormat> memory_format_opt) {
@@ -25,10 +25,10 @@ namespace at::detail {
         const auto device = device_or_default(device_opt);
         TORCH_INTERNAL_ASSERT(device.is_privateuseone());
         const DeviceGuard device_guard(device);
-        auto allocator = at::zoom::ZoomAllocator();
+        auto allocator = c10::zoom::ZoomCachingAllocator::get();
         constexpr c10::DispatchKeySet zoom_dks(c10::DispatchKey::PrivateUse1);
         return at::detail::empty_strided_generic(
-            size, stride, &allocator, zoom_dks, dtype);
+            size, stride, allocator, zoom_dks, dtype);
     }
     
     Tensor zoom_empty_strided(IntArrayRef size, IntArrayRef stride, ::std::optional<ScalarType> dtype_opt, ::std::optional<Layout> layout_opt, ::std::optional<Device> device_opt, ::std::optional<bool> pin_memory_opt){

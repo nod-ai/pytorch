@@ -255,6 +255,15 @@ struct C10_API InefficientStdFunctionContext {
 C10_API void SetAllocator(DeviceType t, Allocator* alloc, uint8_t priority = 0);
 C10_API Allocator* GetAllocator(const DeviceType& t);
 
+// set a functor that can retrieve the PrivateUse1 Allocator at will
+C10_API void SetPrivateUse1GetAllocator(at::Allocator* (*getAllocatorFunc)());
+
+struct PrivateUse1AllocatorRegisterer {
+  explicit PrivateUse1AllocatorRegisterer(at::Allocator* (*getAllocatorFunc)()) {
+    SetPrivateUse1GetAllocator(getAllocatorFunc);
+  }
+};
+
 template <DeviceType t>
 struct AllocatorRegisterer {
   explicit AllocatorRegisterer(Allocator* alloc) {
@@ -267,6 +276,11 @@ struct AllocatorRegisterer {
   static c10::AllocatorRegisterer<t> g_allocator_d(f); \
   }
 
+#define REGISTER_PU1_ALLOCATOR(f)                       \
+  namespace {                                          \
+  static PrivateUse1AllocatorRegisterer g_allocator_d(f); \
+  }
+  
 // An interface for reporting thread local memory usage
 // per device
 struct C10_API MemoryReportingInfoBase : public c10::DebugInfoBase {

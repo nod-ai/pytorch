@@ -1078,11 +1078,13 @@ def CUDAExtension(name, sources, *args, **kwargs):
     libraries.append('torch_cpu')
     libraries.append('torch_python')
     if IS_HIP_EXTENSION:
+        print("IS_HIP_EXTENSION")
         libraries.append('amdhip64')
         # (Arham): commented out for zoom development
         # libraries.append('c10_hip')
         # libraries.append('torch_hip')
     else:
+        print("LOADING CUDA")
         libraries.append('cudart')
         libraries.append('c10_cuda')
         libraries.append('torch_cuda')

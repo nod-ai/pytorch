@@ -1,7 +1,7 @@
 #pragma once
 #include <torch/library.h>
 #include <ATen/DeviceGuard.h>
-#include "ZoomAllocator.h"
+#include "ZoomCachingAllocator.h"
 #include <ATen/native/cpu/Loops.h>
 #include <c10/core/TensorOptions.h>
 #include <ATen/native/DispatchStub.h>
