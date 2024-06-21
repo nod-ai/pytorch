@@ -12,14 +12,13 @@ namespace at::zoom::detail {
 
 
 // The real implementation of ZoomHooksInterface
-struct ZoomHooks : public at::ZoomHooksInterface {
-  ZoomHooks(at::ZoomHooksArgs) {}
+struct ZoomHooks : public ZoomHooksInterface {
+  ZoomHooks(ZoomHooksArgs) {}
   void initZoom() const override;
   void initPrivateUse1() const override;
   Device getDeviceFromPtr(void* data) const override;
   bool isPinnedPtr(const void* data) const override;
   const Generator& getDefaultZoomGenerator(DeviceIndex device_index = -1) const override;
-  const Generator& GetDefaultGenerator(DeviceIndex device_index) override;
   bool hasROCM() const override;
   DeviceIndex current_device() const override;
   bool hasPrimaryContext(DeviceIndex device_index) const override;

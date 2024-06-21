@@ -7,6 +7,7 @@
 #include <c10/core/StreamGuard.h>
 #include "ZoomFunctions.h"
 #include <c10/util/CallOnce.h>
+#include <ATen/core/GeneratorForPrivateuseone.h>
 #include <deque>
 
 namespace at {
@@ -60,6 +61,9 @@ const Generator& getDefaultZoomGenerator(DeviceIndex device_index) {
   });
   return default_gens_zoom[idx];
 }
+
+// register to PrivateUse1
+REGISTER_GENERATOR_PRIVATEUSE1(getDefaultZoomGenerator);
 
 /**
  * Utility to create a ZoomGeneratorImpl. Returns a shared_ptr
@@ -504,8 +508,5 @@ ZoomGeneratorImpl* ZoomGeneratorImpl::clone_impl() const {
   auto gen = new ZoomGeneratorImpl(this->device().index(), state_->clone());
   return gen;
 }
-
-// register to PrivateUse1
-REGISTER_GENERATOR_PRIVATEUSE1(getDefaultZoomGenerator);
 
 } // namespace at

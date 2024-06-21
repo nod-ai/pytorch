@@ -59,7 +59,7 @@ constexpr const char* ZOOM_HELP =
 // TODO: Consider putting the stub definitions in another class, so that one
 // never forgets to implement each virtual function in the real implementation
 // in CUDAHooks.  This probably doesn't buy us much though.
-struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
+struct ZoomHooksInterface : PrivateUse1HooksInterface {
   // This should never actually be implemented, but it is used to
   // squelch -Werror=non-virtual-dtor
   virtual ~ZoomHooksInterface() override = default;
@@ -73,9 +73,9 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
     TORCH_CHECK(false, "Cannot get default CUDA generator without ATen_cuda library. ", ZOOM_HELP);
   }
 
-  virtual const Generator& GetDefaultGenerator(DeviceIndex device_index);
+  virtual const Generator& getDefaultGenerator(DeviceIndex device_index) override { return getDefaultZoomGenerator(device_index); };
 
-  virtual Device getDeviceFromPtr(void* /*data*/) const {
+  virtual Device getDeviceFromPtr(void* /*data*/) const override {
     TORCH_CHECK(false, "Cannot get device of pointer on CUDA without ATen_cuda library. ", ZOOM_HELP);
   }
 
@@ -95,7 +95,7 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
     return -1;
   }
 
-  virtual Allocator* getPinnedMemoryAllocator() const {
+  virtual Allocator* getPinnedMemoryAllocator() const override {
     TORCH_CHECK(false, "Pinned memory requires CUDA. ", ZOOM_HELP);
   }
 
@@ -124,9 +124,9 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
 // #define REGISTER_CUDA_HOOKS(clsname) \
 //   C10_REGISTER_CLASS(CUDAHooksRegistry, clsname, clsname)
 
-struct TORCH_API ZoomHooksArgs {};
+struct ZoomHooksArgs {};
 
 namespace detail {
-TORCH_API const ZoomHooksInterface& getZoomHooks();
+const ZoomHooksInterface& getZoomHooks();
 } // namespace detail
 } // namespace at

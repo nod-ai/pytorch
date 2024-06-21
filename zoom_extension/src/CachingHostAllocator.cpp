@@ -64,10 +64,10 @@ class EventPool {
   std::vector<PerDevicePool> pools_;
 };
 
-using Block = HostBlock<ZoomStream>;
+using Block = HostBlock<c10::zoom::ZoomStream>;
 
 struct ZoomCachingHostAllocatorImpl
-    : public CachingHostAllocatorImpl<ZoomStream, EventPool::Event> {
+    : public CachingHostAllocatorImpl<c10::zoom::ZoomStream, EventPool::Event> {
  private:
   void allocate_host_memory(size_t size, void** ptr) override {
     // Pinned memory pointers allocated by any device can be directly used by
@@ -86,8 +86,8 @@ struct ZoomCachingHostAllocatorImpl
             pinned_use_zoom_host_register()) {
       allocWithZoomHostRegister(ptr, size);
     } else {
-      // Use hipHostAlloc for allocating pinned memory (global lock in driver)
-      C10_ZOOM_CHECK(hipHostAlloc(ptr, size, hipHostAllocDefault));
+      // Use hipHostMalloc for allocating pinned memory (global lock in driver)
+      C10_ZOOM_CHECK(hipHostMalloc(ptr, size, hipHostMallocDefault));
     }
   }
 
@@ -98,13 +98,13 @@ struct ZoomCachingHostAllocatorImpl
       C10_ZOOM_CHECK(hipHostUnregister(ptr));
       free(ptr);
     } else {
-      C10_ZOOM_CHECK(hipFreeHost(block->ptr_));
+      C10_ZOOM_CHECK(hipHostFree(block->ptr_));
     }
   }
 
   void record_stream(
       std::optional<std::vector<EventPool::Event>>& events,
-      ZoomStream stream) override {
+      c10::zoom::ZoomStream stream) override {
     auto event = create_event_internal(stream.device_index());
     event->record(stream);
     events->push_back(std::move(event));
@@ -250,7 +250,7 @@ void raw_local_deleter(void* ptr) {
 bool CachingHostAllocator_recordEvent(
     void* ptr,
     void* ctx,
-    at::zoom::ZoomStream stream) {
+    c10::zoom::ZoomStream stream) {
   return getZoomCachingHostAllocator().record_event(ptr, ctx, stream);
 }
 

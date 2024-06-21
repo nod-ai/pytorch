@@ -28,9 +28,11 @@ const ZoomHooksInterface& getZoomHooks() {
 
   if (zoom_hooks == nullptr) {
     zoom_hooks = new ZoomHooksInterface();
+    RegisterPrivateUse1HooksInterface(zoom_hooks);
   }
   return *zoom_hooks;
 }
+
 } // namespace detail
 
 

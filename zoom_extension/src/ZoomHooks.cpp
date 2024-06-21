@@ -120,10 +120,6 @@ const Generator& ZoomHooks::getDefaultZoomGenerator(DeviceIndex device_index) co
   return at::zoom::detail::getDefaultZoomGenerator(device_index);
 }
 
-const Generator& ZoomHooks::GetDefaultGenerator(DeviceIndex device_index) {
-    return getDefaultZoomGenerator(device_index);
-}
-
 Device ZoomHooks::getDeviceFromPtr(void* data) const {
   return at::zoom::getDeviceFromPtr(data);
 }
