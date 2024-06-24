@@ -1,8 +1,13 @@
 #include "EmptyTensor.h"
+#include "../ZoomHooksInterface.h"
+#include <iostream>
 
 namespace at::detail {
 
     Tensor zoom_empty_generic(IntArrayRef size, ScalarType dtype, std::optional<Device> device_opt, std::optional<c10::MemoryFormat> memory_format_opt) {
+        // if(isPrivateUse1HooksRegistered()) std::cout << "REG" << std::endl;
+        // std::cout << "EG" << std::endl;
+        at::globalContext().lazyInitPrivateUse1();
         const auto device = device_or_default(device_opt);
         TORCH_INTERNAL_ASSERT(device.is_privateuseone());
         const DeviceGuard device_guard(device);
@@ -22,6 +27,9 @@ namespace at::detail {
     
 
     Tensor zoom_empty_strided_generic(IntArrayRef size, IntArrayRef stride, ScalarType dtype, ::std::optional<Device> device_opt) {
+        // if(isPrivateUse1HooksRegistered()) std::cout << "REG" << std::endl;
+        // std::cout << "ESG" << std::endl;
+        at::globalContext().lazyInitPrivateUse1();
         const auto device = device_or_default(device_opt);
         TORCH_INTERNAL_ASSERT(device.is_privateuseone());
         const DeviceGuard device_guard(device);

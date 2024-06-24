@@ -2,6 +2,8 @@
 #include <torch/library.h>
 #include <ATen/DeviceGuard.h>
 #include "ZoomCachingAllocator.h"
+#include "ZoomHooksInterface.h"
+#include "ZoomHooks.h"
 #include <ATen/native/cpu/Loops.h>
 #include <c10/core/TensorOptions.h>
 #include <ATen/native/DispatchStub.h>

@@ -15,7 +15,7 @@ namespace at::zoom::detail {
 struct ZoomHooks : public ZoomHooksInterface {
   ZoomHooks(ZoomHooksArgs) {}
   void initZoom() const override;
-  void initPrivateUse1() const override;
+  // void initPrivateUse1() const override;
   Device getDeviceFromPtr(void* data) const override;
   bool isPinnedPtr(const void* data) const override;
   const Generator& getDefaultZoomGenerator(DeviceIndex device_index = -1) const override;
@@ -28,5 +28,7 @@ struct ZoomHooks : public ZoomHooksInterface {
   int getNumGPUs() const override;
   void deviceSynchronize(DeviceIndex device_index) const override;
 };
+
+void register_zoom_hooks();
 
 } // at::zoom::detail

@@ -24,16 +24,21 @@ namespace detail {
 // you're probably losing only a word (the vptr in the allocated object.)
 static ZoomHooksInterface* zoom_hooks = nullptr;
 
-const ZoomHooksInterface& getZoomHooks() {
-
+// init and register extension hooks
+void initZoomHooks() {
   if (zoom_hooks == nullptr) {
     zoom_hooks = new ZoomHooksInterface();
     RegisterPrivateUse1HooksInterface(zoom_hooks);
   }
+}
+
+const ZoomHooksInterface& getZoomHooks() {
+  initZoomHooks();
   return *zoom_hooks;
 }
 
 } // namespace detail
 
+C10_DEFINE_REGISTRY(PrivateUse1HooksRegistry, ZoomHooksInterface, ZoomHooksArgs)
 
 } // namespace at

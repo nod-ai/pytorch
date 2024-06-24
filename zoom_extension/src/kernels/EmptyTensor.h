@@ -1,5 +1,6 @@
 #pragma once
 #include "../extension.h"
+#include "../ZoomContext.h"
 
 namespace at::detail {
 

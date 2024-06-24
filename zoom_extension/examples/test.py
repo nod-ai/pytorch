@@ -7,4 +7,6 @@ torch._register_device_module('zoom', torch_zoom)
 unsupported_dtypes = None
 torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupported_dtypes)
 
+torch_zoom.init_zoom()
+
 x = torch.empty(5, device='zoom:0')

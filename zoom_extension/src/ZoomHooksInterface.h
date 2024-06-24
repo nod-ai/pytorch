@@ -69,6 +69,10 @@ struct ZoomHooksInterface : PrivateUse1HooksInterface {
     TORCH_CHECK(false, "Cannot initialize CUDA without ATen_cuda library. ", ZOOM_HELP);
   }
 
+  virtual void initPrivateUse1() const override {
+    initZoom();
+  }
+
   virtual const Generator& getDefaultZoomGenerator(C10_UNUSED DeviceIndex device_index = -1) const {
     TORCH_CHECK(false, "Cannot get default CUDA generator without ATen_cuda library. ", ZOOM_HELP);
   }
@@ -126,7 +130,12 @@ struct ZoomHooksInterface : PrivateUse1HooksInterface {
 
 struct ZoomHooksArgs {};
 
+TORCH_DECLARE_REGISTRY(PrivateUse1HooksRegistry, ZoomHooksInterface, ZoomHooksArgs);
+#define REGISTER_PRIVATEUSE1_HOOKS(clsname) \
+  C10_REGISTER_CLASS(PrivateUse1HooksRegistry, clsname, clsname)
+
 namespace detail {
+void initZoomHooks();
 const ZoomHooksInterface& getZoomHooks();
 } // namespace detail
 } // namespace at
