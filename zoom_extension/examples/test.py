@@ -10,3 +10,15 @@ torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupport
 torch_zoom.init_zoom()
 
 x = torch.empty(5, device='zoom:0')
+
+x = torch.ones(5)
+y = x.to('zoom:0')
+z = y.to('zoom:1')
+
+print(y.device)
+
+print(z.device)
+
+c = z.cpu()
+
+print(c)
