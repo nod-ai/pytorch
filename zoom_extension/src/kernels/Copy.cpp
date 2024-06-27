@@ -33,6 +33,9 @@ namespace at::detail {
     }
 
 
+    // Copy kernels only support overriding the registered DispatchStub for a hardcoded set of in-tree devices,
+    // in principle we can do that rather than using TORCH_LIBRARY_IMPL if we add zoom as a 'supported device'
+    // this is a TODO for once we're in-tree
     TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
         m.impl("_copy_from", &zoom_copy_from);
     }

@@ -83,6 +83,33 @@ class ZoomError : public c10::Error {
 //     C10_CUDA_KERNEL_LAUNCH_CHECK();                                   \
 //   } while (0)
 
+#define HIP_DRIVER_CHECK(EXPR)                                                \
+  do {                                                                            \
+    hipError_t __err = EXPR;                                                        \
+    if (__err != hipSuccess) {                                                  \
+      AT_ERROR("HIP driver error: ", static_cast<int>(__err));                   \
+    }                                                                             \
+  } while (0)
+
+#define ZOOM_HIPRTC_CHECK(EXPR)                                       \
+  do {                                                                                              \
+    hiprtcResult __err = EXPR;                                                                       \
+    if (__err != HIPRTC_SUCCESS) {                                                                   \
+      if (static_cast<int>(__err) != 7) {                                                           \
+        AT_ERROR("HIPRTC error: ", hiprtcGetErrorString(__err));  \
+      } else {                                                                                      \
+        AT_ERROR("HIPRTC error: HIPRTC_ERROR_BUILTIN_OPERATION_FAILURE");                        \
+      }                                                                                             \
+    }                                                                                               \
+  } while (0)
+
+
+#define ZOOM_KERNEL_ASSERT(cond)                                         \
+  if (C10_UNLIKELY(!(cond))) {                                           \
+    __assert_fail(                                                       \
+        #cond, __FILE__, static_cast<unsigned int>(__LINE__), __func__); \
+  }
+
 namespace c10::zoom {
 
 /// In the event of a CUDA failure, formats a nice error message about that
