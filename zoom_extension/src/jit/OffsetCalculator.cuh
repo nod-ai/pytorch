@@ -6,7 +6,7 @@
 #include <c10/macros/Macros.h>
 #include <ATen/core/Array.h>
 #include <ATen/native/TensorIterator.h>
-#include "IntegerDivider.h"
+#include "IntegerDivider.cuh"
 
 // If element_sizes is nullptr, then the strides will be in bytes, otherwise
 // the strides will be in # of elements.

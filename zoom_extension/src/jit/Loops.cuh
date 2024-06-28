@@ -3,14 +3,12 @@
 #include <ATen/detail/FunctionTraits.h>
 #include <ATen/native/TensorIterator.h>
 #include <ATen/native/TensorIteratorDynamicCasting.h>
-#include "OffsetCalculator.h"
+#include "OffsetCalculator.cuh"
 #include <ATen/OpMathType.h>
 #include "thread_constants.h"
 #include "../ZoomException.h"
 
-#include <thrust/tuple.h>
-
-#include "MemoryAccess.hpp"
+#include "MemoryAccess.cuh"
 
 
 namespace at { namespace native {
@@ -69,7 +67,7 @@ __device__ inline void elementwise_kernel_helper(func_t f, policy_t policy) {
 
 }}  // namespace at::native
 
-#include "HIPLoops.h"
+#include "HIPLoops.cuh"
 
 namespace at:: native {
 

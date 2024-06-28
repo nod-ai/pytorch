@@ -8,9 +8,10 @@
 #include <c10/macros/Macros.h>
 #include <ATen/core/Array.h>
 #include <ATen/detail/FunctionTraits.h>
-#include "OffsetCalculator.h"
+#include "OffsetCalculator.cuh"
 #include "thread_constants.h"
 #include "../ZoomException.h"
+#include <hip/hip_runtime.h>
 
 // this is rocthrust
 // Note: [rocThrust Device System]
@@ -19,7 +20,6 @@
 // but we can make things behave correctly for HIP by redefining this macro
 #define THRUST_DEVICE_SYSTEM 5
 #include <thrust/tuple.h>
-// #include "/mnt/share/amdsharks/arham/rocThrust/thrust/tuple.h"
 
 
 // make sure this is defined

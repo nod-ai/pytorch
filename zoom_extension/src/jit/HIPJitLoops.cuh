@@ -6,12 +6,12 @@
 #include <ATen/TensorIterator.h>
 #include <ATen/core/Array.h>
 #include "../ZoomContext.h"
-#include "OffsetCalculator.h"
+#include "OffsetCalculator.cuh"
 #include "jit_utils.h"
-#include "MemoryAccess.hpp"
+#include "MemoryAccess.cuh"
 #include "thread_constants.h"
 
-#include "Loops.h"
+#include "Loops.cuh"
 
 #include <c10/macros/Macros.h>
 #include <c10/core/ScalarType.h>

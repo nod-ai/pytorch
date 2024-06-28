@@ -11,10 +11,10 @@
 //===----------------------------------------------------------------------===//
 
 #include <string>
-#include <ATen/cuda/llvm_jit_strings.h>
+#include "llvm_jit_strings.h"
 
 
-namespace at::cuda {
+namespace at::zoom {
 
 // copy-pasted from some llvm files:
 // - https://github.com/llvm/llvm-project/blob/main/libcxx/include/type_traits
@@ -1441,4 +1441,4 @@ const std::string &get_complex_math_string() {
   return complex_math;
 }
 
-} // namespace at::cuda
+} // namespace at::zoom

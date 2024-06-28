@@ -7,9 +7,9 @@
 #include <ATen/TensorIterator.h>
 #include <ATen/native/TensorIteratorDynamicCasting.h>
 
-#include "MemoryAccess.hpp"
+#include "MemoryAccess.cuh"
 
-#include "HIPJitLoops.h"
+#include "HIPJitLoops.cuh"
 
 namespace at {
 namespace native {

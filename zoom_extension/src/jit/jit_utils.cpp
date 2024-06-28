@@ -7,7 +7,7 @@
 #include "../ZoomContext.h"
 #include "../ZoomException.h"
 #include "../ZoomMiscFunctions.h"
-#include "OffsetCalculator.h"
+#include "OffsetCalculator.cuh"
 // #include <ATen/cuda/nvrtc_stub/ATenNVRTC.h>
 #include <ATen/code_template.h>
 #include <ATen/OpMathType.h>
