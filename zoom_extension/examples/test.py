@@ -11,7 +11,7 @@ torch_zoom.init_zoom()
 
 x = torch.empty(5, device='zoom:0')
 
-x = torch.ones(5)
+x = torch.ones(5, device='cpu') * -1
 y = x.to('zoom:0')
 z = y.to('zoom:1')
 
@@ -19,6 +19,10 @@ print(y.device)
 
 print(z.device)
 
-c = z.cpu()
+print(z.cpu())
 
-print(c)
+z = z.abs()
+# z = torch.abs(z)
+print(z.device)
+
+print(z.cpu())

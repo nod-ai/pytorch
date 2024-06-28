@@ -2,7 +2,7 @@ import glob
 from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
-zoom_sources = glob.glob("src/**/*.cpp", recursive=True)
+zoom_sources = glob.glob("src/**/*.cpp", recursive=True) + glob.glob("src/**/*.cu", recursive=True)
 zoom_include_dirs = ["src", "src/kernels"]
 
 setup(

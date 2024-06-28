@@ -13,12 +13,6 @@
 #include "../ZoomException.h"
 #include <hip/hip_runtime.h>
 
-// this is rocthrust
-// Note: [rocThrust Device System]
-// (Arham): redefining here is a temporary hack, for some reason mi250 test nodes didn't compile rocThrust with hipcc??
-// this results in them trying to include cuda headers that don't exist, I don't know why that's the case
-// but we can make things behave correctly for HIP by redefining this macro
-#define THRUST_DEVICE_SYSTEM 5
 #include <thrust/tuple.h>
 
 
