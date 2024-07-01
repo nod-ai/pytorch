@@ -19,10 +19,13 @@ print(y.device)
 
 print(z.device)
 
-print(z.cpu())
-
-z = z.abs()
-# z = torch.abs(z)
+# print(z.cpu())
+f = z.to('cpu')
+print(f)
+# z = z.abs()
+z = torch.abs(z)
 print(z.device)
 
 print(z.cpu())
+print(f)
+print(y.abs().cpu())
