@@ -9,23 +9,36 @@ torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupport
 
 torch_zoom.init_zoom()
 
-x = torch.empty(5, device='zoom:0')
+print(torch._C._get_privateuse1_backend_name())
 
-x = torch.ones(5, device='cpu') * -1
-y = x.to('zoom:0')
-z = y.to('zoom:1')
+# x = torch.empty(5, device='zoom:0')
 
-print(y.device)
+def list_mybackend_devices(backend='zoom'):
+    devices = []
+    i = 0
+    while True:
+        try:
+            # Attempt to create a tensor on the device
+            torch.tensor([1], device=f'{backend}:{i}')
+            devices.append(f'{backend}:{i}')
+            i += 1
+        except RuntimeError as e:
+            # If we get an error, assume we've reached the end of available devices
+            break
+    return devices
 
-print(z.device)
+print(list_mybackend_devices())
+print(list_mybackend_devices('privateuseone'))
 
+# for some reason zoom:0 works fine, but using another device index gives memory access errors when running the abs kernel
+x = torch.ones(5, device='zoom') #* -1
+
+print(x.cpu())
+# y = x.to(torch.device('zoom:1'))
+# print(y == y)
+# print(y.cpu())
+# print(y.abs().cpu())
+# print(y.device, y.abs().device)
+# z = x.to(torch.device('zoom', 1))
 # print(z.cpu())
-f = z.to('cpu')
-print(f)
-# z = z.abs()
-z = torch.abs(z)
-print(z.device)
-
-print(z.cpu())
-print(f)
-print(y.abs().cpu())
+# print(z.abs().cpu())

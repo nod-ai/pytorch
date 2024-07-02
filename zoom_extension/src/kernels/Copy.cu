@@ -475,9 +475,9 @@ static void copy_kernel_zoom(TensorIterator& iter, bool non_blocking) {
     // this is a TODO for once we're in-tree
     // REGISTER_DISPATCH(copy_stub, &copy_kernel_zoom);
 
-    Tensor zoom_copy_from(Tensor & self, const Tensor & src, bool non_blocking) {
+    Tensor& zoom_copy_(Tensor & self, const Tensor & src, bool non_blocking) {
         // copied sanity checks/routing from Copy.cpp 
-        TORCH_CHECK(self.is_quantized() || src.is_quantized(), "Quantized Copy unimplemented in Zoom Backend");
+        TORCH_CHECK(!(self.is_quantized() || src.is_quantized()), "Quantized Copy unimplemented in Zoom Backend");
         // if (self.is_quantized() && !src.is_quantized()) {
         //     return quantized_copy_from_float_(self, src);
         // }
@@ -493,20 +493,21 @@ static void copy_kernel_zoom(TensorIterator& iter, bool non_blocking) {
         //     TORCH_CHECK(false, "Copying from quantized Tensor to non-quantized Tensor is not allowed, please use dequantize to get a float Tensor from a quantized Tensor");
         // }
 
-            const bool is_same_data = (
-            self.is_alias_of(src) &&
-            self.storage_offset() == src.storage_offset() &&
-            self.strides().equals(src.strides()) &&
-            self.sizes().equals(src.sizes()) &&
-            self.scalar_type() == src.scalar_type() &&
-            self.is_conj() == src.is_conj() &&
-            self.is_neg() == src.is_neg()
+        const bool is_same_data = (
+          self.is_alias_of(src) &&
+          self.storage_offset() == src.storage_offset() &&
+          self.strides().equals(src.strides()) &&
+          self.sizes().equals(src.sizes()) &&
+          self.scalar_type() == src.scalar_type() &&
+          self.is_conj() == src.is_conj() &&
+          self.is_neg() == src.is_neg()
         );
         
         if (is_same_data) {
             return self;
         }
 
+        // copy from self to dst
         auto iter = TensorIteratorConfig()
             .add_output(self)
             .add_const_input(src)
@@ -535,7 +536,12 @@ static void copy_kernel_zoom(TensorIterator& iter, bool non_blocking) {
 
     }
 
+    Tensor zoom_copy_from(const Tensor& self, const Tensor& dst, bool non_blocking) {
+      return zoom_copy_(const_cast<Tensor&>(dst), self, non_blocking);
+    }
+
     TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+        m.impl("copy_", &zoom_copy_);
         m.impl("_copy_from", &zoom_copy_from);
     }
 

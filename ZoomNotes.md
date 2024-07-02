@@ -36,4 +36,4 @@ TODO List:
 
 
 - Impl kernels and functionality w/ AOT triton kernels
-- Properly support multiple devices, this involves managing contexts appropriately between threads. We should have a bank of streams corresponding to each device as well as a bank of allocators corresponding to each device.
+- Properly support multiple devices, there are currently some memory errors when using devices other than `zoom:0`, first step is to add device side assertion handling logic

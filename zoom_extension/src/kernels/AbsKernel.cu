@@ -6,7 +6,6 @@
 #include <ATen/native/DispatchStub.h>
 #include <ATen/native/TensorIterator.h>
 #include "../extension.h"
-// #include <torch/library.h>
 
 namespace at::native {
 
@@ -40,14 +39,6 @@ void abs_kernel_zoom(TensorIteratorBase& iter) {
 }
 
 REGISTER_PRIVATEUSE1_DISPATCH(abs_stub, &abs_kernel_zoom);
-
-// Tensor& abs_out(const Tensor& self, Tensor& result) {
-//   return unary_op_impl_with_complex_to_float_out(result, self, abs_stub, /*promotes_integer_to_float=*/false);
-// }
-
-// Tensor abs(const Tensor & self) {
-//   return unary_op_impl_with_complex_to_float(self, at::zoom::native::abs_out);
-// }
 
 TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
   m.impl("abs", &abs);

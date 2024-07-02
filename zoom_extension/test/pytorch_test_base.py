@@ -10,6 +10,6 @@ torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupport
 torch_zoom.init_zoom()
 
 class ZoomTestBase(DeviceTypeTestBase):
-    device_type = 'zoom'
+    device_type = 'privateuseone'
 
 TEST_CLASS = ZoomTestBase

@@ -111,7 +111,7 @@ void ZoomHooks::initZoom() const {
 
   maybe_set_zoom_module_loading("LAZY");
   const auto num_devices = c10::zoom::device_count_ensure_non_zero();
-  // std::cout << "NUMDEVICES: " << std::to_string(num_devices) << std::endl;
+  std::cout << "NUMDEVICES: " << std::to_string(num_devices) << std::endl;
   c10::zoom::ZoomCachingAllocator::init(num_devices);
   at::zoom::detail::init_p2p_access_cache(num_devices);
 }
@@ -208,7 +208,9 @@ std::string ZoomHooks::showConfig() const {
 }
 
 int ZoomHooks::getNumGPUs() const {
-  return c10::zoom::device_count();
+  auto cnt = c10::zoom::device_count();
+  std::cout << "numgpu: " << cnt << std::endl;
+  return cnt;
 }
 
 void ZoomHooks::deviceSynchronize(DeviceIndex device_index) const {
