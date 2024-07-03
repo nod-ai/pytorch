@@ -30,10 +30,11 @@ torch_zoom.init_zoom()
 # Running Device Type Tests
 Set up the environment using `env.sh`. You may have to edit these variables if cloning. `TORCH_TEST_DEVICES` should point to `test/pytorch_test_base.py`.
 
-Then you can run `pytorch/test/test_torch.py` to run all device tests.
+Then you can run `test.sh` to run the pytorch device test suite. This script will have two output artifacts, one will be `test.log` with a verbose log of the `unittest` output from the test suite. The other is `zoom_unimplemented_operators.log` which will contain a list of unimplemented operators in the zoom backend, as well as the frequency with which this operator was called in the test suite.
+
+The unimplemented operator log should not be considered exhaustive as additional operator failures may occur once the offending operator is implemented. This is just meant to be a tool to drive development.
 
 TODO List:
 
-
-- Impl kernels and functionality w/ AOT triton kernels
+- Impl kernels and functionality
 - Properly support multiple devices, there are currently some memory errors when using devices other than `zoom:0`, first step is to add device side assertion handling logic

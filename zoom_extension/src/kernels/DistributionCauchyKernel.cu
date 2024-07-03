@@ -18,8 +18,7 @@ REGISTER_PRIVATEUSE1_DISPATCH(cauchy_stub, &cauchy_kernel);
 // See note: [Declarations for Random Stubs]
 
 Tensor & cauchy_(Tensor & self, double median, double sigma, ::std::optional<Generator> generator); // {"schema": "aten::cauchy_(Tensor(a!) self, float median=0, float sigma=1, *, Generator? generator=None) -> Tensor(a!)", "dispatch": "True", "default": "False"}
-// Tensor & cauchy_out(const Tensor & self, double median, double sigma, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::cauchy.out(Tensor self, float median=0, float sigma=1, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
-// Tensor cauchy(const Tensor & self, double median, double sigma, ::std::optional<Generator> generator); // {"schema": "aten::cauchy(Tensor self, float median=0, float sigma=1, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
+
 
 Tensor & zoom_cauchy_(Tensor & self, double median, double sigma, ::std::optional<Generator> generator) {
     return cauchy_(self, median, sigma, std::move(generator));

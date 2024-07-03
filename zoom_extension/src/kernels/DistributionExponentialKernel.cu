@@ -18,10 +18,8 @@ REGISTER_PRIVATEUSE1_DISPATCH(exponential_stub, &exponential_kernel);
 
 // See note: [Declarations for Random Stubs]
 
-
-// Tensor & exponential_out(const Tensor & self, double lambd, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::exponential.out(Tensor self, float lambd=1, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
-// Tensor exponential(const Tensor & self, double lambd, ::std::optional<Generator> generator); // {"schema": "aten::exponential(Tensor self, float lambd=1, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
 Tensor & exponential_(Tensor & self, double lambd, ::std::optional<Generator> generator); // {"schema": "aten::exponential_(Tensor(a!) self, float lambd=1, *, Generator? generator=None) -> Tensor(a!)", "dispatch": "True", "default": "False"}
+
 
 Tensor & zoom_exponential_out(const Tensor & self, double lambd, ::std::optional<Generator> generator, Tensor & out) {
     // Check if the output tensor has the correct shape and dtype

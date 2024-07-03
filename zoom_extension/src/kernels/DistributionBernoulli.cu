@@ -50,9 +50,6 @@ Tensor & bernoulli_(Tensor & self, const Tensor & p, ::std::optional<Generator> 
 Tensor & bernoulli_(Tensor & self, double p, ::std::optional<Generator> generator); // {"schema": "aten::bernoulli_.float(Tensor(a!) self, float p=0.5, *, Generator? generator=None) -> Tensor(a!)", "dispatch": "True", "default": "False"}
 Tensor bernoulli(const Tensor & self, double p, ::std::optional<Generator> generator); // {"schema": "aten::bernoulli.p(Tensor self, float p, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
 
-// Tensor & bernoulli_out(const Tensor & self, const Tensor & p, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::bernoulli.Tensor_out(Tensor self, Tensor p, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
-// Tensor bernoulli(const Tensor & self, const Tensor & p, ::std::optional<Generator> generator); // {"schema": "aten::bernoulli.Tensor(Tensor self, Tensor p, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
-// Tensor & bernoulli_out(const Tensor & self, double p, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::bernoulli.float_out(Tensor self, float p=0.5, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
 
 Tensor zoom_bernoulli(const Tensor & self, ::std::optional<Generator> generator) {
     return at::native::bernoulli(self, std::move(generator));

@@ -19,8 +19,7 @@ REGISTER_PRIVATEUSE1_DISPATCH(geometric_stub, &geometric_kernel);
 
 
 Tensor & geometric_(Tensor & self, double p, ::std::optional<Generator> generator); // {"schema": "aten::geometric_(Tensor(a!) self, float p, *, Generator? generator=None) -> Tensor(a!)", "dispatch": "True", "default": "False"}
-// Tensor & geometric_out(const Tensor & self, double p, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::geometric.out(Tensor self, float p, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
-// Tensor geometric(const Tensor & self, double p, ::std::optional<Generator> generator); // {"schema": "aten::geometric(Tensor self, float p, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
+
 
 Tensor & zoom_geometric_(Tensor & self, double p, ::std::optional<Generator> generator) {
     return geometric_(self, p, std::move(generator));

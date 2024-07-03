@@ -19,8 +19,7 @@ REGISTER_PRIVATEUSE1_DISPATCH(log_normal_stub, &log_normal_kernel);
 
 
 Tensor & log_normal_(Tensor & self, double mean, double std, ::std::optional<Generator> generator); // {"schema": "aten::log_normal_(Tensor(a!) self, float mean=1, float std=2, *, Generator? generator=None) -> Tensor(a!)", "dispatch": "True", "default": "False"}
-// Tensor & log_normal_out(const Tensor & self, double mean, double std, ::std::optional<Generator> generator, Tensor & out); // {"schema": "aten::log_normal.out(Tensor self, float mean=1, float std=2, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)", "dispatch": "True", "default": "True"}
-// Tensor log_normal(const Tensor & self, double mean, double std, ::std::optional<Generator> generator); // {"schema": "aten::log_normal(Tensor self, float mean=1, float std=2, *, Generator? generator=None) -> Tensor", "dispatch": "True", "default": "True"}
+
 
 Tensor & zoom_log_normal_(Tensor & self, double mean, double std, ::std::optional<Generator> generator) {
     return log_normal_(self, mean, std, std::move(generator));
