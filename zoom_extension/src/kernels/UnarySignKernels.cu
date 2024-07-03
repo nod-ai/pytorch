@@ -112,10 +112,10 @@ void sgn_kernel_zoom(TensorIteratorBase& iter){
       });
 }
 
-REGISTER_DISPATCH(logical_not_stub, &logical_not_kernel_zoom);
-REGISTER_DISPATCH(neg_stub, &neg_kernel_zoom);
-REGISTER_DISPATCH(sign_stub, &sign_kernel_zoom);
-REGISTER_DISPATCH(signbit_stub, &signbit_kernel_zoom);
-REGISTER_DISPATCH(sgn_stub, &sgn_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(logical_not_stub, &logical_not_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(neg_stub, &neg_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(sign_stub, &sign_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(signbit_stub, &signbit_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(sgn_stub, &sgn_kernel_zoom);
 
 } // namespace at::native

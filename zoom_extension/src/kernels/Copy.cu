@@ -473,7 +473,7 @@ static void copy_kernel_zoom(TensorIterator& iter, bool non_blocking) {
     // Copy kernels only support overriding the registered DispatchStub for a hardcoded set of in-tree devices,
     // in principle we can do that rather than using TORCH_LIBRARY_IMPL if we add zoom as a 'supported device'
     // this is a TODO for once we're in-tree
-    // REGISTER_DISPATCH(copy_stub, &copy_kernel_zoom);
+    // REGISTER_PRIVATEUSE1_DISPATCH(copy_stub, &copy_kernel_zoom);
 
     Tensor& zoom_copy_(Tensor & self, const Tensor & src, bool non_blocking) {
         // copied sanity checks/routing from Copy.cpp 

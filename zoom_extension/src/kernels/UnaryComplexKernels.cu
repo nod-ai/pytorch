@@ -85,7 +85,7 @@ void conj_kernel_zoom(TensorIteratorBase& iter) {
   );
 }
 
-REGISTER_DISPATCH(angle_stub, &angle_kernel_zoom);
-REGISTER_DISPATCH(conj_physical_stub, &conj_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(angle_stub, &angle_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(conj_physical_stub, &conj_kernel_zoom);
 
 } // namespace at::native
