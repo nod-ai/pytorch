@@ -36,7 +36,7 @@ inline TensorImpl* resize_impl_zoom_(
   }
 
   // NB: We don't need to hold the device guard when calling from TH
-  zoom::OptionalZoomGuard guard;
+  c10::zoom::OptionalZoomGuard guard;
   if (device_guard) {
     guard.set_index(self->storage().device().index());
   }

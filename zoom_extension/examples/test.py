@@ -32,6 +32,7 @@ print(list_mybackend_devices('privateuseone'))
 
 # for some reason zoom:0 works fine, but using another device index gives memory access errors when running the abs kernel
 x = torch.ones(5, device='zoom') #* -1
+x = x.view(-1, 1)
 
 print(x.cpu())
 # y = x.to(torch.device('zoom:1'))
