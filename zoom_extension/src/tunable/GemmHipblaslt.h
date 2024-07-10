@@ -398,7 +398,7 @@ class HipblasltGemmOp : public Callable<ParamsT> {
 
       size_t workspace_size = GetHipblasltWorkspaceSize();
 
-      auto op_handle = at::zoom::getCurrentCUDABlasLtHandle();
+      auto op_handle = at::zoom::getCurrentHIPBlasLtHandle();
 
       size_t ret_workspace_size = 0;
       auto status = hipblaslt_ext::matmulIsAlgoSupported(op_handle,

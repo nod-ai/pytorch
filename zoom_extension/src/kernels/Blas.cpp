@@ -689,7 +689,7 @@ Tensor& dot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
       [&] {
         // Tensor result = at::empty({}, self.options());
 
-        auto handle = at::zoom::getCurrentCUDABlasHandle();
+        auto handle = at::zoom::getCurrentHIPBlasHandle();
         at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);
         at::zoom::blas::dot<scalar_t>(
             handle,
@@ -749,7 +749,7 @@ Tensor& vdot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
   AT_DISPATCH_COMPLEX_TYPES(self.scalar_type(), "vdot", [&] {
     // Tensor result = at::empty({}, self.options());
 
-    auto handle = at::zoom::getCurrentCUDABlasHandle();
+    auto handle = at::zoom::getCurrentHIPBlasHandle();
     at::zoom::blas::PointerModeGuard pointerModeGuard(
         handle, HIPBLAS_POINTER_MODE_DEVICE);
     at::zoom::blas::vdot<scalar_t>(

@@ -120,7 +120,7 @@ static hipblasStatus_t rocBLASStatusToHIPStatus(rocblas_status error)
 
 namespace {
 
-static hipblasOperation_t _cublasOpFromChar(char op) {
+static hipblasOperation_t _hipblasOpFromChar(char op) {
   switch (op) {
     case 'n':
     case 'N':
@@ -133,10 +133,10 @@ static hipblasOperation_t _cublasOpFromChar(char op) {
       return HIPBLAS_OP_C;
   }
   AT_ERROR(
-      "_cublasOpFromChar input should be 't', 'n' or 'c' but got `", op, "`");
+      "_hipblasOpFromChar input should be 't', 'n' or 'c' but got `", op, "`");
 }
 
-static void _cublasAdjustLdLevel2(int64_t m, int64_t n, int64_t* lda) {
+static void _hipblasAdjustLdLevel2(int64_t m, int64_t n, int64_t* lda) {
   // Note: leading dimensions generally are checked that they are > 0
   // and at least as big the result requires (even if the value won't
   // be used).
@@ -150,7 +150,7 @@ static void _cublasAdjustLdLevel2(int64_t m, int64_t n, int64_t* lda) {
     *lda = std::max<int64_t>(m, 1);
 }
 
-static void _cublasAdjustLdLevel3(
+static void _hipblasAdjustLdLevel3(
     char transa,
     char transb,
     int64_t m,
@@ -197,10 +197,10 @@ static size_t _parseChosenWorkspaceSize() {
     try {
       workspace_size = std::stoi(val);
     } catch(std::invalid_argument const& e) {
-      TORCH_WARN("invalid CUBLASLT_WORKSPACE_SIZE,",
+      TORCH_WARN("invalid HIPBLASLT_WORKSPACE_SIZE,",
                  " using default workspace size of ", workspace_size, " KiB.");
     } catch(std::out_of_range const& e) {
-      TORCH_WARN("CUBLASLT_WORKSPACE_SIZE out of range,",
+      TORCH_WARN("HIPBLASLT_WORKSPACE_SIZE out of range,",
                  " using default workspace size of ", workspace_size, " KiB.");
     }
   }
@@ -243,8 +243,8 @@ namespace at::zoom::blas {
 #ifndef DISABLE_HIPBLASLT
 namespace {
 // Following the pattern of CuSparseDescriptor
-// Defined here for now because this is the only place cublas_lt interface is
-// used but can be moved to a header once cublas_lt interface is used in
+// Defined here for now because this is the only place hipblas_lt interface is
+// used but can be moved to a header once hipblas_lt interface is used in
 // multiple places.
 template <typename T, hipblasStatus_t (*destructor)(T*)>
 struct CuBlasLtDeleter {
@@ -327,7 +327,7 @@ class CuBlasLtMatmulPreference : public CuBlasLtDescriptor<
 
 
 template <typename Dtype>
-inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
+inline void bgemm_internal_hipblaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
   #ifdef DISABLE_HIPBLASLT
   TORCH_CHECK_DISABLE_HIPBLAS_LT
   #else
@@ -352,14 +352,14 @@ inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
   } else if constexpr (std::is_same_v<Dtype, at::BFloat16>) {
     abcType = HIP_R_16BF;
   } else {
-    AT_ERROR("at::zoom::blas::bgemm_internal_cublaslt: not implemented for ", typeid(Dtype).name());
+    AT_ERROR("at::zoom::blas::bgemm_internal_hipblaslt: not implemented for ", typeid(Dtype).name());
   }
 
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasLtHandle_t ltHandle = at::zoom::getCurrentCUDABlasLtHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasLtHandle_t ltHandle = at::zoom::getCurrentHIPBlasLtHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
 
   CuBlasLtMatmulDescriptor computeDesc(computeType, scaleType);
   computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_TRANSA, opa);
@@ -386,7 +386,7 @@ inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
 
   auto& allocator = *::c10::zoom::ZoomCachingAllocator::get();
   auto workspace = allocator.allocate(workspaceSize);
-  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for cublaslt");
+  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for hipblaslt");
 
   hipblasLtMatmulHeuristicResult_t heuristicResult = {};
   int returnedResult = 0;
@@ -405,7 +405,7 @@ inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
     TORCH_HIPBLAS_CHECK(HIPBLAS_STATUS_NOT_SUPPORTED);
   }
 
-  hipblasStatus_t cublasStatus = hipblasLtMatmul(
+  hipblasStatus_t hipblasStatus = hipblasLtMatmul(
       ltHandle,
       computeDesc.descriptor(),
       &alpha,
@@ -423,9 +423,9 @@ inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
       workspaceSize,
       c10::zoom::GetCurrentZoomStream());
   TORCH_CHECK(
-      cublasStatus == HIPBLAS_STATUS_SUCCESS,
+      hipblasStatus == HIPBLAS_STATUS_SUCCESS,
       "CUDA error: ",
-      at::zoom::blas::_cublasGetErrorEnum(cublasStatus),
+      at::zoom::blas::_hipblasGetErrorEnum(hipblasStatus),
       " when calling hipblasLtMatmul with transpose_mat1 ",
       (opa == HIPBLAS_OP_T),
       " transpose_mat2 ",
@@ -453,44 +453,44 @@ inline void bgemm_internal_cublaslt(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
 
 
 template <typename Dtype>
-inline void bgemm_internal_cublas(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
-  AT_ERROR("at::zoom::blas::bgemm_internal_cublas: not implemented for ", typeid(Dtype).name());
+inline void bgemm_internal_hipblas(CUDABLAS_BGEMM_ARGTYPES(Dtype)) {
+  AT_ERROR("at::zoom::blas::bgemm_internal_hipblas: not implemented for ", typeid(Dtype).name());
 }
 
 template <>
-void bgemm_internal_cublas<double>(CUDABLAS_BGEMM_ARGTYPES(double)) {
+void bgemm_internal_hipblas<double>(CUDABLAS_BGEMM_ARGTYPES(double)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   BGEMM_CHECK_ARGVALUES(double);
   TORCH_HIPBLAS_CHECK(hipblasDgemmStridedBatched(
       handle, opa, opb, m, n, k, &alpha, a, lda, stridea, b, ldb, strideb, &beta, c, ldc, stridec, num_batches));
 }
 
 template <>
-void bgemm_internal_cublas<float>(CUDABLAS_BGEMM_ARGTYPES(float)) {
+void bgemm_internal_hipblas<float>(CUDABLAS_BGEMM_ARGTYPES(float)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   BGEMM_CHECK_ARGVALUES(float);
   TORCH_HIPBLAS_CHECK(hipblasSgemmStridedBatched(
       handle, opa, opb, m, n, k, &alpha, a, lda, stridea, b, ldb, strideb, &beta, c, ldc, stridec, num_batches));
 }
 
 template <>
-void bgemm_internal_cublas<c10::complex<double>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<double>)) {
+void bgemm_internal_hipblas<c10::complex<double>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<double>)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   BGEMM_CHECK_ARGVALUES(c10::complex<double>);
   TORCH_HIPBLAS_CHECK(hipblasZgemmStridedBatched(
       handle, opa, opb, m, n, k, reinterpret_cast<const hipDoubleComplex*>(&alpha), reinterpret_cast<const hipDoubleComplex*>(a),
@@ -499,13 +499,13 @@ void bgemm_internal_cublas<c10::complex<double>>(CUDABLAS_BGEMM_ARGTYPES(c10::co
 }
 
 template <>
-void bgemm_internal_cublas<c10::complex<float>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<float>)) {
+void bgemm_internal_hipblas<c10::complex<float>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<float>)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   BGEMM_CHECK_ARGVALUES(c10::complex<float>);
   TORCH_HIPBLAS_CHECK(hipblasCgemmStridedBatched(
       handle, opa, opb, m, n, k, reinterpret_cast<const hipComplex*>(&alpha), reinterpret_cast<const hipComplex*>(a),
@@ -514,13 +514,13 @@ void bgemm_internal_cublas<c10::complex<float>>(CUDABLAS_BGEMM_ARGTYPES(c10::com
 }
 
 template <>
-void bgemm_internal_cublas<at::Half>(CUDABLAS_BGEMM_ARGTYPES(at::Half)) {
+void bgemm_internal_hipblas<at::Half>(CUDABLAS_BGEMM_ARGTYPES(at::Half)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   BGEMM_CHECK_ARGVALUES(at::Half);
   float falpha = alpha;
   float fbeta = beta;
@@ -541,16 +541,16 @@ void bgemm_internal_cublas<at::Half>(CUDABLAS_BGEMM_ARGTYPES(at::Half)) {
 }
 
 template <>
-void bgemm_internal_cublas<at::BFloat16>(CUDABLAS_BGEMM_ARGTYPES(at::BFloat16)) {
+void bgemm_internal_hipblas<at::BFloat16>(CUDABLAS_BGEMM_ARGTYPES(at::BFloat16)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
   BGEMM_CHECK_ARGVALUES(at::BFloat16);
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
   const float falpha = alpha;
   const float fbeta = beta;
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
 
   #ifdef HIPBLAS_V2
   auto compute_type = HIPBLAS_COMPUTE_32F;
@@ -573,10 +573,10 @@ void bgemm_internal<double>(CUDABLAS_BGEMM_ARGTYPES(double))
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support double gemm yet
-    bgemm_internal_cublas<double>(CUDABLAS_BGEMM_ARGS(double));
+    bgemm_internal_hipblas<double>(CUDABLAS_BGEMM_ARGS(double));
   }
   else {
-    bgemm_internal_cublas<double>(CUDABLAS_BGEMM_ARGS(double));
+    bgemm_internal_hipblas<double>(CUDABLAS_BGEMM_ARGS(double));
   }
 }
 
@@ -586,13 +586,13 @@ void bgemm_internal<float>(CUDABLAS_BGEMM_ARGTYPES(float))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    bgemm_internal_cublas<float>(CUDABLAS_BGEMM_ARGS(float));
+    bgemm_internal_hipblas<float>(CUDABLAS_BGEMM_ARGS(float));
     #else
-    bgemm_internal_cublaslt<float>(CUDABLAS_BGEMM_ARGS(float));
+    bgemm_internal_hipblaslt<float>(CUDABLAS_BGEMM_ARGS(float));
     #endif
   }
   else {
-    bgemm_internal_cublas<float>(CUDABLAS_BGEMM_ARGS(float));
+    bgemm_internal_hipblas<float>(CUDABLAS_BGEMM_ARGS(float));
   }
 }
 
@@ -601,10 +601,10 @@ void bgemm_internal<c10::complex<double>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<d
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support complex<double> gemm yet
-    bgemm_internal_cublas<c10::complex<double>>(CUDABLAS_BGEMM_ARGS(c10::complex<double>));
+    bgemm_internal_hipblas<c10::complex<double>>(CUDABLAS_BGEMM_ARGS(c10::complex<double>));
   }
   else {
-    bgemm_internal_cublas<c10::complex<double>>(CUDABLAS_BGEMM_ARGS(c10::complex<double>));
+    bgemm_internal_hipblas<c10::complex<double>>(CUDABLAS_BGEMM_ARGS(c10::complex<double>));
   }
 }
 
@@ -613,10 +613,10 @@ void bgemm_internal<c10::complex<float>>(CUDABLAS_BGEMM_ARGTYPES(c10::complex<fl
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support complex<float> gemm yet
-    bgemm_internal_cublas<c10::complex<float>>(CUDABLAS_BGEMM_ARGS(c10::complex<float>));
+    bgemm_internal_hipblas<c10::complex<float>>(CUDABLAS_BGEMM_ARGS(c10::complex<float>));
   }
   else {
-    bgemm_internal_cublas<c10::complex<float>>(CUDABLAS_BGEMM_ARGS(c10::complex<float>));
+    bgemm_internal_hipblas<c10::complex<float>>(CUDABLAS_BGEMM_ARGS(c10::complex<float>));
   }
 }
 
@@ -626,13 +626,13 @@ void bgemm_internal<at::Half>(CUDABLAS_BGEMM_ARGTYPES(at::Half))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    bgemm_internal_cublas<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
+    bgemm_internal_hipblas<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
     #else
-    bgemm_internal_cublaslt<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
+    bgemm_internal_hipblaslt<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
     #endif
   }
   else {
-    bgemm_internal_cublas<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
+    bgemm_internal_hipblas<at::Half>(CUDABLAS_BGEMM_ARGS(at::Half));
   }
 }
 
@@ -642,13 +642,13 @@ void bgemm_internal<at::BFloat16>(CUDABLAS_BGEMM_ARGTYPES(at::BFloat16))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    bgemm_internal_cublas<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
+    bgemm_internal_hipblas<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
     #else
-    bgemm_internal_cublaslt<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
+    bgemm_internal_hipblaslt<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
     #endif
   }
   else {
-    bgemm_internal_cublas<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
+    bgemm_internal_hipblas<at::BFloat16>(CUDABLAS_BGEMM_ARGS(at::BFloat16));
   }
 }
 
@@ -764,50 +764,50 @@ void bgemm<at::BFloat16>(CUDABLAS_BGEMM_ARGTYPES(at::BFloat16)) {
 }
 
 template <typename Dtype>
-inline void gemm_internal_cublaslt(CUDABLAS_GEMM_ARGTYPES(Dtype)) {
+inline void gemm_internal_hipblaslt(CUDABLAS_GEMM_ARGTYPES(Dtype)) {
   // forward to bgemm implementation but set strides and batches to 0
-  bgemm_internal_cublaslt(transa, transb, m, n, k, alpha, a, lda, 0, b, ldb, 0, beta, c, ldc, 0, 0);
+  bgemm_internal_hipblaslt(transa, transb, m, n, k, alpha, a, lda, 0, b, ldb, 0, beta, c, ldc, 0, 0);
 }
 
 template <typename Dtype>
-inline void gemm_internal_cublas(CUDABLAS_GEMM_ARGTYPES(Dtype)) {
-  AT_ERROR("at::zoom::blas::gemm_internal_cublas: not implemented for ", typeid(Dtype).name());
+inline void gemm_internal_hipblas(CUDABLAS_GEMM_ARGTYPES(Dtype)) {
+  AT_ERROR("at::zoom::blas::gemm_internal_hipblas: not implemented for ", typeid(Dtype).name());
 }
 
 template <>
-void gemm_internal_cublas<double>(CUDABLAS_GEMM_ARGTYPES(double)) {
+void gemm_internal_hipblas<double>(CUDABLAS_GEMM_ARGTYPES(double)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(double);
   TORCH_HIPBLAS_CHECK(hipblasDgemm(
       handle, opa, opb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc));
 }
 
 template <>
-void gemm_internal_cublas<float>(CUDABLAS_GEMM_ARGTYPES(float)) {
+void gemm_internal_hipblas<float>(CUDABLAS_GEMM_ARGTYPES(float)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(float);
   TORCH_HIPBLAS_CHECK(hipblasSgemm(
       handle, opa, opb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc));
 }
 
 template <>
-void gemm_internal_cublas<c10::complex<double>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<double>)) {
+void gemm_internal_hipblas<c10::complex<double>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<double>)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(c10::complex<double>);
   TORCH_HIPBLAS_CHECK(hipblasZgemm(
       handle, opa, opb, m, n, k, reinterpret_cast<const hipDoubleComplex*>(&alpha), reinterpret_cast<const hipDoubleComplex*>(a),
@@ -816,13 +816,13 @@ void gemm_internal_cublas<c10::complex<double>>(CUDABLAS_GEMM_ARGTYPES(c10::comp
 }
 
 template <>
-void gemm_internal_cublas<c10::complex<float>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<float>)) {
+void gemm_internal_hipblas<c10::complex<float>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<float>)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(c10::complex<float>);
   TORCH_HIPBLAS_CHECK(hipblasCgemm(
       handle, opa, opb, m, n, k, reinterpret_cast<const hipComplex*>(&alpha), reinterpret_cast<const hipComplex*>(a),
@@ -831,15 +831,15 @@ void gemm_internal_cublas<c10::complex<float>>(CUDABLAS_GEMM_ARGTYPES(c10::compl
 }
 
 template <>
-void gemm_internal_cublas<at::Half>(CUDABLAS_GEMM_ARGTYPES(at::Half)) {
+void gemm_internal_hipblas<at::Half>(CUDABLAS_GEMM_ARGTYPES(at::Half)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
   float falpha = alpha;
   float fbeta = beta;
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(at::Half);
 
   int flag = 0;
@@ -875,21 +875,21 @@ void gemm_internal_cublas<at::Half>(CUDABLAS_GEMM_ARGTYPES(at::Half)) {
 }
 
 template <>
-void gemm_internal_cublas<at::BFloat16>(CUDABLAS_GEMM_ARGTYPES(at::BFloat16)) {
+void gemm_internal_hipblas<at::BFloat16>(CUDABLAS_GEMM_ARGTYPES(at::BFloat16)) {
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t opa = _cublasOpFromChar(transa);
-  hipblasOperation_t opb = _cublasOpFromChar(transb);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t opa = _hipblasOpFromChar(transa);
+  hipblasOperation_t opb = _hipblasOpFromChar(transb);
   float falpha = alpha;
   float fbeta = beta;
-  _cublasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
+  _hipblasAdjustLdLevel3(transa, transb, m, n, k, &lda, &ldb, &ldc);
   GEMM_CHECK_ARGVALUES(at::BFloat16);
 #ifdef HIPBLAS_V2
   auto compute_type = HIPBLAS_COMPUTE_32F;
 #else
   auto compute_type = HIP_R_16BF;
 #endif
-  TORCH_HIPBLAS_CHECK(hipblasSetMathMode(handle, cublas_flags));
+  TORCH_HIPBLAS_CHECK(hipblasSetMathMode(handle, hipblas_flags));
   TORCH_HIPBLAS_CHECK(hipblasGemmEx(
       handle,
       opa,
@@ -910,7 +910,7 @@ void gemm_internal_cublas<at::BFloat16>(CUDABLAS_GEMM_ARGTYPES(at::BFloat16)) {
       ldc,
       compute_type,
       HIPBLAS_GEMM_DEFAULT));
-  TORCH_HIPBLAS_CHECK(hipblasSetMathMode(handle, CUBLAS_DEFAULT_MATH));
+  TORCH_HIPBLAS_CHECK(hipblasSetMathMode(handle, HIPBLAS_DEFAULT_MATH));
 }
 
 template <>
@@ -918,10 +918,10 @@ void gemm_internal<double>(CUDABLAS_GEMM_ARGTYPES(double))
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support double gemm yet
-    gemm_internal_cublas<double>(CUDABLAS_GEMM_ARGS(double));
+    gemm_internal_hipblas<double>(CUDABLAS_GEMM_ARGS(double));
   }
   else {
-    gemm_internal_cublas<double>(CUDABLAS_GEMM_ARGS(double));
+    gemm_internal_hipblas<double>(CUDABLAS_GEMM_ARGS(double));
   }
 }
 
@@ -931,13 +931,13 @@ void gemm_internal<float>(CUDABLAS_GEMM_ARGTYPES(float))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    gemm_internal_cublas<float>(CUDABLAS_GEMM_ARGS(float));
+    gemm_internal_hipblas<float>(CUDABLAS_GEMM_ARGS(float));
     #else
-    gemm_internal_cublaslt<float>(CUDABLAS_GEMM_ARGS(float));
+    gemm_internal_hipblaslt<float>(CUDABLAS_GEMM_ARGS(float));
     #endif
   }
   else {
-    gemm_internal_cublas<float>(CUDABLAS_GEMM_ARGS(float));
+    gemm_internal_hipblas<float>(CUDABLAS_GEMM_ARGS(float));
   }
 }
 
@@ -946,10 +946,10 @@ void gemm_internal<c10::complex<double>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<dou
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support complex gemm yet
-    gemm_internal_cublas<c10::complex<double>>(CUDABLAS_GEMM_ARGS(c10::complex<double>));
+    gemm_internal_hipblas<c10::complex<double>>(CUDABLAS_GEMM_ARGS(c10::complex<double>));
   }
   else {
-    gemm_internal_cublas<c10::complex<double>>(CUDABLAS_GEMM_ARGS(c10::complex<double>));
+    gemm_internal_hipblas<c10::complex<double>>(CUDABLAS_GEMM_ARGS(c10::complex<double>));
   }
 }
 
@@ -958,10 +958,10 @@ void gemm_internal<c10::complex<float>>(CUDABLAS_GEMM_ARGTYPES(c10::complex<floa
 {
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     // hipblaslt does not support complex gemm yet
-    gemm_internal_cublas<c10::complex<float>>(CUDABLAS_GEMM_ARGS(c10::complex<float>));
+    gemm_internal_hipblas<c10::complex<float>>(CUDABLAS_GEMM_ARGS(c10::complex<float>));
   }
   else {
-    gemm_internal_cublas<c10::complex<float>>(CUDABLAS_GEMM_ARGS(c10::complex<float>));
+    gemm_internal_hipblas<c10::complex<float>>(CUDABLAS_GEMM_ARGS(c10::complex<float>));
   }
 }
 
@@ -971,13 +971,13 @@ void gemm_internal<at::Half>(CUDABLAS_GEMM_ARGTYPES(at::Half))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    gemm_internal_cublas<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
+    gemm_internal_hipblas<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
     #else
-    gemm_internal_cublaslt<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
+    gemm_internal_hipblaslt<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
     #endif
   }
   else {
-    gemm_internal_cublas<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
+    gemm_internal_hipblas<at::Half>(CUDABLAS_GEMM_ARGS(at::Half));
   }
 }
 
@@ -987,13 +987,13 @@ void gemm_internal<at::BFloat16>(CUDABLAS_GEMM_ARGTYPES(at::BFloat16))
   if (at::globalContext().blasPreferredBackend() == BlasBackend::Cublaslt) {
     #ifdef DISABLE_HIPBLASLT
     TORCH_WARN_DISABLE_HIPBLASLT
-    gemm_internal_cublas<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
+    gemm_internal_hipblas<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
     #else
-    gemm_internal_cublaslt<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
+    gemm_internal_hipblaslt<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
     #endif
   }
   else {
-    gemm_internal_cublas<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
+    gemm_internal_hipblas<at::BFloat16>(CUDABLAS_GEMM_ARGS(at::BFloat16));
   }
 }
 
@@ -1173,11 +1173,11 @@ void gemm_and_bias(
 
   auto& allocator = *::c10::zoom::ZoomCachingAllocator::get();
   auto workspace = allocator.allocate(workspaceSize);
-  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for cublaslt");
+  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for hipblaslt");
 
   hipblasLtMatmulHeuristicResult_t heuristicResult = {};
   int returnedResult = 0;
-  hipblasLtHandle_t ltHandle = at::zoom::getCurrentCUDABlasLtHandle();
+  hipblasLtHandle_t ltHandle = at::zoom::getCurrentHIPBlasLtHandle();
   TORCH_HIPBLAS_CHECK(hipblasLtMatmulAlgoGetHeuristic(
       ltHandle,
       computeDesc.descriptor(),
@@ -1193,7 +1193,7 @@ void gemm_and_bias(
     TORCH_HIPBLAS_CHECK(HIPBLAS_STATUS_NOT_SUPPORTED);
   }
 
-  hipblasStatus_t cublasStatus = hipblasLtMatmul(
+  hipblasStatus_t hipblasStatus = hipblasLtMatmul(
       ltHandle,
       computeDesc.descriptor(),
       &alpha_val,
@@ -1211,9 +1211,9 @@ void gemm_and_bias(
       workspaceSize,
       c10::zoom::GetCurrentZoomStream());
   TORCH_CHECK(
-      cublasStatus == HIPBLAS_STATUS_SUCCESS,
+      hipblasStatus == HIPBLAS_STATUS_SUCCESS,
       "CUDA error: ",
-      at::zoom::blas::_cublasGetErrorEnum(cublasStatus),
+      at::zoom::blas::_hipblasGetErrorEnum(hipblasStatus),
       " when calling hipblasLtMatmul with transpose_mat1 ",
       transpose_mat1,
       " transpose_mat2 ",
@@ -1335,8 +1335,8 @@ void scaled_gemm(
   const float alpha_val = 1.0;
   const float beta_val = 0.0;
   CuBlasLtMatmulDescriptor computeDesc(computeType, scaleType);
-  computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_TRANSA, _cublasOpFromChar(transa));
-  computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_TRANSB, _cublasOpFromChar(transb));
+  computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_TRANSA, _hipblasOpFromChar(transa));
+  computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_TRANSB, _hipblasOpFromChar(transb));
   computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_A_SCALE_POINTER, mat1_scale_ptr);
   computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_B_SCALE_POINTER, mat2_scale_ptr);
   computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_D_SCALE_POINTER, result_scale_ptr);
@@ -1362,13 +1362,13 @@ void scaled_gemm(
   size_t workspaceSize = _getWorkspaceSize();
   auto& allocator = *::c10::zoom::ZoomCachingAllocator::get();
   auto workspace = allocator.allocate(workspaceSize);
-  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for cublaslt");
+  TORCH_CHECK(workspace.get() != nullptr, "OOM trying to allocate workspace for hipblaslt");
 
   CuBlasLtMatmulPreference preference;
   preference.setAttribute(HIPBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, workspaceSize);
   hipblasLtMatmulHeuristicResult_t heuristicResult = {};
   int returnedResult = 0;
-  hipblasLtHandle_t ltHandle = at::zoom::getCurrentCUDABlasLtHandle();
+  hipblasLtHandle_t ltHandle = at::zoom::getCurrentHIPBlasLtHandle();
   TORCH_HIPBLAS_CHECK(hipblasLtMatmulAlgoGetHeuristic(
       ltHandle,
       computeDesc.descriptor(),
@@ -1387,8 +1387,8 @@ void scaled_gemm(
     TORCH_HIPBLAS_CHECK(hipblaslt_ext::getAllAlgos(
         ltHandle,
         hipblaslt_ext::GemmType::HIPBLASLT_GEMM,
-        _cublasOpFromChar(transa),
-        _cublasOpFromChar(transb),
+        _hipblasOpFromChar(transa),
+        _hipblasOpFromChar(transb),
         ScalarTypeToCudaDataType(mat1_dtype),
         ScalarTypeToCudaDataType(mat2_dtype),
         // C is nullptr and beta=0, so set to something reasonable. See above.
@@ -1425,7 +1425,7 @@ void scaled_gemm(
     }
     TORCH_CHECK(found, "could not find valid hipblaslt solution");
   }
-  hipblasStatus_t cublasStatus = hipblasLtMatmul(
+  hipblasStatus_t hipblasStatus = hipblasLtMatmul(
       ltHandle,
       computeDesc.descriptor(),
       &alpha_val,
@@ -1443,9 +1443,9 @@ void scaled_gemm(
       workspaceSize,
       c10::zoom::GetCurrentZoomStream());
   TORCH_CHECK(
-      cublasStatus == HIPBLAS_STATUS_SUCCESS,
+      hipblasStatus == HIPBLAS_STATUS_SUCCESS,
       "CUDA error: ",
-      at::zoom::blas::_cublasGetErrorEnum(cublasStatus),
+      at::zoom::blas::_hipblasGetErrorEnum(hipblasStatus),
       " when calling hipblasLtMatmul with transpose_mat1 ",
       transa,
       " transpose_mat2 ",
@@ -1504,10 +1504,10 @@ void int8_gemm(
   CuBlasLtMatrixLayout Bdesc(abType, k, n, mat2_ld, transpose_mat2);
   CuBlasLtMatrixLayout Cdesc(cType, m, n, result_ld);
 
-  // cublas team: alpha and beta need to be the same dtype as of scaleType
+  // hipblas team: alpha and beta need to be the same dtype as of scaleType
   at::opmath_type<int32_t> alpha_val = 1;
   int32_t beta_val = 0;
-  hipblasLtHandle_t ltHandle = at::zoom::getCurrentCUDABlasLtHandle();
+  hipblasLtHandle_t ltHandle = at::zoom::getCurrentHIPBlasLtHandle();
 
   CuBlasLtMatmulPreference preference;
   size_t workspaceSize = _getWorkspaceSize();
@@ -1532,7 +1532,7 @@ void int8_gemm(
   }
 
 
-  hipblasStatus_t cublasStatus = hipblasLtMatmul(
+  hipblasStatus_t hipblasStatus = hipblasLtMatmul(
       ltHandle,
       computeDesc.descriptor(),
       &alpha_val,
@@ -1550,9 +1550,9 @@ void int8_gemm(
       workspaceSize,
       c10::zoom::GetCurrentZoomStream());
   TORCH_CHECK(
-      cublasStatus == HIPBLAS_STATUS_SUCCESS,
+      hipblasStatus == HIPBLAS_STATUS_SUCCESS,
       "CUDA error: ",
-      at::zoom::blas::_cublasGetErrorEnum(cublasStatus),
+      at::zoom::blas::_hipblasGetErrorEnum(hipblasStatus),
       " when calling hipblasLtMatmul with transpose_mat1 ",
       transpose_mat1,
       " transpose_mat2 ",
@@ -1715,9 +1715,9 @@ template <>
 void gemv<c10::complex<double>>(CUDABLAS_GEMV_ARGTYPES(c10::complex<double>)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t op = _cublasOpFromChar(trans);
-  _cublasAdjustLdLevel2(m, n, &lda);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t op = _hipblasOpFromChar(trans);
+  _hipblasAdjustLdLevel2(m, n, &lda);
   GEMV_CHECK_ARGVALUES(c10::complex<double>);
   TORCH_HIPBLAS_CHECK(
       hipblasZgemv(handle, op, m, n, reinterpret_cast<const hipDoubleComplex*>(&alpha), reinterpret_cast<const hipDoubleComplex*>(a),
@@ -1732,9 +1732,9 @@ void gemv<c10::complex<float>>(CUDABLAS_GEMV_ARGTYPES(c10::complex<float>)) {
   NoTF32Guard disable_tf32;
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t op = _cublasOpFromChar(trans);
-  _cublasAdjustLdLevel2(m, n, &lda);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t op = _hipblasOpFromChar(trans);
+  _hipblasAdjustLdLevel2(m, n, &lda);
   GEMV_CHECK_ARGVALUES(c10::complex<float>);
   TORCH_HIPBLAS_CHECK(
       hipblasCgemv(handle, op, m, n, reinterpret_cast<const hipComplex*>(&alpha), reinterpret_cast<const hipComplex*>(a),
@@ -1746,9 +1746,9 @@ template <>
 void gemv<double>(CUDABLAS_GEMV_ARGTYPES(double)) {
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t op = _cublasOpFromChar(trans);
-  _cublasAdjustLdLevel2(m, n, &lda);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t op = _hipblasOpFromChar(trans);
+  _hipblasAdjustLdLevel2(m, n, &lda);
   GEMV_CHECK_ARGVALUES(double);
   TORCH_HIPBLAS_CHECK(
       hipblasDgemv(handle, op, m, n, &alpha, a, lda, x, incx, &beta, y, incy));
@@ -1761,9 +1761,9 @@ void gemv<float>(CUDABLAS_GEMV_ARGTYPES(float)) {
   NoTF32Guard disable_tf32;
   // See Note [Writing Nondeterministic Operations]
   globalContext().alertCuBLASConfigNotDeterministic();
-  hipblasHandle_t handle = at::zoom::getCurrentCUDABlasHandle();
-  hipblasOperation_t op = _cublasOpFromChar(trans);
-  _cublasAdjustLdLevel2(m, n, &lda);
+  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  hipblasOperation_t op = _hipblasOpFromChar(trans);
+  _hipblasAdjustLdLevel2(m, n, &lda);
   GEMV_CHECK_ARGVALUES(float);
   TORCH_HIPBLAS_CHECK(
       hipblasSgemv(handle, op, m, n, &alpha, a, lda, x, incx, &beta, y, incy));
@@ -1771,20 +1771,20 @@ void gemv<float>(CUDABLAS_GEMV_ARGTYPES(float)) {
 
 template <>
 void gemv<at::Half>(CUDABLAS_GEMV_ARGTYPES(at::Half)) {
-  // In general, cublas regards matrices as column-major.
-  // The cublasS/Dgemv usages in cuda::blas::gemv<float>/<double> above
+  // In general, hipblas regards matrices as column-major.
+  // The hipblasS/Dgemv usages in cuda::blas::gemv<float>/<double> above
   // require that external blas::gemv callers obey the following convention:
   //
   // If "a" is row-major with shape (output, summed) in blas::gemv's caller,
   // caller interprets it as column-major with shape (summed, output), passes
-  // summed and output respectively to our local vars m, n, and requests that cublas
+  // summed and output respectively to our local vars m, n, and requests that hipblas
   // internally transpose ("trans") the column-major interpretation of a.
   //
-  // There's no such thing as "cublasHalfgemv", so here we hack gemv with a gemm.
+  // There's no such thing as "hipblasHalfgemv", so here we hack gemv with a gemm.
   // However, we must allow the same calling convention, because the caller shouldn't
   // have to swap args based on whether it's calling blas::gemv<at::Half> or <float>.
 
-  bool trans_bool = (_cublasOpFromChar(trans) != HIPBLAS_OP_N);
+  bool trans_bool = (_hipblasOpFromChar(trans) != HIPBLAS_OP_N);
   if (trans_bool) {
     std::swap(m, n);
   }
@@ -1804,7 +1804,7 @@ void gemv<at::Half>(CUDABLAS_GEMV_ARGTYPES(at::Half)) {
 
 template <>
 void gemv<at::BFloat16>(CUDABLAS_GEMV_ARGTYPES(at::BFloat16)) {
-  bool trans_bool = (_cublasOpFromChar(trans) != HIPBLAS_OP_N);
+  bool trans_bool = (_hipblasOpFromChar(trans) != HIPBLAS_OP_N);
   if (trans_bool) {
     std::swap(m, n);
   }
@@ -1992,7 +1992,7 @@ void geqrfBatched<c10::complex<double>>(
 template <>
 void getrfBatched<double>(
     int n, double** dA_array, int ldda, int* ipiv_array, int* info_array, int batchsize) {
-  auto handle = at::zoom::getCurrentCUDABlasHandle();
+  auto handle = at::zoom::getCurrentHIPBlasHandle();
   TORCH_HIPBLAS_CHECK(hipblasDgetrfBatched(
       handle, n, dA_array, ldda, ipiv_array, info_array, batchsize));
 }
@@ -2000,7 +2000,7 @@ void getrfBatched<double>(
 template <>
 void getrfBatched<float>(
     int n, float** dA_array, int ldda, int* ipiv_array, int* info_array, int batchsize) {
-  auto handle = at::zoom::getCurrentCUDABlasHandle();
+  auto handle = at::zoom::getCurrentHIPBlasHandle();
   TORCH_HIPBLAS_CHECK(hipblasSgetrfBatched(
       handle, n, dA_array, ldda, ipiv_array, info_array, batchsize));
 }
@@ -2013,7 +2013,7 @@ void getrfBatched<c10::complex<double>>(
     int* ipiv_array,
     int* info_array,
     int batchsize) {
-  auto handle = at::zoom::getCurrentCUDABlasHandle();
+  auto handle = at::zoom::getCurrentHIPBlasHandle();
   TORCH_HIPBLAS_CHECK(hipblasZgetrfBatched(
       handle,
       n,
@@ -2032,7 +2032,7 @@ void getrfBatched<c10::complex<float>>(
     int* ipiv_array,
     int* info_array,
     int batchsize) {
-  auto handle = at::zoom::getCurrentCUDABlasHandle();
+  auto handle = at::zoom::getCurrentHIPBlasHandle();
   TORCH_HIPBLAS_CHECK(hipblasCgetrfBatched(
       handle,
       n,

@@ -22,7 +22,7 @@
  * A hipblas handle does not encapsulate a hipblaslt handle.
  *
  * To work around this difference in behavior, a separate handle pool is available for ROCm builds.
- * For CUDA builds, getCurrentCUDABlasLtHandle will alias for getCurrentCUDABlasHandle,
+ * For CUDA builds, getCurrentHIPBlasLtHandle will alias for getCurrentHIPBlasHandle,
  * whereas for ROCm builds, it is a distinct function.
  */
 
@@ -84,7 +84,7 @@ void clearCublasWorkspaces() {
 }
 
 size_t parseChosenWorkspaceSize() {
-  const char * val = getenv("CUBLAS_WORKSPACE_CONFIG");
+  const char * val = getenv("HIPBLAS_WORKSPACE_CONFIG");
   /* :4096:2:16:8 default, 32MiB for Hopper */
   hipDeviceProp_t* properties = at::zoom::getCurrentDeviceProperties();
   const bool sm90 = properties != nullptr && properties->major == 9 && properties->minor == 0;
@@ -97,12 +97,12 @@ size_t parseChosenWorkspaceSize() {
     std::sregex_iterator next(config.begin(), config.end(), exp);
     std::sregex_iterator end;
     if (next == end) {
-      TORCH_WARN("Could not parse CUBLAS_WORKSPACE_CONFIG, using default workspace size of ", default_size, " bytes.");
+      TORCH_WARN("Could not parse HIPBLAS_WORKSPACE_CONFIG, using default workspace size of ", default_size, " bytes.");
       return default_size;
     }
     while (next != end) {
       std::smatch match = *next;
-      TORCH_CHECK(match.size() == 3, "Expected CUBLAS_WORKSPACE_SPACE_CONFIG match of size 3 (Format :SIZE:COUNT)");
+      TORCH_CHECK(match.size() == 3, "Expected HIPBLAS_WORKSPACE_SPACE_CONFIG match of size 3 (Format :SIZE:COUNT)");
       size_t curr_size = (size_t) std::stoi(match.str(1));
       size_t count = (size_t) std::stoi(match.str(2));
       total_size += curr_size * 1024 * count;
@@ -123,7 +123,7 @@ at::DataPtr getNewWorkspace() {
   return c10::zoom::ZoomCachingAllocator::get()->allocate(getChosenWorkspaceSize());
 }
 
-hipblasHandle_t getCurrentCUDABlasHandle() {
+hipblasHandle_t getCurrentHIPBlasHandle() {
   c10::DeviceIndex device = 0;
   C10_ZOOM_CHECK(c10::zoom::GetDevice(&device));
 
@@ -158,7 +158,7 @@ hipblasHandle_t getCurrentCUDABlasHandle() {
 }
 
 #ifndef DISABLE_HIPBLASLT
-hipblasLtHandle_t getCurrentCUDABlasLtHandle() {
+hipblasLtHandle_t getCurrentHIPBlasLtHandle() {
   c10::DeviceIndex device = 0;
   C10_ZOOM_CHECK(c10::zoom::GetDevice(&device));
 

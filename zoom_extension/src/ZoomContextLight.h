@@ -75,14 +75,9 @@ bool canDeviceAccessPeer(
 
 c10::Allocator* getZoomDeviceAllocator();
 
-
-// hipblasHandle_t getCurrentHIPBlasHandle();
-// hipblasLtHandle_t getCurrentHIPBlasLtHandle();
-
-
-hipblasHandle_t getCurrentCUDABlasHandle();
+hipblasHandle_t getCurrentHIPBlasHandle();
 #ifndef DISABLE_HIPBLASLT
-hipblasLtHandle_t getCurrentCUDABlasLtHandle();
+hipblasLtHandle_t getCurrentHIPBlasLtHandle();
 #endif
 // TODO (Arham), optionally integrate hipsolver libs
 #if defined(HIPSOLVER_VERSION)
