@@ -47,3 +47,45 @@ void c10_zoom_check_implementation(
 }
 
 } // namespace c10::zoom
+
+
+namespace at::zoom {
+  namespace blas {
+    const char* _hipblasGetErrorEnum(hipblasStatus_t error) {
+  if (error == HIPBLAS_STATUS_SUCCESS) {
+    return "HIPBLAS_STATUS_SUCCESS";
+  }
+  if (error == HIPBLAS_STATUS_NOT_INITIALIZED) {
+    return "HIPBLAS_STATUS_NOT_INITIALIZED";
+  }
+  if (error == HIPBLAS_STATUS_ALLOC_FAILED) {
+    return "HIPBLAS_STATUS_ALLOC_FAILED";
+  }
+  if (error == HIPBLAS_STATUS_INVALID_VALUE) {
+    return "HIPBLAS_STATUS_INVALID_VALUE";
+  }
+  if (error == HIPBLAS_STATUS_ARCH_MISMATCH) {
+    return "HIPBLAS_STATUS_ARCH_MISMATCH";
+  }
+  if (error == HIPBLAS_STATUS_MAPPING_ERROR) {
+    return "HIPBLAS_STATUS_MAPPING_ERROR";
+  }
+  if (error == HIPBLAS_STATUS_EXECUTION_FAILED) {
+    return "HIPBLAS_STATUS_EXECUTION_FAILED";
+  }
+  if (error == HIPBLAS_STATUS_INTERNAL_ERROR) {
+    return "HIPBLAS_STATUS_INTERNAL_ERROR";
+  }
+  if (error == HIPBLAS_STATUS_NOT_SUPPORTED) {
+    return "HIPBLAS_STATUS_NOT_SUPPORTED";
+  }
+#ifdef HIPBLAS_STATUS_LICENSE_ERROR
+  if (error == HIPBLAS_STATUS_LICENSE_ERROR) {
+    return "HIPBLAS_STATUS_LICENSE_ERROR";
+  }
+#endif
+  return "<unknown>";
+}
+
+  } // namespace blas
+} //namespace at::zoom

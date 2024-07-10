@@ -4,6 +4,7 @@
 #include <c10/util/Exception.h>
 #include <c10/util/irange.h>
 #include "ZoomDefines.h"
+#include <hipblas/hipblas.h>
 
 // Note [CHECK macro]
 // ~~~~~~~~~~~~~~~~~~
@@ -109,6 +110,24 @@ class ZoomError : public c10::Error {
     __assert_fail(                                                       \
         #cond, __FILE__, static_cast<unsigned int>(__LINE__), __func__); \
   }
+
+
+namespace at::zoom::blas {
+  const char* _hipblasGetErrorEnum(hipblasStatus_t error);
+}
+
+
+#define TORCH_HIPBLAS_CHECK(EXPR)                              \
+do {                                                          \
+  hipblasStatus_t __err = EXPR;                                \
+  TORCH_CHECK(__err == HIPBLAS_STATUS_SUCCESS,                 \
+              "HIP error: ",                                 \
+              at::zoom::blas::_hipblasGetErrorEnum(__err),     \
+              " when calling `" #EXPR "`");                   \
+} while (0)
+
+#define TORCH_WARN_DISABLE_HIPBLASLT TORCH_WARN_ONCE("hipblasLt temporarily disabled in Zoom backend, using hipblas instead")
+#define TORCH_CHECK_DISABLE_HIPBLAS_LT TORCH_CHECK(false, "Error: hipblasLt routine called, but hipblasLt is disabled in the Zoom backend")
 
 namespace c10::zoom {
 

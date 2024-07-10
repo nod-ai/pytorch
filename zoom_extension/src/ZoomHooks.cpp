@@ -219,7 +219,7 @@ void ZoomHooks::deviceSynchronize(DeviceIndex device_index) const {
 }
 
 // // Sigh, the registry doesn't support namespaces :(
-// using at::CUDAHooksRegistry;
+// using at::zoomHooksRegistry;
 // using at::RegistererCUDAHooksRegistry;
 
 // REGISTER_CUDA_HOOKS(ZoomHooks);

@@ -6,7 +6,7 @@
 
 #include <ATen/detail/PrivateUse1HooksInterface.h>
 
-// Forward-declares at::Generator and at::cuda::NVRTC
+// Forward-declares at::Generator and at::zoom::NVRTC
 // namespace at {
 // struct Generator;
 // namespace cuda {

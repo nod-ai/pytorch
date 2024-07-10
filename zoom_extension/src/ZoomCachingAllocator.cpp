@@ -401,7 +401,7 @@ class EventPool {
  public:
   using Event = std::unique_ptr<hipEvent_t, std::function<void(hipEvent_t*)>>;
   // TODO: Explicit device count
-  EventPool() : pools_(at::zoom::device_count()) {}
+  EventPool() : pools_(c10::zoom::device_count()) {}
 
   Event get(c10::DeviceIndex device) {
     TORCH_INTERNAL_ASSERT(0 <= device);
@@ -505,15 +505,15 @@ struct MempoolIdHash {
 };
 
 hipError_t hipMallocMaybeCapturing(void** p, size_t size) {
-  if (at::zoom::currentStreamCaptureStatusMayInitCtx() ==
-      at::zoom::CaptureStatus::None) {
+  if (c10::zoom::currentStreamCaptureStatusMayInitCtx() ==
+      c10::zoom::CaptureStatus::None) {
     return C10_ZOOM_ERROR_HANDLED(hipMalloc(p, size));
   } else {
     // It's ok to capture hipMallocs, as long as we never hipFree those
     // addresses before replay.
     // Capturing hipMalloc behaves nicely: it gives the graph new VA,
     // but is ignored (won't leakily allocate new memory) in replays.
-    at::zoom::ZoomStreamCaptureModeGuard g{hipStreamCaptureModeRelaxed};
+    c10::zoom::ZoomStreamCaptureModeGuard g{hipStreamCaptureModeRelaxed};
     return C10_ZOOM_ERROR_HANDLED(hipMalloc(p, size));
   }
 }

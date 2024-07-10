@@ -1,5 +1,7 @@
 #pragma once
 // Light-weight version of CUDAContext.h with fewer transitive includes
+#define USE_ROCM
+#define DISABLE_HIPBLASLT
 
 #include <cstdint>
 
@@ -11,6 +13,12 @@
 
 #include <c10/core/Allocator.h>
 #include "ZoomFunctions.h"
+
+#include <hipblas/hipblas.h>
+#ifndef DISABLE_HIPBLASLT
+#include <hipblaslt/hipblaslt.h>
+#include <hipblaslt/hipblaslt-ext.hpp>
+#endif
 
 namespace c10 {
 struct Allocator;
@@ -68,6 +76,14 @@ bool canDeviceAccessPeer(
 c10::Allocator* getZoomDeviceAllocator();
 
 
+// hipblasHandle_t getCurrentHIPBlasHandle();
+// hipblasLtHandle_t getCurrentHIPBlasLtHandle();
+
+
+hipblasHandle_t getCurrentCUDABlasHandle();
+#ifndef DISABLE_HIPBLASLT
+hipblasLtHandle_t getCurrentCUDABlasLtHandle();
+#endif
 // TODO (Arham), optionally integrate hipsolver libs
 #if defined(HIPSOLVER_VERSION)
 hipsolverDnHandle_t getCurrentHIPSolverDnHandle();

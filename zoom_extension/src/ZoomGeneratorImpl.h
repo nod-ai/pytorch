@@ -43,7 +43,7 @@ struct HIPGraph;
  * holding an initial offset value, and a uint64_t holding an
  * intra-graph offset. (The intra-graph offset starts from zero
  * when capture begins.)  In each consumer kernel,
- * at::cuda::philox::unpack computes the offset to use for this kernel
+ * at::zoom::philox::unpack computes the offset to use for this kernel
  * as intra-graph offset + *initial offset.
  *
  * When the graph reruns, the logic that reruns it first
@@ -70,7 +70,7 @@ struct HIPGraph;
  * #include <ATen/cuda/CUDAGraphsUtils.cuh>
  *
  * __global__ void kernel(..., PhiloxHIPState philox_args) {
- *   auto seeds = at::cuda::philox::unpack(philox_args);
+ *   auto seeds = at::zoom::philox::unpack(philox_args);
  *   IndexType idx = blockIdx.x * blockDim.x + threadIdx.x;
  *   curandStatePhilox4_32_10_t state;
  *   curand_init(std::get<0>(seeds), // seed

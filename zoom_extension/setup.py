@@ -3,7 +3,7 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 zoom_sources = glob.glob("src/**/*.cpp", recursive=True) + glob.glob("src/**/*.cu", recursive=True)
-zoom_include_dirs = ["src", "src/kernels"]
+zoom_include_dirs = ["src", "src/kernels", "src/kernels/tunable"]
 
 setup(
     name="torch_zoom",

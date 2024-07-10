@@ -34,6 +34,10 @@ Then you can run `test.sh` to run the pytorch device test suite. This script wil
 
 The unimplemented operator log should not be considered exhaustive as additional operator failures may occur once the offending operator is implemented. This is just meant to be a tool to drive development.
 
+# HIPBlasLt
+
+This is temporarily disabled via the macro `DISABLE_HIPBLASLT` in `ZoomContextLight.h`, we can reenable it by undef'ing that macro. This means that right now `scaledgemm` and `intmm` dont work, but we can implement hipblas versions of them and/or just enable hipblaslt.
+
 TODO List:
 
 - Impl kernels and functionality

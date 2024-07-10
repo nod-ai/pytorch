@@ -26,7 +26,7 @@ struct PhiloxHIPState {
     captured_ = true;
   }
 
-  // Public members, directly accessible by at::cuda::philox::unpack.
+  // Public members, directly accessible by at::zoom::philox::unpack.
   // If we made them private with getters/setters, the getters/setters
   // would have to be __device__, and we can't declare __device__ in ATen.
   union Payload {

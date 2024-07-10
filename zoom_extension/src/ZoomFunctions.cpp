@@ -157,7 +157,7 @@ std::optional<DeviceIndex> getDeviceIndexWithPrimaryContext() {
       return current_device_index;
     }
   }
-  for (const auto device_index : c10::irange(at::zoom::device_count())) {
+  for (const auto device_index : c10::irange(c10::zoom::device_count())) {
     if (device_index == current_device_index)
       continue;
     if (hasPrimaryContext(device_index)) {
