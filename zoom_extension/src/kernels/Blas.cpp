@@ -480,53 +480,61 @@ const Tensor& baddbmm_out_hip_impl(const Tensor& result, const Tensor& self, con
 
 // We might replace these with TORCH_IMPL_FUNC expressions when in-tree
 Tensor& addmm_out_hip(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, Tensor& result) {
+  checkBackend("addmm_out", {result, self, mat1, mat2}, Backend::PrivateUse1);
+  TORCH_CHECK(
+      mat1.dim() == 2, "mat1 must be a matrix, got ", mat1.dim(), "-D tensor");
+  TORCH_CHECK(
+      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
+  TORCH_CHECK(
+      mat1.sizes()[1] == mat2.sizes()[0],
+      "mat1 and mat2 shapes cannot be multiplied (",
+      mat1.sizes()[0],
+      "x",
+      mat1.sizes()[1],
+      " and ",
+      mat2.sizes()[0],
+      "x",
+      mat2.sizes()[1],
+      ")");
+
   addmm_out_hip_impl(const_cast<Tensor&>(result), self, mat1, mat2, beta, alpha);
   return result;
 }
 
 Tensor addmm_hip(const Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha) {
-  TORCH_CHECK(mat1.dim() == 2 && mat2.dim() == 2, "tensors must be 2-D");
-  TORCH_CHECK(
-    mat1.dtype() == mat2.dtype(),
-    "expected mat1 and mat2 to have the same dtype, but got: ", mat1.dtype(), " != ", mat2.dtype()
-  )
-  TORCH_CHECK(self.size(0) == mat1.size(0))
-  TORCH_CHECK(self.size(1) == mat2.size(1))
-  TORCH_CHECK(mat1.size(1) == mat2.size(0))
-
   Tensor result = at::empty({mat1.size(0), mat2.size(1)}, self.options());
   addmm_out_hip(self, mat1, mat2, beta, alpha, result);
   return result;
 }
 
 Tensor& addmm_hip_(Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha) {
-  TORCH_CHECK(mat1.dim() == 2 && mat2.dim() == 2, "tensors must be 2-D");
-  TORCH_CHECK(
-    mat1.dtype() == mat2.dtype(),
-    "expected mat1 and mat2 to have the same dtype, but got: ", mat1.dtype(), " != ", mat2.dtype()
-  )
-  TORCH_CHECK(self.size(0) == mat1.size(0))
-  TORCH_CHECK(self.size(1) == mat2.size(1))
-  TORCH_CHECK(mat1.size(1) == mat2.size(0))
-
   addmm_out_hip(self, mat1, mat2, beta, alpha, self);
   return self;
 }
 
 Tensor& addmm_activation_out_hip(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, bool use_gelu, Tensor& result) {
+  checkBackend("addmm_out", {result, self, mat1, mat2}, Backend::PrivateUse1);
+  TORCH_CHECK(
+      mat1.dim() == 2, "mat1 must be a matrix, got ", mat1.dim(), "-D tensor");
+  TORCH_CHECK(
+      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
+  TORCH_CHECK(
+      mat1.sizes()[1] == mat2.sizes()[0],
+      "mat1 and mat2 shapes cannot be multiplied (",
+      mat1.sizes()[0],
+      "x",
+      mat1.sizes()[1],
+      " and ",
+      mat2.sizes()[0],
+      "x",
+      mat2.sizes()[1],
+      ")");
+
   addmm_out_hip_impl(const_cast<Tensor&>(result), self, mat1, mat2, beta, alpha, use_gelu ? Activation::GELU : Activation::RELU);
   return result;
 }
 
 Tensor _addmm_activation_hip(const Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha, bool use_gelu) {
-  TORCH_CHECK(mat1.dim() == 2 && mat2.dim() == 2, "tensors must be 2-D");
-  TORCH_CHECK(
-    mat1.dtype() == mat2.dtype(),
-    "expected mat1 and mat2 to have the same dtype, but got: ", mat1.dtype(), " != ", mat2.dtype()
-  )
-  TORCH_CHECK(self.size(0) == mat1.size(0))
-  TORCH_CHECK(self.size(1) == mat2.size(1))
-  TORCH_CHECK(mat1.size(1) == mat2.size(0))
   Tensor result = at::empty({mat1.size(0), mat2.size(1)}, self.options());
   addmm_activation_out_hip(self, mat1, mat2, beta, alpha, use_gelu, result);
   return result;
@@ -534,19 +542,37 @@ Tensor _addmm_activation_hip(const Tensor & self, const Tensor & mat1, const Ten
 
 
 Tensor& mm_out_hip(const Tensor& self, const Tensor& mat2, Tensor& result) {
+  checkBackend("mm_out", {result, self, mat2}, Backend::PrivateUse1);
+  TORCH_CHECK(
+      self.dim() == 2, "mat1 must be a matrix, got ", self.dim(), "-D tensor");
+  TORCH_CHECK(
+      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
+  TORCH_CHECK(
+      self.sizes()[1] == mat2.sizes()[0],
+      "mat1 and mat2 shapes cannot be multiplied (",
+      self.sizes()[0],
+      "x",
+      self.sizes()[1],
+      " and ",
+      mat2.sizes()[0],
+      "x",
+      mat2.sizes()[1],
+      ")");
   addmm_out_hip_impl(const_cast<Tensor&>(result), result, self, mat2, 0, 1);
   return result;
 }
 
 Tensor mm_hip(const Tensor & self, const Tensor & mat2) {
-  TORCH_CHECK(self.dim() == 2 && mat2.dim() == 2)
-  TORCH_CHECK(self.size(1) == mat2.size(0))
   Tensor result = at::empty({self.size(0), mat2.size(1)}, self.options());
   mm_out_hip(self, mat2, result);
   return result;
 }
 
 Tensor& baddbmm_out_hip(const Tensor& self, const Tensor& batch1, const Tensor& batch2, const Scalar& beta, const Scalar& alpha, Tensor& result) {
+  checkBackend("baddbmm_out", {self, batch1, batch2}, Backend::PrivateUse1);
+  TORCH_CHECK(self.dtype() == batch1.dtype(), "Input dtypes must be the same, got: input ", self.dtype(), ", batch1: ", batch1.dtype(), ", batch2: ", batch2.dtype());
+  TORCH_CHECK(batch1.dim() == 3, "expected 3D tensor");
+  TORCH_CHECK(batch2.dim() == 3, "expected 3D tensor");
   {
     at::NoNamesGuard guard;
     baddbmm_out_hip_impl(result, self, batch1, batch2, beta, alpha);
@@ -555,36 +581,21 @@ Tensor& baddbmm_out_hip(const Tensor& self, const Tensor& batch1, const Tensor& 
 }
 
 Tensor baddbmm_hip(const Tensor & self, const Tensor & batch1, const Tensor & batch2, const Scalar & beta, const Scalar & alpha) {
-  TORCH_CHECK(batch1.dim() == 3 && batch2.dim() == 3, "tensors must be 3-D");
-  TORCH_CHECK(
-    batch1.dtype() == batch2.dtype(),
-    "expected batch1 and batch2 to have the same dtype, but got: ", batch1.dtype(), " != ", batch2.dtype()
-  )
-  TORCH_CHECK(batch1.size(0) == batch2.size(0))
-  TORCH_CHECK(self.size(0) == batch1.size(1))
-  TORCH_CHECK(self.size(1) == batch2.size(2))
-  TORCH_CHECK(batch1.size(2) == batch2.size(1))
   Tensor result = at::empty_like(self);
   baddbmm_out_hip(self, batch1, batch2, beta, alpha, result);
   return result;
 } 
 
 Tensor & baddbmm_hip_(Tensor & self, const Tensor & batch1, const Tensor & batch2, const Scalar & beta, const Scalar & alpha) {
-  TORCH_CHECK(batch1.dim() == 3 && batch2.dim() == 3, "tensors must be 3-D");
-  TORCH_CHECK(
-    batch1.dtype() == batch2.dtype(),
-    "expected batch1 and batch2 to have the same dtype, but got: ", batch1.dtype(), " != ", batch2.dtype()
-  )
-  TORCH_CHECK(batch1.size(0) == batch2.size(0))
-  TORCH_CHECK(self.size(0) == batch1.size(1))
-  TORCH_CHECK(self.size(1) == batch2.size(2))
-  TORCH_CHECK(batch1.size(2) == batch2.size(1))
   baddbmm_out_hip(self, batch1, batch2, beta, alpha, self);
   return self;
 } 
 
 
 Tensor& bmm_out_hip(const Tensor& batch1, const Tensor& batch2, Tensor &result) {
+  checkBackend("bmm_out", {result, batch1, batch2}, Backend::PrivateUse1);
+  TORCH_CHECK(batch1.dim() == 3, "expected 3D tensor");
+  TORCH_CHECK(batch2.dim() == 3, "expected 3D tensor");
   Scalar beta(0.0);
   Scalar alpha(1.0);
   {
@@ -595,13 +606,6 @@ Tensor& bmm_out_hip(const Tensor& batch1, const Tensor& batch2, Tensor &result) 
 }
 
 Tensor bmm_hip(const Tensor & batch1, const Tensor & batch2) {
-  TORCH_CHECK(batch1.dim() == 3 && batch2.dim() == 3, "tensors must be 3-D");
-  TORCH_CHECK(
-    batch1.dtype() == batch2.dtype(),
-    "expected batch1 and batch2 to have the same dtype, but got: ", batch1.dtype(), " != ", batch2.dtype()
-  )
-  TORCH_CHECK(batch1.size(0) == batch2.size(0))
-  TORCH_CHECK(batch1.size(2) == batch2.size(1))
   Tensor result = at::empty({batch1.size(0), batch1.size(1), batch2.size(2)}, batch1.options());
   bmm_out_hip(batch1, batch2, result);
   return result;

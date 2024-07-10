@@ -555,7 +555,7 @@ void bgemm_internal_cublas<at::BFloat16>(CUDABLAS_BGEMM_ARGTYPES(at::BFloat16)) 
   #ifdef HIPBLAS_V2
   auto compute_type = HIPBLAS_COMPUTE_32F;
   #else
-  auto compute_type = HIP_R_16BF
+  auto compute_type = HIP_R_16BF;
   #endif
 
   TORCH_HIPBLAS_CHECK(hipblasGemmStridedBatchedEx(handle,

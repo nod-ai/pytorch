@@ -1080,6 +1080,8 @@ def CUDAExtension(name, sources, *args, **kwargs):
     if IS_HIP_EXTENSION:
         print("IS_HIP_EXTENSION")
         libraries.append('amdhip64')
+        libraries.append('rocblas')
+        libraries.append('hipblas')
         # (Arham): commented out for zoom development
         # libraries.append('c10_hip')
         # libraries.append('torch_hip')

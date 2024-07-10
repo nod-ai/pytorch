@@ -10,6 +10,7 @@ torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupport
 
 torch_zoom.init_zoom()
 DIM = 128
+device = 'cpu'
 
 model = nn.Sequential(
     nn.Linear(128, 128),
@@ -17,8 +18,8 @@ model = nn.Sequential(
     nn.Linear(128, 5)
 )
 
-x = torch.randn(128, device='zoom')
-model.to('zoom')
+x = torch.randn((128), device=device)
+model.to(device)
 out = model(x)
 
 print(out.device)
