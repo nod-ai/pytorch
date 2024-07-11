@@ -48,12 +48,19 @@ Tensor & zoom_set_source_Tensor(Tensor & self, const Tensor & source) {
     return zoom_set_source_Storage(self, storage);
 }
 
+Tensor _reshape_from_tensor(const Tensor& self, const Tensor& shape_tensor);
+Tensor _shape_as_tensor(const Tensor & self);
+
 TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("set_", &set_zoom_);
     m.impl("set_.source_Storage", &zoom_set_source_Storage);
     m.impl("set_.source_Storage_storage_offset", &set_storage_zoom_);
     m.impl("set_.source_Tensor_storage_offset", &zoom_set_source_Tensor_storage_offset);
     m.impl("set_.source_Tensor", &zoom_set_source_Tensor);
+
+    m.impl("_reshape_from_tensor", &_reshape_from_tensor);
+    m.impl("_shape_as_tensor", &_shape_as_tensor);
+
 }
 
 } // namespace at::native
