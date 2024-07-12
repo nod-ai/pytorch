@@ -1218,6 +1218,10 @@ Tensor & index_reduce_out_zoom
 }
 
 Tensor & index_reduce_zoom_(Tensor & self, int64_t dim, const Tensor & index, const Tensor & source, c10::string_view reduce, bool include_self) {
+  at::assert_no_internal_overlap(self);
+  at::assert_no_overlap(self, index);
+  at::assert_no_overlap(self, source);
+  at::assert_no_overlap(index, source);
   return index_reduce_out_zoom(self, dim, index, source, reduce, include_self, self);
 }
 Tensor index_reduce_zoom(const Tensor & self, int64_t dim, const Tensor & index, const Tensor & source, c10::string_view reduce, bool include_self) {
@@ -1569,7 +1573,7 @@ REGISTER_PRIVATEUSE1_DISPATCH(masked_fill_kernel_quantized_stub, &masked_fill_ke
 
 } // anonymous namespace
 
-Tensor & masked_fill__zoom(Tensor& self, const Tensor & mask, const Scalar& value) {
+Tensor & masked_fill_zoom_Scalar_out(const Tensor & self, const Tensor & mask, const Scalar & value, Tensor & out) {
   TORCH_CHECK(self.device() == mask.device(), "expected self and mask to be on the same device, but got mask on ",
     mask.device(), " and self on ", self.device());
   TORCH_CHECK(mask.scalar_type() == kBool,
@@ -1589,25 +1593,45 @@ Tensor & masked_fill__zoom(Tensor& self, const Tensor & mask, const Scalar& valu
       .set_check_mem_overlap(false)
       .check_all_same_dtype(false)
       .resize_outputs(false)
-      .add_output(self)
+      .add_output(out)
       .add_const_input(self)
       .add_const_input(*b_mask)
       .build();
 
   masked_fill_kernel(iter, value);
-  namedinference::propagate_names_if_nonempty(self, maybe_outnames);
-  return self;
+  namedinference::propagate_names_if_nonempty(out, maybe_outnames);
+  return out;
 }
 
-Tensor & masked_fill__zoom(Tensor& self, const Tensor & mask, const Tensor & value) {
-  TORCH_CHECK(value.dim() == 0, "masked_fill_ only supports a 0-dimensional value tensor, but got tensor "
+Tensor & masked_fill_zoom_Scalar_(Tensor& self, const Tensor & mask, const Scalar& value) {
+  return masked_fill_zoom_Scalar_out(self, mask, value, self);
+}
+
+Tensor masked_fill_zoom_Scalar(const Tensor & self, const Tensor & mask, const Scalar & value) {
+  Tensor result = self.clone();
+  masked_fill_zoom_Scalar_(result, mask, value);
+  return result;
+}
+
+Tensor & masked_fill_zoom_Tensor_out(const Tensor & self, const Tensor & mask, const Tensor & value, Tensor & out) {
+   TORCH_CHECK(value.dim() == 0, "masked_fill_ only supports a 0-dimensional value tensor, but got tensor "
       "with ", value.dim(), " dimension(s).");
-  // We hit this function if either of the input tensor lives on CUDA.
-  // It is ok, if `value` is `CPU` tensor but we should not allow `self` or
-  // `mask` to be CPU tensor. Check for `self` and `mask` being on same device
-  // exists in `masked_fill__zoom` (Scalar version).
-  TORCH_CHECK(!self.device().is_cpu(), "masked_fill_: Expected inputs to be on same device")
-  return masked_fill__zoom(self, mask, value.item());
+    // We hit this function if either of the input tensor lives on CUDA.
+    // It is ok, if `value` is `CPU` tensor but we should not allow `self` or
+    // `mask` to be CPU tensor. Check for `self` and `mask` being on same device
+    // exists in `masked_fill__zoom` (Scalar version).
+    TORCH_CHECK(!self.device().is_cpu(), "masked_fill_: Expected inputs to be on same device")
+    return masked_fill_zoom_Scalar_out(self, mask, value.item(), out);
+}
+
+Tensor & masked_fill_zoom_Tensor_(Tensor& self, const Tensor & mask, const Tensor & value) {
+  return masked_fill_zoom_Tensor_out(self, mask, value, self);
+}
+
+Tensor masked_fill_zoom_Tensor(const Tensor & self, const Tensor & mask, const Tensor & value) {
+  Tensor result = self.clone();
+  masked_fill_zoom_Tensor_(result, mask, value);
+  return result;
 }
 
 namespace {
@@ -1828,6 +1852,17 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
   m.impl("index_reduce.out", &index_reduce_out_zoom);
   m.impl("index_reduce_", &index_reduce_zoom_);
   m.impl("index_reduce", &index_reduce_zoom);
+
+  m.impl("index_select.out", &index_select_out_zoom);
+  m.impl("index_select", &index_select_zoom);
+
+  m.impl("masked_fill.Scalar_out", &masked_fill_zoom_Scalar_out);
+  m.impl("masked_fill_.Scalar", &masked_fill_zoom_Scalar_);
+  m.impl("masked_fill.Scalar", &masked_fill_zoom_Scalar);
+
+  m.impl("masked_fill.Tensor_out", &masked_fill_zoom_Tensor_out);
+  m.impl("masked_fill_.Tensor", &masked_fill_zoom_Tensor_);
+  m.impl("masked_fill.Tensor", &masked_fill_zoom_Tensor);
 }
 
 } // at::native
