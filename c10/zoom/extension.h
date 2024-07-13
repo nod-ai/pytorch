@@ -1,0 +1,15 @@
+#pragma once
+#include <torch/library.h>
+#include <ATen/DeviceGuard.h>
+#include <c10/zoom/ZoomCachingAllocator.h>
+#include <ATen/detail/ZoomHooksInterface.h>
+#include <ATen/zoom/detail/ZoomHooks.h>
+#include <ATen/native/cpu/Loops.h>
+#include <c10/core/TensorOptions.h>
+#include <ATen/native/DispatchStub.h>
+#include <ATen/native/TensorFactories.h>
+#include <ATen/zoom/EmptyTensor.h>
+#include <ATen/ops/empty.h>
+#include <iostream>
+#include <torch/csrc/Device.h>
+#include <torch/extension.h>

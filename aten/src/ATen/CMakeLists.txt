@@ -82,9 +82,11 @@ file(GLOB hip_nvrtc_stub_cpp "hip/nvrtc_stub/*.cpp")
 file(GLOB miopen_h "miopen/*.h")
 file(GLOB miopen_cpp "miopen/*.cpp")
 
-# ZOOM Backend
-file(GLOB zoom_h "zoom/*.h")
-file(GLOB zoom_cpp "zoom/*.cpp")
+file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h" "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/impl/*.h" "zoom/tunable/*.cuh" "zoom/tunable/*.h")
+file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp" "zoom/impl/*.cpp" "zoom/tunable/*.cpp")
+file(GLOB zoom_hip "zoom/*.zoom" "zoom/detail/*.zoom" "zoom/impl/*.zoom" "zoom/tunable/*.zoom")
+file(GLOB zoom_hiprtc_stub_h "zoom/hiprtc_stub/*.h")
+file(GLOB zoom_hiprtc_stub_cpp "zoom/hiprtc_stub/*.cpp")
 
 file(GLOB mkl_cpp "mkl/*.cpp")
 file(GLOB mkldnn_cpp "mkldnn/*.cpp")
@@ -169,6 +171,9 @@ file(GLOB native_transformers_hip_hip "native/transformers/hip/*.hip")
 file(GLOB native_transformers_hip_cpp "native/transformers/hip/*.cpp")
 file(GLOB native_quantized_cudnn_hip_cpp "native/quantized/cudnn/hip/*.cpp")
 file(GLOB native_utils_cpp "native/utils/*.cpp")
+
+file(GLOB native_zoom_hip "native/zoom/*.cu")
+file(GLOB native_zoom_cpp "native/zoom/*.cpp")
 
 # flash_attention sources
 file(GLOB flash_attention_cuda_cu "native/transformers/cuda/flash_attn/*.cu")
@@ -348,9 +353,16 @@ endif()
 
 if(USE_ZOOM)
   list(APPEND ATen_ZOOM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/zoom)
-  # TODO: Codegen separate files for HIP and use those (s/cuda_generated_sources/hip_generated_sources)
+  list(APPEND ATen_ZOOM_SRCS
+    ${ATen_ZOOM_SRCS}
+    ${zoom_hip}
+    ${native_zoom_hip}
+  )
   list(APPEND all_zoom_cpp
     ${zoom_cpp}
+    ${native_zoom_cpp}
+    ${ATen_ZOOM_SRCS}
+    ${all_zoom_cpp}
   )
 endif()
 
@@ -591,6 +603,7 @@ endif()
 
 if(USE_ZOOM)
   set(ATen_ZOOM_SRCS ${all_zoom_cpp})
+  set(ATen_HIPRTC_STUB_SRCS ${zoom_hiprtc_stub_cpp})
 endif()
 
 set(ATEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${AT_INSTALL_INCLUDE_DIR}")
@@ -671,6 +684,7 @@ set(ATen_CUDA_CU_SRCS_W_SORT_BY_KEY ${ATen_CUDA_CU_SRCS_W_SORT_BY_KEY} PARENT_SC
 set(ATen_NVRTC_STUB_SRCS ${ATen_NVRTC_STUB_SRCS} PARENT_SCOPE)
 set(ATen_HIP_SRCS ${ATen_HIP_SRCS} PARENT_SCOPE)
 set(ATen_ZOOM_SRCS ${ATen_ZOOM_SRCS} PARENT_SCOPE)
+set(ATen_HIPRTC_STUB_SRCS ${ATen_HIPRTC_STUB_SRCS} PARENT_SCOPE)
 set(ATen_MPS_SRCS ${ATen_MPS_SRCS} PARENT_SCOPE)
 set(ATen_XPU_SRCS ${ATen_XPU_SRCS} PARENT_SCOPE)
 set(ATen_QUANTIZED_SRCS ${ATen_QUANTIZED_SRCS} PARENT_SCOPE)

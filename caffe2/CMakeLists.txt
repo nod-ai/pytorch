@@ -929,8 +929,8 @@ if(USE_ROCM)
 endif()
 
 if(USE_ZOOM)
-  # filter_list(__caffe2_hip_srcs_cpp Caffe2_HIP_SRCS "\\.(cu|hip)$")
-  set_source_files_properties(${Caffe2_ZOOM_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+  filter_list(__caffe2_zoom_hip_srcs_cpp Caffe2_ZOOM_SRCS "\\.(cu|hip)$")
+  set_source_files_properties(${_caffe2_zoom_hip_srcs_cpp} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
 endif()
 
 # Compile exposed libraries.
@@ -1794,11 +1794,12 @@ if(USE_ZOOM)
 
   # Since PyTorch files contain HIP headers, these flags are required for the necessary definitions to be added.
   target_compile_options(torch_zoom PUBLIC ${HIP_CXX_FLAGS})  # experiment
-  # target_link_libraries(torch_zoom PUBLIC c10_zoom)
-  target_link_libraries(torch_zoom PUBLIC c10)
+  target_link_libraries(torch_zoom PUBLIC c10_zoom)
+  # target_link_libraries(torch_zoom PUBLIC c10)
 
   # this is where lib amdhip64 is actually linked (e.g. HIP symbols)
-  target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
+  # should be included in c10_zoom
+  # target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
 
   target_link_libraries(torch_zoom PUBLIC torch_cpu_library)# ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
   # target_link_libraries(torch_zoom PRIVATE ${Caffe2_HIP_DEPENDENCY_LIBS})

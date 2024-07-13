@@ -1,14 +1,12 @@
 # CMake
 
-**We don't actually need to use this right now, cpp_extension loads amdhip64 for us as an external extension. For now just compile torch as if for CPU.**
-
-Using the `USE_ZOOM` flag with CMake will enable building with HIP for ROCm without requiring any of the "HIPify" scripts in order to build. This will include HIP libraries and population `torch.version.hip` appropriately. This flag is NOT yet entered into the `setup.py` script, so for now it needs to be added manually via `cmake` or `ccmake`.
+Using the `USE_ZOOM` flag with CMake will enable building with HIP for ROCm without requiring any of the "HIPify" scripts in order to build. This will include HIP libraries and populate `torch.version.hip` appropriately. This flag is NOT yet entered into the `setup.py` script, so for now it needs to be added manually via `cmake` or `ccmake`.
 
 You'll need to set `ROCM_PATH` and `HIP_ROOT_DIR` appropriately, by default on linux these should be `/opt/rocm/` and `/opt/rocm/hip` respectively.
 
-For now, I've added a Macro in `Allocator.h` that registers a functor that retrieves the `ZoomCachingAllocator` for us since we're currently implemented as an external backend. Once, we're in the main repo we can replace it with the proper logic when retrieving the allocator for the Zoom backend.
+For now, I've added a Macro in `Allocator.h` that registers a functor that retrieves the `ZoomCachingAllocator` for us since we're currently implemented as an external backend (e.g. using PU1 dispatch key). Once, we're in the main repo we can replace it with the proper logic when retrieving the allocator for the Zoom backend.
 
-# Setup.py
+# Setup.py for zoom_extension
 First use `env.sh` to set up the environment, you may need to change the `PYTORCH_ROCM_ARCH` variable based on what you get when running `rocminfo`, under "Name" there should be an architecture name like `gfx90a`.
 
 Running `python setup.py install` inside `zoom_extension/` will install the `torch_zoom` package, to use this in a python process you must `import torch` before `import torch_zoom`, otherwise certain necessary shared libraries will not be available.
