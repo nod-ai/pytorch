@@ -1,5 +1,5 @@
 #pragma once
-#include <c10/zoom/extension.h>
+#include <torch/library.h>
 #include <ATen/zoom/ZoomContext.h>
 
 namespace at{

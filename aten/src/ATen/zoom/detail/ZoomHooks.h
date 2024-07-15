@@ -15,7 +15,7 @@ namespace at::zoom::detail {
 struct ZoomHooks : public ZoomHooksInterface {
   ZoomHooks(ZoomHooksArgs) {}
   void initZoom() const override;
-  // void initPrivateUse1() const override;
+  void initPrivateUse1() const override;
   Device getDeviceFromPtr(void* data) const override;
   bool isPinnedPtr(const void* data) const override;
   const Generator& getDefaultZoomGenerator(DeviceIndex device_index = -1) const override;

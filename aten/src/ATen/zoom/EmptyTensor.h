@@ -1,6 +1,8 @@
 #pragma once
-#include <c10/zoom/extension.h>
+#include <torch/library.h>
+#include <ATen/EmptyTensor.h>
 #include <ATen/zoom/ZoomContext.h>
+#include <c10/zoom/ZoomCachingAllocator.h>
 
 namespace at::detail {
 

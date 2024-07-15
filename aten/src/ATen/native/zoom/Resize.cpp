@@ -5,7 +5,7 @@
 #include <ATen/zoom/PeerToPeerAccess.h>
 #include <ATen/native/ResizeCommon.h>
 #include <c10/zoom/ZoomGuard.h>
-#include <c10/zoom/extension.h>
+#include <torch/library.h>
 
 namespace at::native {
 

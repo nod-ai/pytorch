@@ -2,7 +2,7 @@
 
 #include <c10/core/Device.h>
 #include <c10/core/impl/GPUTrace.h>
-#include <ATen/zoom/ZoomDefines.h>
+#include <hip/hip_runtime.h>
 #include <c10/zoom/ZoomException.h>
 
 namespace c10::zoom {
@@ -83,7 +83,7 @@ void __inline__ memcpy_and_sync(
         c10::DeviceType::PrivateUse1, reinterpret_cast<uintptr_t>(stream));
   }
 
-  HIP_ASSERT(hipMemcpyWithStream(dst, src, nbytes, kind, stream));
+  C10_ZOOM_CHECK(hipMemcpyWithStream(dst, src, nbytes, kind, stream));
 
 }
 

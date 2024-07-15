@@ -1,7 +1,7 @@
 #include "CachingHostAllocator.h"
 
 #include <ATen/DeviceGuard.h>
-#include <c10/zoom/ZoomEvent.h>
+#include <ATen/zoom/ZoomEvent.h>
 #include <c10/core/thread_pool.h>
 #include <c10/zoom/ZoomAllocatorConfig.h>
 

@@ -116,6 +116,10 @@ void ZoomHooks::initZoom() const {
   at::zoom::detail::init_p2p_access_cache(num_devices);
 }
 
+void ZoomHooks::initPrivateUse1() const {
+  initZoom();
+}
+
 const Generator& ZoomHooks::getDefaultZoomGenerator(DeviceIndex device_index) const {
   return at::zoom::detail::getDefaultZoomGenerator(device_index);
 }

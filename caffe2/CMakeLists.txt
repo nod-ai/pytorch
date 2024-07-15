@@ -602,6 +602,10 @@ if(USE_CUDA OR USE_ROCM)
   append_filelist("libtorch_cuda_core_sources" Caffe2_GPU_HIP_JIT_FUSERS_SRCS)
 endif()
 
+# if (USE_ZOOM)
+#   append_filelist("libtorch_zoom_core_sources" Caffe2_GPU_HIP_JIT_FUSERS_SRCS)
+# endif()
+
 if(USE_CUDA)
   list(APPEND Caffe2_GPU_CU_SRCS ${Caffe2_GPU_HIP_JIT_FUSERS_SRCS})
   add_library(caffe2_nvrtc SHARED ${ATen_NVRTC_STUB_SRCS})
@@ -682,6 +686,27 @@ if(USE_ROCM)
   target_compile_definitions(caffe2_nvrtc PRIVATE USE_ROCM __HIP_PLATFORM_AMD__)
   install(TARGETS caffe2_nvrtc DESTINATION "${TORCH_INSTALL_LIB_DIR}")
 endif()
+
+# if(USE_ZOOM)
+#   list(APPEND Caffe2_ZOOM_SRCS ${Caffe2_GPU_HIP_JIT_FUSERS_SRCS})
+#   if(USE_NCCL)
+#     list(APPEND Caffe2_ZOOM_SRCS
+#       ${TORCH_SRC_DIR}/csrc/cuda/nccl.cpp)
+#   endif()
+#   if(USE_DISTRIBUTED)
+#     append_filelist("libtorch_zoom_distributed_base_sources" Caffe2_ZOOM_SRCS)
+#     if(NOT WIN32)
+#       append_filelist("libtorch_zoom_distributed_extra_sources" Caffe2_ZOOM_SRCS)
+#     endif()
+#   endif()
+#   # caffe2_nvrtc's stubs to driver APIs are useful for HIP.
+#   # See NOTE [ ATen NVRTC Stub and HIP ]
+#   add_library(caffe2_nvrtc SHARED ${ATen_HIPRTC_STUB_SRCS})
+#   target_link_libraries(caffe2_nvrtc ${PYTORCH_HIP_LIBRARIES} ${ROCM_HIPRTC_LIB})
+#   target_include_directories(caffe2_nvrtc PRIVATE ${CMAKE_BINARY_DIR})
+#   target_compile_definitions(caffe2_nvrtc PRIVATE USE_ROCM __HIP_PLATFORM_AMD__)
+#   install(TARGETS caffe2_nvrtc DESTINATION "${TORCH_INSTALL_LIB_DIR}")
+# endif()
 
 if(NOT NO_API AND NOT BUILD_LITE_INTERPRETER)
   list(APPEND TORCH_SRCS
@@ -1801,7 +1826,7 @@ if(USE_ZOOM)
   # should be included in c10_zoom
   # target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
 
-  target_link_libraries(torch_zoom PUBLIC torch_cpu_library)# ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
+  target_link_libraries(torch_zoom PUBLIC torch_cpu_library ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
   # target_link_libraries(torch_zoom PRIVATE ${Caffe2_HIP_DEPENDENCY_LIBS})
 
   # Since PyTorch files contain HIP headers, this is also needed to capture the includes.

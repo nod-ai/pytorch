@@ -59,7 +59,7 @@ constexpr const char* ZOOM_HELP =
 // TODO: Consider putting the stub definitions in another class, so that one
 // never forgets to implement each virtual function in the real implementation
 // in CUDAHooks.  This probably doesn't buy us much though.
-struct ZoomHooksInterface : PrivateUse1HooksInterface {
+struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   // This should never actually be implemented, but it is used to
   // squelch -Werror=non-virtual-dtor
   virtual ~ZoomHooksInterface() override = default;
@@ -128,14 +128,14 @@ struct ZoomHooksInterface : PrivateUse1HooksInterface {
 // #define REGISTER_CUDA_HOOKS(clsname) \
 //   C10_REGISTER_CLASS(CUDAHooksRegistry, clsname, clsname)
 
-struct ZoomHooksArgs {};
+struct TORCH_API ZoomHooksArgs {};
 
 TORCH_DECLARE_REGISTRY(PrivateUse1HooksRegistry, ZoomHooksInterface, ZoomHooksArgs);
 #define REGISTER_PRIVATEUSE1_HOOKS(clsname) \
   C10_REGISTER_CLASS(PrivateUse1HooksRegistry, clsname, clsname)
 
 namespace detail {
-void initZoomHooks();
-const ZoomHooksInterface& getZoomHooks();
+TORCH_API void initZoomHooks();
+TORCH_API const ZoomHooksInterface& getZoomHooks();
 } // namespace detail
 } // namespace at

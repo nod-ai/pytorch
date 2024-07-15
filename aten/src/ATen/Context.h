@@ -11,6 +11,7 @@
 #include <ATen/detail/AcceleratorHooksInterface.h>
 #include <ATen/detail/CUDAHooksInterface.h>
 #include <ATen/detail/HIPHooksInterface.h>
+#include <ATen/detail/ZoomHooksInterface.h>
 #include <ATen/detail/IPUHooksInterface.h>
 #include <ATen/detail/MAIAHooksInterface.h>
 #include <ATen/detail/MPSHooksInterface.h>
@@ -163,9 +164,10 @@ class TORCH_API Context {
   }
   void lazyInitPrivateUse1() {
     c10::call_once(thp_init, [&] {
-      if (isPrivateUse1HooksRegistered()) {
-        at::GetPrivateUse1HooksInterface()->initPrivateUse1();
-      }
+      // if (isPrivateUse1HooksRegistered()) {
+      //   at::GetPrivateUse1HooksInterface()->initPrivateUse1();
+      // }
+      detail::getZoomHooks().initPrivateUse1();
     });
   }
   static const at::cuda::NVRTC& getNVRTC() {

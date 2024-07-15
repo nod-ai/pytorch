@@ -3,7 +3,7 @@
 #include <c10/macros/Macros.h>
 #include <c10/util/Exception.h>
 #include <c10/util/irange.h>
-#include <ATen/zoom/ZoomDefines.h>
+#include <hip/hip_runtime.h>
 #include <hipblas/hipblas.h>
 
 // Note [CHECK macro]

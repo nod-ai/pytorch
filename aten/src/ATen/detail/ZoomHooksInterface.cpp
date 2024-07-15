@@ -26,10 +26,18 @@ static ZoomHooksInterface* zoom_hooks = nullptr;
 
 // init and register extension hooks
 void initZoomHooks() {
-  if (zoom_hooks == nullptr) {
-    zoom_hooks = new ZoomHooksInterface();
-    RegisterPrivateUse1HooksInterface(zoom_hooks);
-  }
+  static c10::once_flag once;
+  c10::call_once(once, [] {
+    zoom_hooks = PrivateUse1HooksRegistry()->Create("ZoomHooks", ZoomHooksArgs{}).release();
+    if (!zoom_hooks) {
+      zoom_hooks = new ZoomHooksInterface();
+    }
+  });
+  RegisterPrivateUse1HooksInterface(zoom_hooks);
+  // if (zoom_hooks == nullptr) {
+  //   zoom_hooks = new ZoomHooksInterface();
+  //   RegisterPrivateUse1HooksInterface(zoom_hooks);
+  // }
 }
 
 const ZoomHooksInterface& getZoomHooks() {

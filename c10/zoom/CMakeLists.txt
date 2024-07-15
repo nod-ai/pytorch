@@ -19,9 +19,10 @@ file(GLOB C10_ZOOM_SRCS
 # suffixed with cc, because the hcc compiler won't accept them otherwise.)
 file(GLOB __c10_zoom_srcs_cpp *.cu impl/*.cu)
 set_source_files_properties(${__c10_zoom_srcs_cpp} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+set_source_files_properties(${C10_ZOOM_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
 
-file(GLOB_RECURSE C10_HIP_HEADERS *.h)
-hip_add_library(c10_zoom ${C10_HIP_SRCS} ${C10_HIP_HEADERS})
+file(GLOB_RECURSE C10_ZOOM_HEADERS *.h)
+hip_add_library(c10_zoom ${C10_ZOOM_SRCS} ${C10_ZOOM_HEADERS})
 
 # Propagate HIP_CXX_FLAGS that were set from Dependencies.cmake
 target_compile_options(c10_zoom PRIVATE ${HIP_CXX_FLAGS})
@@ -45,6 +46,7 @@ target_include_directories(
     c10_zoom PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../..>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+    $<BUILD_INTERFACE:${ROCM_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>)
 
 # add_subdirectory(test)

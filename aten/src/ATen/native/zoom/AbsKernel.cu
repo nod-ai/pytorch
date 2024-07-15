@@ -5,7 +5,7 @@
 #include <ATen/Dispatch.h>
 #include <ATen/native/DispatchStub.h>
 #include <ATen/native/TensorIterator.h>
-#include <c10/zoom/extension.h>
+#include <torch/library.h>
 
 namespace at::native {
 
@@ -40,10 +40,10 @@ void abs_kernel_zoom(TensorIteratorBase& iter) {
 
 REGISTER_PRIVATEUSE1_DISPATCH(abs_stub, &abs_kernel_zoom);
 
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-  m.impl("abs", &abs);
-  m.impl("abs.out", &abs_out);
-}
+// TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+//   m.impl("abs", &abs);
+//   m.impl("abs.out", &abs_out);
+// }
 
 
 } // namespace at::native

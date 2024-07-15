@@ -1,5 +1,5 @@
 #pragma once
-#include <ATen/zoom/ZoomDefines.h>
+#include <hip/hip_runtime.h>
 #include <c10/core/DeviceGuard.h>
 #include <c10/core/Stream.h>
 #include <c10/zoom/ZoomFunctions.h>
