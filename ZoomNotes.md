@@ -6,27 +6,25 @@ You'll need to set `ROCM_PATH` and `HIP_ROOT_DIR` appropriately, by default on l
 
 For now, I've added a Macro in `Allocator.h` that registers a functor that retrieves the `ZoomCachingAllocator` for us since we're currently implemented as an external backend (e.g. using PU1 dispatch key). Once, we're in the main repo we can replace it with the proper logic when retrieving the allocator for the Zoom backend.
 
-# Setup.py for zoom_extension
+# Setup.py for torch.zoom
 First use `env.sh` to set up the environment, you may need to change the `PYTORCH_ROCM_ARCH` variable based on what you get when running `rocminfo`, under "Name" there should be an architecture name like `gfx90a`.
 
-Running `python setup.py install` inside `zoom_extension/` will install the `torch_zoom` package, to use this in a python process you must `import torch` before `import torch_zoom`, otherwise certain necessary shared libraries will not be available.
+Running `python setup.py install` inside root will build torch with zoom (currently still using the `PrivateUse` dispatch key).
 
 Programs using the zoom backend must be prefaced with this stub until we register a proper dispatch key in pytorch
 
 ```python
 import torch
-import torch_zoom
+import torch.zoom
 
 torch.utils.rename_privateuse1_backend('zoom')
-torch._register_device_module('zoom', torch_zoom)
 # TODO: figure this out
 unsupported_dtypes = None
 torch.utils.generate_methods_for_privateuse1_backend(unsupported_dtype=unsupported_dtypes)
-torch_zoom.init_zoom()
 ```
 
 # Running Device Type Tests
-Set up the environment using `env.sh`. You may have to edit these variables if cloning. `TORCH_TEST_DEVICES` should point to `test/pytorch_test_base.py`.
+Set up the environment using `env.sh`. You may have to edit these variables if cloning. `TORCH_TEST_DEVICES` should point to `zoom_extension/test/pytorch_test_base.py`.
 
 Then you can run `test.sh` to run the pytorch device test suite. This script will have a few output artifacts, one will be `test.log` with a verbose log of the `unittest` output from the test suite. Another is `zoom_unimplemented_operators.log` which will contain a list of unimplemented operators in the zoom backend, as well as the frequency with which this operator was called in the test suite. Finally, it will output a list of test failures (i.e. `AssertionError`) that were encountered in the test suite in `zoom_test_errors.log`.
 
