@@ -1151,7 +1151,7 @@ void gemm_and_bias(
   if (activation == GEMMAndBiasActivationEpilogue::RELU) {
     epilogue = HIPBLASLT_EPILOGUE_RELU_BIAS;
   } else if (activation == GEMMAndBiasActivationEpilogue::GELU) {
-#if TORCH_HIP_VERSION >= 11040 || defined(USE_ROCM)
+#if TORCH_HIP_VERSION >= 11040
     epilogue = HIPBLASLT_EPILOGUE_GELU_BIAS;
 #endif
   }
@@ -1328,7 +1328,7 @@ void scaled_gemm(
 #ifdef DISABLE_HIPBLASLT
   TORCH_CHECK_DISABLE_HIPBLAS_LT
 #else
-#if TORCH_HIP_VERSION >= 11080 || defined(USE_ROCM)
+#if TORCH_HIP_VERSION >= 11080
   const auto computeType = HIPBLAS_COMPUTE_32F;
   const auto scaleType = HIP_R_32F;
   const int8_t fastAccuMode = use_fast_accum ? 1 : 0;
@@ -1467,7 +1467,7 @@ void scaled_gemm(
       " scaleType ",
       scaleType);
   return;
-#endif // TORCH_HIP_VERSION >= 11080 || defined(USE_ROCM)
+#endif // TORCH_HIP_VERSION >= 11080
   TORCH_CHECK(false, "scaled_gemm is only supported for CUDA 11.8 and above");
 #endif
 }

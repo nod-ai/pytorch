@@ -1697,7 +1697,7 @@ PyObject* initModule() {
         return ret == 0;
       };
 
-#if defined(USE_CUDNN) || defined(USE_ROCM)
+#if defined(USE_CUDNN) || (defined(USE_ROCM) && !defined(USE_ZOOM))
   PyObject* has_cudnn = Py_True;
 #else
   PyObject* has_cudnn = Py_False;

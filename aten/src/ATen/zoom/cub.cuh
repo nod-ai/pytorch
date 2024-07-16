@@ -205,7 +205,6 @@ constexpr int max_cub_size = std::numeric_limits<int>::max() / 2 + 1; // 2**30
 // so split at int_max/2
 template<typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, int max_cub_size=impl::max_cub_size>
 inline void inclusive_scan(InputIteratorT input, OutputIteratorT output, ScanOpT scan_op, int64_t num_items) {
-#if defined(USE_ROCM)
   //For ROCm, use hipCUB chained iterators
   HIPCUB_WRAPPER(NO_ROCM(detail)::hipcub::DeviceScan::InclusiveScan,
       input,
@@ -214,60 +213,6 @@ inline void inclusive_scan(InputIteratorT input, OutputIteratorT output, ScanOpT
       num_items,
       c10::zoom::getCurrentZoomStream());
   C10_ZOOM_KERNEL_LAUNCH_CHECK();
-#else
-  // non synchronizing cub call
-  // even though cub is supposed to support tensors with int_max elements, in reality it doesn't,
-  // so split at int_max/2
-  int size_cub = std::min<int64_t>(num_items, max_cub_size);
-  HIPCUB_WRAPPER(NO_ROCM(at_zoom_detail)::hipcub::DeviceScan::InclusiveScan,
-      input,
-      output,
-      scan_op,
-      size_cub,
-      c10::zoom::getCurrentZoomStream());
-  C10_ZOOM_KERNEL_LAUNCH_CHECK();
-  using input_t = typename std::iterator_traits<InputIteratorT>::value_type;
-  for (int64_t i = max_cub_size; i < num_items; i += max_cub_size) {
-    auto allocator = c10::zoom::ZoomCachingAllocator::get();
-    c10::DataPtr first_elem = allocator->allocate(sizeof(input_t));
-    auto first_elem_ptr = reinterpret_cast<input_t *>(first_elem.get());
-
-    size_cub = std::min<int64_t>(num_items - i, max_cub_size);
-   hipLaunchKernelGGL(( impl::transform_vals), dim3(1), dim3(1), 0, c10::zoom::getCurrentZoomStream(), 
-        output + i - 1,
-        input + i,
-        first_elem_ptr,
-        scan_op);
-    C10_ZOOM_KERNEL_LAUNCH_CHECK();
-#if !CUB_SUPPORTS_FUTURE_VALUE()
-    using ArgIndexInputIterator = NO_ROCM(at_zoom_detail)::hipcub::ArgIndexInputIterator<InputIteratorT>;
-    using tuple = typename ArgIndexInputIterator::value_type;
-    auto input_iter_transform = [=] __device__ (const tuple &x)->input_t  {
-      if (x.key == 0) {
-        return *first_elem_ptr;
-      } else {
-        return x.value;
-      }
-    };
-    auto input_ = NO_ROCM(at_zoom_detail)::hipcub::TransformInputIterator<input_t, decltype(input_iter_transform), ArgIndexInputIterator>(
-      ArgIndexInputIterator(input + i), input_iter_transform);
-    HIPCUB_WRAPPER(NO_ROCM(at_zoom_detail)::hipcub::DeviceScan::InclusiveScan,
-        input_,
-        output + i,
-        scan_op,
-        size_cub,
-        c10::zoom::getCurrentZoomStream());
-#else
-    HIPCUB_WRAPPER(NO_ROCM(at_zoom_detail)::hipcub::DeviceScan::ExclusiveScan,
-        input + i + 1,
-        output + i,
-        scan_op,
-        ::at_zoom_detail::hipcub::FutureValue<input_t>(first_elem_ptr),
-        size_cub,
-        c10::zoom::getCurrentZoomStream());
-#endif
-  }
-#endif
 }
 
 template<typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename InitValueT, int max_cub_size=impl::max_cub_size>

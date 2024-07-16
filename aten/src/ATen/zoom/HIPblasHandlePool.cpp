@@ -78,9 +78,9 @@ using CuBlasPoolType = DeviceThreadHandlePool<hipblasHandle_t, createCublasHandl
 } // namespace
 
 void clearCublasWorkspaces() {
-  #if !defined(USE_ROCM)
-      cublas_handle_stream_to_workspace().clear();
-  #endif
+  // #if !defined(USE_ROCM)
+  //     cublas_handle_stream_to_workspace().clear();
+  // #endif
 }
 
 size_t parseChosenWorkspaceSize() {

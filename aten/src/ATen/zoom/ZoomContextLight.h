@@ -1,6 +1,5 @@
 #pragma once
-// Light-weight version of CUDAContext.h with fewer transitive includes
-#define USE_ROCM
+// Light-weight version of ZoomContext.h with fewer transitive includes
 #define DISABLE_HIPBLASLT
 
 #include <cstdint>
