@@ -91,8 +91,10 @@ if(INTERN_BUILD_ATEN_OPS)
   list(APPEND Caffe2_DEPENDENCY_LIBS ${ATen_CPU_DEPENDENCY_LIBS})
   list(APPEND Caffe2_CUDA_DEPENDENCY_LIBS ${ATen_CUDA_DEPENDENCY_LIBS})
   list(APPEND Caffe2_HIP_DEPENDENCY_LIBS ${ATen_HIP_DEPENDENCY_LIBS})
+  list(APPEND Caffe2_ZOOM_DEPENDENCY_LIBS ${ATen_ZOOM_DEPENDENCY_LIBS})
   list(APPEND Caffe2_DEPENDENCY_INCLUDE ${ATen_THIRD_PARTY_INCLUDE})
   set(Caffe2_CUDA_DEPENDENCY_LIBS ${Caffe2_CUDA_DEPENDENCY_LIBS} PARENT_SCOPE)
+  set(Caffe2_ZOOM_DEPENDENCY_LIBS ${Caffe2_ZOOM_DEPENDENCY_LIBS} PARENT_SCOPE)
 endif()
 
 # ---[ Caffe2 build
@@ -1817,7 +1819,6 @@ if(USE_ZOOM)
 
   # Call again since Caffe2_ZOOM_INCLUDE is extended with ATen include dirs.
   hip_include_directories(${Caffe2_ZOOM_INCLUDE})
-
   # Since PyTorch files contain HIP headers, these flags are required for the necessary definitions to be added.
   target_compile_options(torch_zoom PUBLIC ${HIP_CXX_FLAGS})  # experiment
   target_link_libraries(torch_zoom PUBLIC c10_zoom)
@@ -1826,9 +1827,16 @@ if(USE_ZOOM)
   # this is where lib amdhip64 is actually linked (e.g. HIP symbols)
   # should be included in c10_zoom
   # target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
-
+  if(NOT INTERN_BUILD_MOBILE)
+    # TODO: Cut this over to ATEN_HIP_FILES_GEN_LIB.  At the moment, we
+    # only generate CUDA files
+    # NB: This dependency must be PRIVATE, because we don't install
+    # ATEN_CUDA_FILES_GEN_LIB (it's a synthetic target just to get the
+    # correct dependency from generated files.)
+    target_link_libraries(torch_zoom PRIVATE ATEN_ZOOM_FILES_GEN_LIB)
+  endif()
   target_link_libraries(torch_zoom PUBLIC torch_cpu_library ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
-  # target_link_libraries(torch_zoom PRIVATE ${Caffe2_HIP_DEPENDENCY_LIBS})
+  target_link_libraries(torch_zoom PRIVATE ${Caffe2_ZOOM_DEPENDENCY_LIBS})
 
   # Since PyTorch files contain HIP headers, this is also needed to capture the includes.
   target_include_directories(torch_zoom PRIVATE ${Caffe2_ZOOM_INCLUDE})

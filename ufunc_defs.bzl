@@ -23,3 +23,9 @@ def aten_ufunc_generated_cuda_sources(gencode_pattern = "{}"):
         "UfuncCUDA_{}.cu".format(n)
         for n in aten_ufunc_names
     ]]
+
+def aten_ufunc_generated_zoom_sources(gencode_pattern = "{}"):
+    return [gencode_pattern.format(name) for name in [
+        "UfuncZoom_{}.cu".format(n)
+        for n in aten_ufunc_names
+    ]]

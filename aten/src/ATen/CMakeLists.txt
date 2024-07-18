@@ -361,6 +361,7 @@ if(USE_ZOOM)
   list(APPEND all_zoom_cpp
     ${zoom_cpp}
     ${native_zoom_cpp}
+    ${zoom_generated_sources}
     ${ATen_ZOOM_SRCS}
     ${all_zoom_cpp}
   )
@@ -604,6 +605,7 @@ endif()
 if(USE_ZOOM)
   set(ATen_ZOOM_SRCS ${all_zoom_cpp})
   set(ATen_HIPRTC_STUB_SRCS ${zoom_hiprtc_stub_cpp})
+  list(APPEND ATen_ZOOM_DEPENDENCY_LIBS ATEN_ZOOM_FILES_GEN_LIB)
 endif()
 
 set(ATEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${AT_INSTALL_INCLUDE_DIR}")
@@ -641,7 +643,7 @@ foreach(HEADER  ${INSTALL_HEADERS})
 endforeach()
 
 # TODO: Install hip_generated_headers when we have it
-foreach(HEADER ${generated_headers} ${cuda_generated_headers})
+foreach(HEADER ${generated_headers} ${cuda_generated_headers} ${zoom_generated_headers})
   # NB: Assumed to be flat
   install(FILES ${HEADER} DESTINATION ${AT_INSTALL_INCLUDE_DIR}/ATen)
 endforeach()
@@ -711,6 +713,7 @@ set(ATen_CPU_DEPENDENCY_LIBS ${ATen_CPU_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_CUDA_DEPENDENCY_LIBS ${ATen_CUDA_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_XPU_DEPENDENCY_LIBS ${ATen_XPU_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_HIP_DEPENDENCY_LIBS ${ATen_HIP_DEPENDENCY_LIBS} PARENT_SCOPE)
+set(ATen_ZOOM_DEPENDENCY_LIBS ${ATen_ZOOM_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(FLASH_ATTENTION_CUDA_SOURCES ${FLASH_ATTENTION_CUDA_SOURCES} PARENT_SCOPE)
 set(MEM_EFF_ATTENTION_CUDA_SOURCES ${MEM_EFF_ATTENTION_CUDA_SOURCES} PARENT_SCOPE)
 set(ATen_ATTENTION_KERNEL_SRCS ${ATen_ATTENTION_KERNEL_SRCS} PARENT_SCOPE)

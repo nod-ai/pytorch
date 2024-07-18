@@ -1,4 +1,8 @@
 #include <ATen/zoom/EmptyTensor.h>
+#include <torch/library.h>
+#include <ATen/EmptyTensor.h>
+#include <ATen/zoom/ZoomContext.h>
+#include <c10/zoom/ZoomCachingAllocator.h>
 #include <ATen/detail/ZoomHooksInterface.h>
 #include <iostream>
 
@@ -24,6 +28,15 @@ namespace at::detail {
         const auto dtype = dtype_or_default(dtype_opt);
         return zoom_empty_generic(size, dtype, device_opt, memory_format_opt);
     }
+
+    TensorBase empty_zoom(IntArrayRef size, const TensorOptions &options) {
+        return zoom_empty_memory_format(size, 
+            optTypeMetaToScalarType(options.dtype_opt()),
+            options.layout_opt(),
+            options.device_opt(),
+            options.pinned_memory_opt(),
+            options.memory_format_opt());
+    }
     
 
     Tensor zoom_empty_strided_generic(IntArrayRef size, IntArrayRef stride, ScalarType dtype, ::std::optional<Device> device_opt) {
@@ -46,6 +59,19 @@ namespace at::detail {
         const auto dtype = dtype_or_default(dtype_opt);
         return zoom_empty_strided_generic(size, stride, dtype, device_opt);
     }
+
+    TensorBase empty_strided_zoom(
+                IntArrayRef size,
+                IntArrayRef stride,
+                const TensorOptions &options) {
+            return zoom_empty_strided(
+                size,
+                stride,
+                optTypeMetaToScalarType(options.dtype_opt()),
+                options.layout_opt(),
+                options.device_opt(),
+                options.pinned_memory_opt());
+}
 
     TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
         m.impl("empty.memory_format", &zoom_empty_memory_format);

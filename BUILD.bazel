@@ -9,7 +9,7 @@ load("@pytorch//tools/config:defs.bzl", "if_cuda")
 load("@pytorch//:aten.bzl", "generate_aten", "intern_build_aten_ops")
 load(":build.bzl", "GENERATED_AUTOGRAD_CPP", "GENERATED_AUTOGRAD_PYTHON", "define_targets")
 load(":build_variables.bzl", "jit_core_sources", "lazy_tensor_ts_sources", "libtorch_core_sources", "libtorch_cuda_sources", "libtorch_distributed_sources", "libtorch_extra_sources", "libtorch_python_core_sources", "torch_cpp_srcs", "libtorch_python_cuda_sources", "libtorch_python_distributed_sources")
-load(":ufunc_defs.bzl", "aten_ufunc_generated_cpu_kernel_sources", "aten_ufunc_generated_cpu_sources", "aten_ufunc_generated_cuda_sources")
+load(":ufunc_defs.bzl", "aten_ufunc_generated_cpu_kernel_sources", "aten_ufunc_generated_cpu_sources", "aten_ufunc_generated_cuda_sources", "aten_ufunc_generated_zoom_sources")
 load("//:tools/bazel.bzl", "rules")
 
 define_targets(rules = rules)
@@ -104,15 +104,23 @@ generated_cuda_cpp = [
     "aten/src/ATen/RegisterSparseCsrCUDA.cpp",
 ]
 
+generated_zoom_cpp = [
+    "aten/src/ATen/ZoomFunctions.h",
+    "aten/src/ATen/ZoomFunctions_inl.h",
+    "aten/src/ATen/RegisterPrivateUse1.cpp",
+]
+
 generate_aten(
     name = "generated_aten_cpp",
     srcs = aten_generation_srcs,
     outs = (
         generated_cpu_cpp +
         generated_cuda_cpp +
+        generated_zoom_cpp +
         aten_ufunc_generated_cpu_sources("aten/src/ATen/{}") +
         aten_ufunc_generated_cpu_kernel_sources("aten/src/ATen/{}") +
-        aten_ufunc_generated_cuda_sources("aten/src/ATen/{}") + [
+        aten_ufunc_generated_cuda_sources("aten/src/ATen/{}") + 
+        aten_ufunc_generated_zoom_sources("aten/src/ATen/{}") + [
             "aten/src/ATen/Declarations.yaml",
         ]
     ),

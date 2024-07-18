@@ -56,6 +56,8 @@ def gen_registration_headers(
             headers.append("#include <ATen/hip/EmptyTensor.h>")
         else:
             headers.append("#include <ATen/cuda/EmptyTensor.h>")
+    elif backend_index.dispatch_key == DispatchKey.PrivateUse1: #TODO(Arham): remove once we have a zoom key
+        headers.append("#include <ATen/zoom/EmptyTensor.h>")
     elif backend_index.dispatch_key == DispatchKey.MPS:
         headers.append("#include <ATen/mps/EmptyTensor.h>")
     elif per_operator_headers:
@@ -81,9 +83,12 @@ def gen_empty_impl_names(
         DispatchKey.Meta,
         DispatchKey.CPU,
         DispatchKey.CUDA,
+        DispatchKey.PrivateUse1, # TODO (Arham) remove when in-tree
         DispatchKey.MPS,
     ):
         dispatch = str(backend_index.dispatch_key).lower()
+        if backend_index.dispatch_key == DispatchKey.PrivateUse1:
+            dispatch = "zoom"
         empty_impl = f"at::detail::empty_{dispatch}"
         empty_strided_impl = f"at::detail::empty_strided_{dispatch}"
     elif backend_index.dispatch_key in (
@@ -506,6 +511,10 @@ return {sig.name()}({', '.join(e.expr for e in translate(cpp_sig.arguments(), si
                             device_guard = (
                                 f"globalContext().lazyInitCUDA();\n{device_guard}"
                             )
+                        if self.backend_index.dispatch_key == DispatchKey.PrivateUse1:
+                            device_guard = (
+                                f"globalContext().lazyInitPrivateUse1();\n{device_guard}"
+                            )
                     else:
                         # kernel is operating on existing tensors
 
@@ -601,6 +610,7 @@ void set_output_{name}(
         if self.backend_index.dispatch_key in [
             DispatchKey.CUDA,
             DispatchKey.MPS,
+            DispatchKey.PrivateUse1, # TODO (Arham): added PU1 key here for dispatch stub codegen, should replace when in-tree
             DispatchKey.CompositeExplicitAutogradNonFunctional,
         ]:
             maybe_set_guard = """
@@ -632,6 +642,7 @@ if (C10_UNLIKELY(maybe_proxy.has_value())) {
                 DispatchKey.CPU,
                 DispatchKey.CUDA,
                 DispatchKey.MPS,
+                DispatchKey.PrivateUse1, # TODO (Arham): added PU1 key here for dispatch stub codegen, should replace when in-tree
                 DispatchKey.CompositeExplicitAutogradNonFunctional,
             )
             return f"""{maybe_set_guard_line}
@@ -699,6 +710,9 @@ resize_out(out, sizes, strides, options);
                 guard_field = "c10::hip::OptionalHIPGuardMasqueradingAsCUDA guard_;"
             else:
                 guard_field = "c10::cuda::OptionalCUDAGuard guard_;"
+        # TODO (Arham): added PU1 key here for dispatch stub codegen, should replace when in-tree
+        elif self.backend_index.dispatch_key == DispatchKey.PrivateUse1:
+            guard_field = "c10::OptionalDeviceGuard guard_;"
         elif (
             self.backend_index.dispatch_key
             == DispatchKey.CompositeExplicitAutogradNonFunctional

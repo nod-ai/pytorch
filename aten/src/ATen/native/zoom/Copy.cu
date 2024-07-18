@@ -22,6 +22,7 @@
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/zoom/ZoomStream.h>
 #include <ATen/native/zoom/Copy.h>
+#include <ATen/ops/empty.h>
 
 // TODO(NS): Investigate why FP8 conversion intrinsics end up being slower
 // #ifdef AT_USE_NV_CVT_INTRINSICS
@@ -59,7 +60,7 @@ namespace at::native {
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
     BLOCK_SZ = 60;
   }
-  Tensor buf = empty({BLOCK_SZ, BLOCK_SZ}, self.options());
+  Tensor buf = at::empty({BLOCK_SZ, BLOCK_SZ}, self.options());
 
   // The code below is implemented with the assumption that sizes are equal
   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(self.sizes().equals(src.sizes()));

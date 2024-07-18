@@ -1730,6 +1730,7 @@ def gen_aggregated_headers(
     backend_indices: Dict[DispatchKey, BackendIndex],
     cpu_fm: FileManager,
     cuda_fm: FileManager,
+    zoom_fm: FileManager,
     functions_keys: Set[DispatchKey],
     dispatch_keys: Sequence[DispatchKey],
     rocm: bool,
@@ -1810,6 +1811,7 @@ def gen_aggregated_headers(
 
     for dispatch_key in dispatch_keys:
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
+        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
         if dispatch_key in functions_keys:
             inl_headers = f"#include <ATen/{dispatch_key}Functions_inl.h>"
 
@@ -1850,6 +1852,7 @@ def gen_per_operator_headers(
     backend_indices: Dict[DispatchKey, BackendIndex],
     cpu_fm: FileManager,
     cuda_fm: FileManager,
+    zoom_fm: FileManager,
     ops_fm: FileManager,
     functions_keys: Set[DispatchKey],
     dispatch_keys: Sequence[DispatchKey],
@@ -1998,6 +2001,7 @@ def gen_per_operator_headers(
             )
 
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
+        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
         inl_headers = f"#include <ATen/{dispatch_key}Functions_inl.h>"
 
         fm.write_with_template(
@@ -2047,6 +2051,7 @@ def gen_headers(
     core_fm: FileManager,
     cpu_fm: FileManager,
     cuda_fm: FileManager,
+    zoom_fm: FileManager,
     ops_fm: FileManager,
     dispatch_keys: Sequence[DispatchKey],
     functions_keys: Set[DispatchKey],
@@ -2062,6 +2067,7 @@ def gen_headers(
             backend_indices=backend_indices,
             cpu_fm=cpu_fm,
             cuda_fm=cuda_fm,
+            zoom_fm=zoom_fm,
             ops_fm=ops_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
@@ -2077,6 +2083,7 @@ def gen_headers(
             backend_indices=backend_indices,
             cpu_fm=cpu_fm,
             cuda_fm=cuda_fm,
+            zoom_fm=zoom_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
             rocm=rocm,
@@ -2187,6 +2194,7 @@ def gen_source_files(
     cpu_fm: FileManager,
     cpu_vec_fm: FileManager,
     cuda_fm: FileManager,
+    zoom_fm: FileManager,
     dispatch_keys: Sequence[DispatchKey],
     functions_keys: Set[DispatchKey],
     rocm: bool,
@@ -2207,8 +2215,15 @@ def gen_source_files(
 #include <ATen/hip/HIPDevice.h>
 #include <ATen/hip/HIPContext.h>"""
 
+    extra_zoom_headers = """\
+#include <c10/zoom/impl/ZoomGuardImpl.h>
+#include <ATen/zoom/ATenZoomGeneral.h>
+#include <ATen/zoom/ZoomDevice.h>
+#include <ATen/zoom/ZoomContext.h>"""
+
     for dispatch_key in dispatch_keys:
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
+        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
 
         if per_operator_headers:
 
@@ -2280,6 +2295,10 @@ def gen_source_files(
             dispatch_key != DispatchKey.CompositeImplicitAutogradNestedTensor
         )
 
+        extra_headers = extra_cuda_headers if is_cuda_dispatch_key(dispatch_key) else ""
+        if dispatch_key == DispatchKey.PrivateUse1: # TODO(Arham): change once we get a zoom key
+            extra_headers = extra_zoom_headers
+
         dispatch_definitions = get_native_function_definitions(
             fm=fm,
             grouped_native_functions=grouped_native_functions,
@@ -2295,9 +2314,7 @@ def gen_source_files(
             f"Register{dispatch_key}.cpp",
             "RegisterDispatchKey.cpp",
             lambda: {
-                "extra_cuda_headers": extra_cuda_headers
-                if is_cuda_dispatch_key(dispatch_key)
-                else "",
+                "extra_cuda_headers": extra_headers,
                 "external_backend_headers": "",
                 "dispatch_headers": dest.gen_registration_headers(
                     backend_index, per_operator_headers, rocm
@@ -2348,6 +2365,21 @@ def gen_source_files(
                             g, backend_indices[dispatch_key]
                         ),
                         "native_definitions": dest.compute_ufunc_cuda(g),
+                    },
+                )
+            elif dispatch_key is DispatchKey.PrivateUse1:
+                zoom_headers = "#include <ATen/zoom/jit/Loops.cuh>"
+                fm.write_with_template(
+                    f"UfuncZoom_{name}.cu",
+                    "UfuncZoom.cu",
+                    lambda: {
+                        "name": name,
+                        "zoom_headers": zoom_headers,
+                        "meta_declaration": compute_meta_function_declaration(g),
+                        "native_declaration": dest.compute_native_function_declaration(
+                            g, backend_indices[dispatch_key]
+                        ),
+                        "native_definitions": dest.compute_ufunc_zoom(g),
                     },
                 )
             else:
@@ -2888,6 +2920,7 @@ def main() -> None:
     cpu_fm = make_file_manager(options=options)
     cpu_vec_fm = make_file_manager(options=options)
     cuda_fm = make_file_manager(options=options)
+    zoom_fm = make_file_manager(options=options)
     ops_fm = make_file_manager(options=options, install_dir=ops_install_dir)
     aoti_fm = make_file_manager(options=options, install_dir=aoti_install_dir)
 
@@ -2896,6 +2929,7 @@ def main() -> None:
     functions_keys = {
         DispatchKey.CPU,
         DispatchKey.CUDA,
+        DispatchKey.PrivateUse1, # TODO(Arham): change once we have a zoom key
         DispatchKey.CompositeImplicitAutograd,
         DispatchKey.CompositeImplicitAutogradNestedTensor,
         DispatchKey.CompositeExplicitAutograd,
@@ -2937,6 +2971,7 @@ def main() -> None:
             cpu_fm=cpu_fm,
             cpu_vec_fm=cpu_vec_fm,
             cuda_fm=cuda_fm,
+            zoom_fm=zoom_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
             rocm=options.rocm,
@@ -2958,6 +2993,7 @@ def main() -> None:
             core_fm=core_fm,
             cpu_fm=cpu_fm,
             cuda_fm=cuda_fm,
+            zoom_fm=zoom_fm,
             ops_fm=ops_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
@@ -2978,6 +3014,7 @@ def main() -> None:
             (cpu_vec_fm, "cpu_vec_"),
             (core_fm, "core_"),
             (cuda_fm, "cuda_"),
+            (zoom_fm, "zoom_"),
             (ops_fm, "ops_"),
         ]:
             varname = prefix + depfile_stem

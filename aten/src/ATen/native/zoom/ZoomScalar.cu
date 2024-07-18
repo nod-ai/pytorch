@@ -2,6 +2,7 @@
 #include <ATen/core/Tensor.h>
 #include <ATen/Dispatch_v2.h>
 #include <ATen/zoom/EmptyTensor.h>
+#include <ATen/EmptyTensor.h>
 #include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
