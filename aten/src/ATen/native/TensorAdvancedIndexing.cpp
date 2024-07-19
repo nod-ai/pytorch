@@ -735,7 +735,9 @@ Tensor & _index_put_impl_(Tensor & self, const torch::List<std::optional<Tensor>
       at::assert_no_overlap(self, *index);
     }
   }
-  if (self.device().type() == DeviceType::CUDA && (accumulate || globalContext().deterministicAlgorithms())) {
+  // TODO(Arham): replace PU1 with Zoom key
+  bool valid_device = ( self.device().type() == DeviceType::CUDA || self.device().type() == DeviceType::PrivateUse1 );
+  if ( valid_device && (accumulate || globalContext().deterministicAlgorithms())) {
       TORCH_CHECK(value_.device() == self.device(), "expected device ", self.device(), " but got device ",
       value_.device(), " for value tensor");
       index_put_with_sort_stub(self.device().type(), self, indices, value_, accumulate, unsafe);

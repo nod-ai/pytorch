@@ -194,7 +194,8 @@ def parse_native_yaml_struct(
             use_out_as_primary=True,
             external=False,
             # Only cuda-like devices in tree require device guards
-            device_guard=is_cuda_dispatch_key(k),
+            # TODO(Arham): replace PU1 with zoom key
+            device_guard=(is_cuda_dispatch_key(k) or k == DispatchKey.PrivateUse1),
             index=v,
         )
     return ParsedYaml(rs, indices)

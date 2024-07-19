@@ -1,11 +1,10 @@
-// #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/native/zoom/Resize.h>
 #include <ATen/core/Tensor.h>
 #include <ATen/zoom/ZoomContext.h>
 #include <ATen/zoom/PeerToPeerAccess.h>
 #include <ATen/native/ResizeCommon.h>
 #include <c10/zoom/ZoomGuard.h>
-#include <torch/library.h>
 
 namespace at::native {
 
@@ -65,11 +64,6 @@ const Tensor& resize_zoom_(
     at::native::fill_resize_deterministic_(self, old_storage_nbytes);
   }
   return self;
-}
-
-
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-  m.impl("resize_", &resize_zoom_);
 }
 
 } // namespace at::native

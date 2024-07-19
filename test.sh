@@ -1,11 +1,19 @@
 #!/bin/bash
 
 log_file="test.log"
+bak_file="test.log.bak"
 output_file="zoom_unimplemented_operators.log"
+bak_out="zoom_unimplemented_operators.log.bak"
 error_file="zoom_test_errors.log"
+bak_err="zoom_test_errors.log.bak"
+
+# backup logs
+[ -f $log_file ] && cp $log_file $bak_file
+[ -f $output_file ] && cp $output_file $bak_out
+[ -f $error_file ] && cp $error_file $bak_err
 
 # python test/test_torch.py -k TestTorchDeviceTypeZOOM --verbose &> test.log
-python test/test_torch.py -k TestTorchDeviceTypePRIVATEUSEONE --verbose &> $log_file
+python test/test_torch.py --run-parallel 0 -k TestTorchDeviceTypePRIVATEUSEONE --verbose &> $log_file
 
 ## Find Unimplemented Operator Errors from failing tests
 # Pattern to search for

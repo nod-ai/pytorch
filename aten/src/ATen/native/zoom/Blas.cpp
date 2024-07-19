@@ -1,4 +1,4 @@
-// #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/core/Tensor.h>
 #include <ATen/core/NamedTensor.h>
 #include <ATen/Dispatch.h>
@@ -10,7 +10,6 @@
 #include <ATen/zoom/tunable/TunableGemm.h>
 #include <ATen/native/Resize.h>
 #include <c10/util/MaybeOwned.h>
-#include <torch/library.h>
 #include <ATen/ops/empty_like.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
@@ -479,138 +478,34 @@ const Tensor& baddbmm_out_hip_impl(const Tensor& result, const Tensor& self, con
 
 } // anonymous namespace
 
-// We might replace these with TORCH_IMPL_FUNC expressions when in-tree
-Tensor& addmm_out_hip(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, Tensor& result) {
-  checkBackend("addmm_out", {result, self, mat1, mat2}, Backend::PrivateUse1);
-  TORCH_CHECK(
-      mat1.dim() == 2, "mat1 must be a matrix, got ", mat1.dim(), "-D tensor");
-  TORCH_CHECK(
-      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
-  TORCH_CHECK(
-      mat1.sizes()[1] == mat2.sizes()[0],
-      "mat1 and mat2 shapes cannot be multiplied (",
-      mat1.sizes()[0],
-      "x",
-      mat1.sizes()[1],
-      " and ",
-      mat2.sizes()[0],
-      "x",
-      mat2.sizes()[1],
-      ")");
-
+TORCH_IMPL_FUNC(addmm_out_hip)(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, const Tensor& result) {
   addmm_out_hip_impl(const_cast<Tensor&>(result), self, mat1, mat2, beta, alpha);
-  return result;
 }
 
-Tensor addmm_hip(const Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha) {
-  Tensor result = at::empty({mat1.size(0), mat2.size(1)}, self.options());
-  addmm_out_hip(self, mat1, mat2, beta, alpha, result);
-  return result;
-}
-
-Tensor& addmm_hip_(Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha) {
-  addmm_out_hip(self, mat1, mat2, beta, alpha, self);
-  return self;
-}
-
-Tensor& addmm_activation_out_hip(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, bool use_gelu, Tensor& result) {
-  checkBackend("addmm_out", {result, self, mat1, mat2}, Backend::PrivateUse1);
-  TORCH_CHECK(
-      mat1.dim() == 2, "mat1 must be a matrix, got ", mat1.dim(), "-D tensor");
-  TORCH_CHECK(
-      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
-  TORCH_CHECK(
-      mat1.sizes()[1] == mat2.sizes()[0],
-      "mat1 and mat2 shapes cannot be multiplied (",
-      mat1.sizes()[0],
-      "x",
-      mat1.sizes()[1],
-      " and ",
-      mat2.sizes()[0],
-      "x",
-      mat2.sizes()[1],
-      ")");
-
+TORCH_IMPL_FUNC(addmm_activation_out_hip)(const Tensor& self, const Tensor& mat1, const Tensor& mat2, const Scalar& beta, const Scalar& alpha, bool use_gelu, const Tensor& result) {
   addmm_out_hip_impl(const_cast<Tensor&>(result), self, mat1, mat2, beta, alpha, use_gelu ? Activation::GELU : Activation::RELU);
-  return result;
 }
 
-Tensor _addmm_activation_hip(const Tensor & self, const Tensor & mat1, const Tensor & mat2, const Scalar & beta, const Scalar & alpha, bool use_gelu) {
-  Tensor result = at::empty({mat1.size(0), mat2.size(1)}, self.options());
-  addmm_activation_out_hip(self, mat1, mat2, beta, alpha, use_gelu, result);
-  return result;
-} 
-
-
-Tensor& mm_out_hip(const Tensor& self, const Tensor& mat2, Tensor& result) {
-  checkBackend("mm_out", {result, self, mat2}, Backend::PrivateUse1);
-  TORCH_CHECK(
-      self.dim() == 2, "mat1 must be a matrix, got ", self.dim(), "-D tensor");
-  TORCH_CHECK(
-      mat2.dim() == 2, "mat2 must be a matrix, got ", mat2.dim(), "-D tensor");
-  TORCH_CHECK(
-      self.sizes()[1] == mat2.sizes()[0],
-      "mat1 and mat2 shapes cannot be multiplied (",
-      self.sizes()[0],
-      "x",
-      self.sizes()[1],
-      " and ",
-      mat2.sizes()[0],
-      "x",
-      mat2.sizes()[1],
-      ")");
+TORCH_IMPL_FUNC(mm_out_hip)(const Tensor& self, const Tensor& mat2, const Tensor& result) {
   addmm_out_hip_impl(const_cast<Tensor&>(result), result, self, mat2, 0, 1);
-  return result;
 }
 
-Tensor mm_hip(const Tensor & self, const Tensor & mat2) {
-  Tensor result = at::empty({self.size(0), mat2.size(1)}, self.options());
-  mm_out_hip(self, mat2, result);
-  return result;
-}
-
-Tensor& baddbmm_out_hip(const Tensor& self, const Tensor& batch1, const Tensor& batch2, const Scalar& beta, const Scalar& alpha, Tensor& result) {
-  checkBackend("baddbmm_out", {self, batch1, batch2}, Backend::PrivateUse1);
-  TORCH_CHECK(self.dtype() == batch1.dtype(), "Input dtypes must be the same, got: input ", self.dtype(), ", batch1: ", batch1.dtype(), ", batch2: ", batch2.dtype());
-  TORCH_CHECK(batch1.dim() == 3, "expected 3D tensor");
-  TORCH_CHECK(batch2.dim() == 3, "expected 3D tensor");
+TORCH_IMPL_FUNC(baddbmm_out_hip)(const Tensor& self, const Tensor& batch1, const Tensor& batch2, const Scalar& beta, const Scalar& alpha, const Tensor& result) {
   {
     at::NoNamesGuard guard;
     baddbmm_out_hip_impl(result, self, batch1, batch2, beta, alpha);
   }
-  return result;
 }
 
-Tensor baddbmm_hip(const Tensor & self, const Tensor & batch1, const Tensor & batch2, const Scalar & beta, const Scalar & alpha) {
-  Tensor result = at::empty_like(self);
-  baddbmm_out_hip(self, batch1, batch2, beta, alpha, result);
-  return result;
-} 
-
-Tensor & baddbmm_hip_(Tensor & self, const Tensor & batch1, const Tensor & batch2, const Scalar & beta, const Scalar & alpha) {
-  baddbmm_out_hip(self, batch1, batch2, beta, alpha, self);
-  return self;
-} 
-
-
-Tensor& bmm_out_hip(const Tensor& batch1, const Tensor& batch2, Tensor &result) {
-  checkBackend("bmm_out", {result, batch1, batch2}, Backend::PrivateUse1);
-  TORCH_CHECK(batch1.dim() == 3, "expected 3D tensor");
-  TORCH_CHECK(batch2.dim() == 3, "expected 3D tensor");
+TORCH_IMPL_FUNC(bmm_out_hip)(const Tensor& batch1, const Tensor& batch2, const Tensor &result) {
   Scalar beta(0.0);
   Scalar alpha(1.0);
   {
     NoNamesGuard guard;
     baddbmm_out_hip_impl(result, result, batch1, batch2, beta, alpha);
   }
-  return result;
 }
 
-Tensor bmm_hip(const Tensor & batch1, const Tensor & batch2) {
-  Tensor result = at::empty({batch1.size(0), batch1.size(1), batch2.size(2)}, batch1.options());
-  bmm_out_hip(batch1, batch2, result);
-  return result;
-}
 
 namespace {
 
@@ -648,23 +543,16 @@ inline void dot_check(const Tensor& self, const Tensor& other) {
 
 } // anonymous namespace
 
-// forward decl
-Tensor& vdot_out_hip(const Tensor& self, const Tensor& other, Tensor& result);
-
-Tensor& dot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
+Tensor dot_hip(const Tensor& self, const Tensor& other) {
   if (self.is_complex()) {
     if (self.is_conj()) {
       if (other.is_conj()) {
-        // return((dot_out_hip(self.conj(), other.conj(), result)).conj());
-        // to make sure this returns a reference we just set the conj bit on result manually rather than returning a new tensor from Tensor.conj()
-        dot_out_hip(self.conj(), other.conj(), result);
-        result._set_conj(true);
-        return result;
+        return (dot_hip(self.conj(), other.conj())).conj();
        } else {
-         return vdot_out_hip(self.conj(), other, result);
+         return vdot_hip(self.conj(), other);
        }
     } else if (other.is_conj()) {
-      return vdot_out_hip(other.conj(), self, result);
+      return vdot_hip(other.conj(), self);
     }
   }
 
@@ -680,15 +568,14 @@ Tensor& dot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
   }
 
   if (self._is_zerotensor() || other._is_zerotensor()) {
-    result.zero_();
-    return result; //at::_efficientzerotensor({}, self.options());
+    at::_efficientzerotensor({}, self.options());
   }
 
-  AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
+  return AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
       ScalarType::Half, ScalarType::BFloat16,
       self.scalar_type(), "dot",
       [&] {
-        // Tensor result = at::empty({}, self.options());
+        Tensor result = at::empty({}, self.options());
 
         auto handle = at::zoom::getCurrentHIPBlasHandle();
         at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);
@@ -703,40 +590,28 @@ Tensor& dot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
 
         return result;
       });
-  return result;
 }
 
-Tensor dot_hip(const Tensor & self, const Tensor & tensor) {
-    Tensor result = at::empty({}, self.options());
-    dot_out_hip(self, tensor, result);
-    return result;
-}
-
-Tensor& vdot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
+Tensor vdot_hip(const Tensor& self, const Tensor& other) {
   if (!self.is_complex()) {
-    return dot_out_hip(self, other, result);
+    return dot_hip(self, other);
   }
 
   if (self.is_conj()) {
     if (other.is_conj()) {
-      return vdot_out_hip(other.conj(), self.conj(), result);
+      return vdot_hip(other.conj(), self.conj());
     } else {
-      return dot_out_hip(self.conj(), other, result);
+      return dot_hip(self.conj(), other);
     }
   } else if (other.is_conj()) {
-    // return (dot_out_hip(self, other.conj(), result)).conj();
-    // to make sure this returns a reference to a tensor we manually set the conj bit as opposed to returning a new tensor with Tensor.conj()
-    dot_out_hip(self, other.conj(), result);
-    result._set_conj(true);
-    return result;
+    return (dot_hip(self, other.conj())).conj();
   }
 
   at::NoNamesGuard guard;
   dot_check(self, other);
 
   if (self._is_zerotensor() || other._is_zerotensor()) {
-    result.zero_();
-    return result;//at::_efficientzerotensor({}, self.options());
+    at::_efficientzerotensor({}, self.options());
   }
 
   const int n = static_cast<int>(self.numel());
@@ -747,8 +622,8 @@ Tensor& vdot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
     incy = 1;
   }
 
-  AT_DISPATCH_COMPLEX_TYPES(self.scalar_type(), "vdot", [&] {
-    // Tensor result = at::empty({}, self.options());
+  return AT_DISPATCH_COMPLEX_TYPES(self.scalar_type(), "vdot", [&] {
+    Tensor result = at::empty({}, self.options());
 
     auto handle = at::zoom::getCurrentHIPBlasHandle();
     at::zoom::blas::PointerModeGuard pointerModeGuard(
@@ -764,17 +639,9 @@ Tensor& vdot_out_hip(const Tensor& self, const Tensor& other, Tensor& result) {
 
     return result;
   });
-
-  return result;
 }
 
-Tensor vdot_hip(const Tensor & self, const Tensor & other) {
-  Tensor result = at::empty({}, self.options());
-  vdot_out_hip(self, other, result);
-  return result;
-}
-
-Tensor& addmv_out_hip(const Tensor &self, const Tensor &mat, const Tensor &vec, const Scalar& beta_, const Scalar& alpha_, Tensor& result) {
+TORCH_IMPL_FUNC(addmv_out_hip)(const Tensor &self, const Tensor &mat, const Tensor &vec, const Scalar& beta_, const Scalar& alpha_, const Tensor& result) {
   c10::MaybeOwned<Tensor> self_ = expand_size(self, {mat.size(0)});
   auto betaval = beta_.toComplexDouble();
   if (mat.numel() == 0) {
@@ -825,28 +692,8 @@ Tensor& addmv_out_hip(const Tensor &self, const Tensor &mat, const Tensor &vec, 
       });
     }
   }
-
-  return result;
 }
 
-Tensor addmv_hip(const Tensor & self, const Tensor & mat, const Tensor & vec, const Scalar & beta, const Scalar & alpha) {
-  Tensor result;
-  if (mat.numel() == 0) {
-    result = at::empty_like(self, self.options());
-  }
-  else {
-    result = at::empty({self.size(0), mat.size(1)}, self.options());
-  }
-
-  addmv_out_hip(self, mat, vec, beta, alpha, result);
-  return result;
-
-}
-
-Tensor & addmv_hip_(Tensor & self, const Tensor & mat, const Tensor & vec, const Scalar & beta, const Scalar & alpha) {
-  addmv_out_hip(self, mat, vec, beta, alpha, self);
-  return self;
-}
 
 Tensor& _int_mm_out_hip(const Tensor& self, const Tensor& mat2, Tensor& result) {
   // NOTE: cuBLAS is currently broken for some combination of transposed inputs.
@@ -1131,41 +978,6 @@ _scaled_mm_hip(const Tensor& mat_a, const Tensor& mat_b,
   Tensor out = at::empty({0}, mat_a.options().dtype(out_dtype_));
   Tensor amax = at::empty({0}, mat_a.options().dtype(ScalarType::Float));
   return _scaled_mm_out_hip(mat_a, mat_b, bias, out_dtype, scale_a, scale_b, scale_result, use_fast_accum, out, amax);
-}
-
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-  m.impl("addmm", &addmm_hip);
-  m.impl("addmm_", &addmm_hip_);
-  m.impl("addmm.out", &addmm_out_hip);
-  m.impl("_addmm_activation", &_addmm_activation_hip);
-  m.impl("_addmm_activation.out", &addmm_activation_out_hip);
-
-  m.impl("mm", &mm_hip);
-  m.impl("mm.out", &mm_out_hip);
-
-  m.impl("baddbmm", &baddbmm_hip);
-  m.impl("baddbmm_", &baddbmm_hip_);
-  m.impl("baddbmm.out", &baddbmm_out_hip);
-
-  m.impl("bmm", &bmm_hip);
-  m.impl("bmm.out", &bmm_out_hip);
-
-  m.impl("dot", &dot_hip);
-  m.impl("dot.out", &dot_out_hip);
-  m.impl("vdot", &vdot_hip);
-  m.impl("vdot.out", &vdot_out_hip);
-
-  m.impl("addmv", &addmv_hip);
-  m.impl("addmv_", &addmv_hip_);
-  m.impl("addmv.out", &addmv_out_hip);
-
-  m.impl("_int_mm", &_int_mm_hip);
-  m.impl("_int_mm.out", &_int_mm_out_hip);
-
-  m.impl("_scaled_mm", &_scaled_mm_hip);
-  m.impl("_scaled_mm.out", &_scaled_mm_out_hip);
-
-  
 }
 
 } // namespace at::native

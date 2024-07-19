@@ -1,9 +1,8 @@
-// #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/core/Tensor.h>
 #include <ATen/Dispatch_v2.h>
 #include <ATen/zoom/EmptyTensor.h>
 #include <ATen/EmptyTensor.h>
-#include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/NativeFunctions.h>
@@ -34,10 +33,6 @@ Scalar _local_scalar_dense_zoom(const Tensor& self) {
         r = Scalar(*value.const_data_ptr<scalar_t>());
       }), AT_EXPAND(AT_ALL_TYPES_AND_COMPLEX), kComplexHalf, kHalf, kBool, kBFloat16, AT_EXPAND(AT_BAREBONES_UNSIGNED_TYPES));
   return r;
-}
-
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-  m.impl("_local_scalar_dense", &_local_scalar_dense_zoom);
 }
 
 } // at::native

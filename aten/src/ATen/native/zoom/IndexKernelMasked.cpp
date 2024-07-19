@@ -6,7 +6,6 @@
 #include <ATen/ExpandUtils.h>
 #include <ATen/MemoryOverlap.h>
 #include <ATen/NamedTensorUtils.h>
-#include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -54,12 +53,12 @@ Tensor masked_select_zoom(const Tensor & self, const Tensor & mask) {
   return masked_select_out_zoom_impl(result, self, mask);
 }
 
-Tensor & masked_select_zoom_out(const Tensor & self, const Tensor & mask, Tensor & result) {
+Tensor & masked_select_out_zoom(const Tensor & self, const Tensor & mask, Tensor & result) {
   namedinference::compute_broadcast_outnames(self, mask);
   return masked_select_out_zoom_impl(result, self, mask);
 }
 
-Tensor & masked_scatter_zoom_(Tensor& self, const Tensor& mask, const Tensor& source) {
+Tensor & masked_scatter__zoom(Tensor& self, const Tensor& mask, const Tensor& source) {
   at::assert_no_internal_overlap(self);
   TORCH_CHECK(
       self.scalar_type() == source.scalar_type(),
@@ -80,27 +79,6 @@ Tensor & masked_scatter_zoom_(Tensor& self, const Tensor& mask, const Tensor& so
   launch_masked_scatter_kernel(self, *b_mask, maskPrefixSum, source);
 
   return self;
-}
-
-Tensor masked_scatter(const Tensor & self, const Tensor & mask, const Tensor & source) {
-    return self.clone().masked_scatter_(mask, source);
-}
-
-Tensor & masked_scatter_out(const Tensor & self, const Tensor & mask, const Tensor & source, Tensor & out) {
-    out.resize_(self.sizes());
-    out.copy_(self);
-    out.masked_scatter_(mask, source);
-    return out;
-}
-
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-  m.impl("masked_select.out", &masked_select_zoom_out);
-  m.impl("masked_select", &masked_select_zoom);
-
-  m.impl("masked_scatter.out", &masked_scatter_out);
-  m.impl("masked_scatter_", &masked_scatter_zoom_);
-  m.impl("masked_scatter", &masked_scatter);
-
 }
 
 }  // namespace at::native

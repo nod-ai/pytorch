@@ -1,7 +1,6 @@
-// #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/core/Tensor.h>
 #include <ATen/NamedTensorUtils.h>
-#include <torch/library.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/NativeFunctions.h>
@@ -45,10 +44,6 @@ bool zoom_equal(const Tensor& self, const Tensor &src) {
   }
 
   return at::eq(self, src).all().item().to<bool>();
-}
-
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-    m.impl("equal", &zoom_equal);
 }
 
 } // namespace at::native

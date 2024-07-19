@@ -32,10 +32,10 @@ namespace at {
 // #else
 constexpr const char* ZOOM_HELP =
   "PyTorch splits its backend into two shared libraries: a CPU library "
-  "and a CUDA library; this error has occurred because you are trying "
-  "to use some CUDA functionality, but the CUDA library has not been "
-  "loaded by the dynamic linker for some reason.  The CUDA library MUST "
-  "be loaded, EVEN IF you don't directly use any symbols from the CUDA library! "
+  "and a ZOOM library; this error has occurred because you are trying "
+  "to use some ZOOM functionality, but the ZOOM library has not been "
+  "loaded by the dynamic linker for some reason.  The ZOOM library MUST "
+  "be loaded, EVEN IF you don't directly use any symbols from the ZOOM library! "
   "One common culprit is a lack of -Wl,--no-as-needed in your link arguments; many "
   "dynamic linkers will delete dynamic library dependencies if you don't "
   "depend on any of their symbols.  You can check if this has occurred by "
@@ -43,30 +43,30 @@ constexpr const char* ZOOM_HELP =
   "library.";
 // #endif
 
-// The ZoomHooksInterface is an omnibus interface for any CUDA functionality
+// The ZoomHooksInterface is an omnibus interface for any ZOOM functionality
 // which we may want to call into from CPU code (and thus must be dynamically
-// dispatched, to allow for separate compilation of CUDA code).  How do I
+// dispatched, to allow for separate compilation of ZOOM code).  How do I
 // decide if a function should live in this class?  There are two tests:
 //
 //  1. Does the *implementation* of this function require linking against
-//     CUDA libraries?
+//     ZOOM libraries?
 //
-//  2. Is this function *called* from non-CUDA ATen code?
+//  2. Is this function *called* from non-ZOOM ATen code?
 //
-// (2) should filter out many ostensible use-cases, since many times a CUDA
-// function provided by ATen is only really ever used by actual CUDA code.
+// (2) should filter out many ostensible use-cases, since many times a ZOOM
+// function provided by ATen is only really ever used by actual ZOOM code.
 //
 // TODO: Consider putting the stub definitions in another class, so that one
 // never forgets to implement each virtual function in the real implementation
-// in CUDAHooks.  This probably doesn't buy us much though.
+// in ZOOMHooks.  This probably doesn't buy us much though.
 struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   // This should never actually be implemented, but it is used to
   // squelch -Werror=non-virtual-dtor
   virtual ~ZoomHooksInterface() override = default;
 
-  // Initialize THCState and, transitively, the CUDA state
+  // Initialize THCState and, transitively, the ZOOM state
   virtual void initZoom() const {
-    TORCH_CHECK(false, "Cannot initialize CUDA without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot initialize ZOOM without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual void initPrivateUse1() const override {
@@ -74,13 +74,13 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   }
 
   virtual const Generator& getDefaultZoomGenerator(C10_UNUSED DeviceIndex device_index = -1) const {
-    TORCH_CHECK(false, "Cannot get default CUDA generator without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot get default ZOOM generator without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual const Generator& getDefaultGenerator(DeviceIndex device_index) override { return getDefaultZoomGenerator(device_index); };
 
   virtual Device getDeviceFromPtr(void* /*data*/) const override {
-    TORCH_CHECK(false, "Cannot get device of pointer on CUDA without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot get device of pointer on ZOOM without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual bool isPinnedPtr(const void* /*data*/) const {
@@ -92,7 +92,7 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   }
 
   virtual bool hasPrimaryContext(DeviceIndex device_index) const override {
-    TORCH_CHECK(false, "Cannot call hasPrimaryContext(", device_index, ") without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot call hasPrimaryContext(", device_index, ") without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual DeviceIndex current_device() const {
@@ -100,15 +100,15 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   }
 
   virtual Allocator* getPinnedMemoryAllocator() const override {
-    TORCH_CHECK(false, "Pinned memory requires CUDA. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Pinned memory requires ZOOM. ", ZOOM_HELP);
   }
 
   virtual Allocator* getZoomDeviceAllocator() const {
-    TORCH_CHECK(false, "CUDADeviceAllocator requires CUDA. ", ZOOM_HELP);
+    TORCH_CHECK(false, "ZoomDeviceAllocator requires ZOOM. ", ZOOM_HELP);
   }
 
   virtual std::string showConfig() const {
-    TORCH_CHECK(false, "Cannot query detailed CUDA version without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot query detailed ZOOM version without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual int getNumGPUs() const {
@@ -116,7 +116,7 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
   }
 
   virtual void deviceSynchronize(DeviceIndex /*device_index*/) const {
-    TORCH_CHECK(false, "Cannot synchronize CUDA device without ATen_cuda library. ", ZOOM_HELP);
+    TORCH_CHECK(false, "Cannot synchronize ZOOM device without torch_zoom library. ", ZOOM_HELP);
   }
 };
 
