@@ -1981,7 +1981,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: cumprod_out
+    CPU, CUDA, PrivateUse1: cumprod_out
     MPS: cumprod_out_mps
 
 - func: cumprod.dimname(Tensor self, Dimname dim, *, ScalarType? dtype=None) -> Tensor
@@ -2013,7 +2013,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: cumsum_out
+    CPU, CUDA, PrivateUse1: cumsum_out
     MPS: cumsum_out_mps
 
 - func: cumsum.dimname(Tensor self, Dimname dim, *, ScalarType? dtype=None) -> Tensor
@@ -3705,11 +3705,13 @@
   dispatch:
     CPU: _logcumsumexp_cpu
     CUDA: _logcumsumexp_cuda
+    PrivateUse1: _logcumsumexp_zoom
 
 - func: _logcumsumexp.out(Tensor self, int dim, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
     CPU: _logcumsumexp_out_cpu
     CUDA: _logcumsumexp_out_cuda
+    PrivateUse1: _logcumsumexp_out_zoom
 
 - func: logcumsumexp(Tensor self, int dim) -> Tensor
   variants: function, method
@@ -8156,7 +8158,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_src_out
+    CPU, CUDA, PrivateUse1: scatter_src_out
     MPS: scatter_src_out_mps
 
 - func: scatter.value(Tensor self, int dim, Tensor index, Scalar value) -> Tensor
@@ -8172,7 +8174,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_value_out
+    CPU, CUDA, PrivateUse1: scatter_value_out
     MPS: scatter_value_out_mps
 
 - func: scatter.reduce(Tensor self, int dim, Tensor index, Tensor src, *, str reduce) -> Tensor
@@ -8187,7 +8189,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_reduce_out
+    CPU, CUDA, PrivateUse1: scatter_reduce_out
     MPS: scatter_reduce_out_mps
 
 - func: scatter.value_reduce(Tensor self, int dim, Tensor index, Scalar value, *, str reduce) -> Tensor
@@ -8202,7 +8204,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_value_reduce_out
+    CPU, CUDA, PrivateUse1: scatter_value_reduce_out
     MPS: scatter_value_reduce_out_mps
 
 - func: scatter.dimname_src(Tensor self, Dimname dim, Tensor index, Tensor src) -> Tensor
@@ -8224,7 +8226,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_add
+    CPU, CUDA, PrivateUse1: scatter_add
     MPS: scatter_add_mps_out
 
 - func: scatter_add.dimname(Tensor self, Dimname dim, Tensor index, Tensor src) -> Tensor
@@ -8243,7 +8245,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_reduce_two
+    CPU, CUDA, PrivateUse1: scatter_reduce_two
 
 - func: eq_.Scalar(Tensor(a!) self, Scalar other) -> Tensor(a!)
   structured_delegate: eq.Scalar_out
@@ -9253,7 +9255,7 @@
 - func: gather.out(Tensor self, int dim, Tensor index, *, bool sparse_grad=False, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: gather_out
+    CPU, CUDA, PrivateUse1: gather_out
     MPS: gather_out_mps
 
 - func: gather(Tensor self, int dim, Tensor index, *, bool sparse_grad=False) -> Tensor
@@ -9278,7 +9280,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: addcmul_out
+    CPU, CUDA, PrivateUse1: addcmul_out
     MPS: addcmul_out_mps
   tags: pointwise
 
@@ -9299,7 +9301,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: addcdiv_out
+    CPU, CUDA, PrivateUse1: addcdiv_out
     MPS: addcdiv_out_mps
   tags: pointwise
 
@@ -9931,7 +9933,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MPS: fmin_out
+    CPU, CUDA, PrivateUse1, MPS: fmin_out
   tags: pointwise
 
 - func: max(Tensor self) -> Tensor
@@ -9953,7 +9955,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MPS: fmax_out
+    CPU, CUDA, PrivateUse1, MPS: fmax_out
   tags: pointwise
 
 - func: maximum(Tensor self, Tensor other) -> Tensor
@@ -9967,7 +9969,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: maximum_out
+    CPU, CUDA, PrivateUse1: maximum_out
     MPS: maximum_out_mps
   tags: pointwise
 
@@ -9999,7 +10001,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: minimum_out
+    CPU, CUDA, PrivateUse1: minimum_out
     MPS: minimum_out_mps
   tags: pointwise
 
@@ -11489,13 +11491,13 @@
 - func: mse_loss_backward.grad_input(Tensor grad_output, Tensor self, Tensor target, int reduction, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
   dispatch:
-    CPU, CUDA: mse_loss_backward_out
+    CPU, CUDA, PrivateUse1: mse_loss_backward_out
     MPS: mse_loss_backward_out_mps
 
 - func: mse_loss_backward(Tensor grad_output, Tensor self, Tensor target, int reduction) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: mse_loss_backward
+    CPU, CUDA, PrivateUse1: mse_loss_backward
     MPS: mse_loss_backward_mps
 
 - func: l1_loss(Tensor self, Tensor target, int reduction=Mean) -> Tensor
@@ -11647,6 +11649,7 @@
   dispatch:
     CPU: smooth_l1_loss_backward_out
     CUDA: smooth_l1_loss_backward_out
+    PrivateUse1: smooth_l1_loss_backward_out
     MPS: smooth_l1_loss_backward_out_mps
 
 - func: smooth_l1_loss_backward(Tensor grad_output, Tensor self, Tensor target, int reduction, float beta) -> Tensor
@@ -11669,7 +11672,7 @@
 - func: huber_loss_backward.out(Tensor grad_output, Tensor self, Tensor target, int reduction, float delta, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
   dispatch:
-    CPU, CUDA: huber_loss_backward_out
+    CPU, CUDA, PrivateUse1: huber_loss_backward_out
     MPS: huber_loss_backward_out_mps
 
 - func: huber_loss_backward(Tensor grad_output, Tensor self, Tensor target, int reduction, float delta) -> Tensor
