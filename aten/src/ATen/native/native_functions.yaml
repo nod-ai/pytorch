@@ -1282,7 +1282,7 @@
 - func: logical_xor.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: logical_xor_out
+    CPU, CUDA, PrivateUse1: logical_xor_out
     MPS: logical_xor_out_mps
   tags: pointwise
 
@@ -1303,7 +1303,7 @@
 - func: logical_and.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: logical_and_out
+    CPU, CUDA, PrivateUse1: logical_and_out
     MPS: logical_and_out_mps
   tags: pointwise
 
@@ -1324,7 +1324,7 @@
 - func: logical_or.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: logical_or_out
+    CPU, CUDA, PrivateUse1: logical_or_out
     MPS: logical_or_out_mps
   tags: pointwise
 
@@ -2140,7 +2140,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: div_out
+    CPU, CUDA, PrivateUse1: div_out
     MPS: div_out_mps
     SparseCPU, SparseCUDA: div_out_sparse_zerodim
   tags: pointwise
@@ -2166,7 +2166,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: div_out_mode
+    CPU, CUDA, PrivateUse1: div_out_mode
     MPS: div_out_mode_mps
     SparseCPU, SparseCUDA: div_out_sparse_zerodim
   tags: pointwise
@@ -2741,7 +2741,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: floor_divide
+    CPU, CUDA, PrivateUse1: floor_divide
     MPS: floor_divide_mps
     SparseCPU, SparseCUDA: floor_divide_sparse
 
@@ -2756,7 +2756,7 @@
 - func: floor_divide.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: floor_divide_out
+    CPU, CUDA, PrivateUse1: floor_divide_out
     MPS: floor_divide_out_mps
     SparseCPU, SparseCUDA: floor_divide_out_sparse_zerodim
 
@@ -3607,7 +3607,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: xlogy_out
+    CPU, CUDA, PrivateUse1: xlogy_out
     MPS: xlogy_out_mps
   tags: pointwise
 
@@ -4200,7 +4200,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: mul_out
+    CPU, CUDA, PrivateUse1: mul_out
     MPS: mul_out_mps
     SparseCPU: mul_out_sparse_cpu
     SparseCUDA: mul_out_sparse_cuda
@@ -8255,7 +8255,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_and_out
+    CPU, CUDA, PrivateUse1: bitwise_and_out
     MPS: bitwise_and_out_mps
   tags: pointwise
 
@@ -8322,7 +8322,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_or_out
+    CPU, CUDA, PrivateUse1: bitwise_or_out
     MPS: bitwise_or_out_mps
   tags: pointwise
 
@@ -8389,7 +8389,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_xor_out
+    CPU, CUDA, PrivateUse1: bitwise_xor_out
     MPS: bitwise_xor_out_mps
   tags: pointwise
 
@@ -8458,21 +8458,21 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: __lshift__
+    CPU, CUDA, PrivateUse1: __lshift__
   tags: pointwise
 
 - func: __lshift__.Tensor(Tensor self, Tensor other) -> Tensor
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: __lshift__
+    CPU, CUDA, PrivateUse1: __lshift__
   tags: pointwise
 
 - func: __ilshift__.Scalar(Tensor(a!) self, Scalar other) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: __ilshift__
+    CPU, CUDA, PrivateUse1: __ilshift__
   autogen: __lshift__.Scalar_out
   tags: pointwise
 
@@ -8480,7 +8480,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: __ilshift__
+    CPU, CUDA, PrivateUse1: __ilshift__
   autogen: __lshift__.Tensor_out
   tags: pointwise
 
@@ -8501,7 +8501,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: bitwise_left_shift_out
+    CPU, CUDA, PrivateUse1: bitwise_left_shift_out
   tags: pointwise
 
 - func: bitwise_left_shift.Tensor_Scalar(Tensor self, Scalar other) -> Tensor
@@ -8537,28 +8537,28 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: __rshift__
+    CPU, CUDA, PrivateUse1: __rshift__
   tags: pointwise
 
 - func: __rshift__.Tensor(Tensor self, Tensor other) -> Tensor
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: __rshift__
+    CPU, CUDA, PrivateUse1: __rshift__
   tags: pointwise
 
 - func: __irshift__.Scalar(Tensor(a!) self, Scalar other) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: __irshift__
+    CPU, CUDA, PrivateUse1: __irshift__
   autogen: __rshift__.Scalar_out
 
 - func: __irshift__.Tensor(Tensor(a!) self, Tensor other) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: __irshift__
+    CPU, CUDA, PrivateUse1: __irshift__
   autogen: __rshift__.Tensor_out
 
 - func: bitwise_right_shift.Tensor(Tensor self, Tensor other) -> Tensor
@@ -8578,7 +8578,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: bitwise_right_shift_out
+    CPU, CUDA, PrivateUse1: bitwise_right_shift_out
   tags: pointwise
 
 - func: bitwise_right_shift.Tensor_Scalar(Tensor self, Scalar other) -> Tensor
@@ -9636,7 +9636,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: atan2_out
+    CPU, CUDA, PrivateUse1: atan2_out
     MPS: atan2_out_mps
   tags: [core, pointwise]
 
@@ -9767,7 +9767,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: fmod_out
+    CPU, CUDA, PrivateUse1: fmod_out
     MPS: fmod_mps_out
   tags: pointwise
 
@@ -9787,7 +9787,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: hypot_out
+    CPU, CUDA, PrivateUse1: hypot_out
     MPS: hypot_out_mps
   tags: pointwise
 
@@ -9874,7 +9874,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: remainder_out
+    CPU, CUDA, PrivateUse1: remainder_out
     MPS: remainder_out_mps
   tags: pointwise
 
@@ -11470,7 +11470,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: mse_loss_out
+    CPU, CUDA, PrivateUse1: mse_loss_out
     MPS: mse_loss_out_mps
 
 - func: mse_loss(Tensor self, Tensor target, int reduction=Mean) -> Tensor
@@ -11626,7 +11626,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: smooth_l1_loss_out
+    CPU, CUDA, PrivateUse1: smooth_l1_loss_out
     MPS: smooth_l1_loss_out_mps
 
 - func: smooth_l1_loss(Tensor self, Tensor target, int reduction=Mean, float beta=1.0) -> Tensor
@@ -11649,13 +11649,13 @@
 - func: huber_loss.out(Tensor self, Tensor target, int reduction=Mean, float delta=1.0, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
   dispatch:
-    CPU, CUDA: huber_loss_out
+    CPU, CUDA, PrivateUse1: huber_loss_out
     MPS: huber_loss_out_mps
 
 - func: huber_loss(Tensor self, Tensor target, int reduction=Mean, float delta=1.0) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: huber_loss
+    CPU, CUDA, PrivateUse1: huber_loss
     MPS: huber_loss_mps
 
 - func: huber_loss_backward.out(Tensor grad_output, Tensor self, Tensor target, int reduction, float delta, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -12853,7 +12853,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sigmoid_backward_out
+    CPU, CUDA, PrivateUse1: sigmoid_backward_out
     MPS: sigmoid_backward_out_mps
   tags: pointwise
 
@@ -12867,7 +12867,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: logit_backward_out
+    CPU, CUDA, PrivateUse1: logit_backward_out
     MPS: logit_backward_out_mps
   tags: pointwise
 
@@ -12881,7 +12881,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: tanh_backward_out
+    CPU, CUDA, PrivateUse1: tanh_backward_out
     MPS: tanh_backward_out_mps
   tags: pointwise
 
@@ -13271,7 +13271,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA: special_xlog1py_out
+    CPU, CUDA, PrivateUse1: special_xlog1py_out
   tags: pointwise
 
 - func: special_xlog1py.self_scalar_out(Scalar self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
