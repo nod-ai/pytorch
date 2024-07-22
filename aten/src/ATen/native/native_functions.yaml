@@ -798,6 +798,7 @@
   dispatch:
     CPU, Meta: arange_out
     CUDA: arange_cuda_out
+    PrivateUse1: arange_zoom_out
     MPS: arange_mps_out
   cpp_no_default_args: ['step']
 
@@ -3433,6 +3434,7 @@
   dispatch:
     CPU, Meta: linspace_out
     CUDA: linspace_cuda_out
+    PrivateUse1: linspace_zoom_out
     MPS: linspace_out_mps
 
 - func: linspace.Tensor_Tensor_out(Tensor start, Tensor end, int steps, *, Tensor(a!) out) -> Tensor(a!)
@@ -3649,6 +3651,7 @@
   dispatch:
     CPU, Meta: logspace_out
     CUDA: logspace_cuda_out
+    PrivateUse1: logspace_zoom_out
 
 - func: logspace.Tensor_Tensor_out(Tensor start, Tensor end, int steps, float base=10.0, *, Tensor(a!) out) -> Tensor(a!)
   category_override: factory
@@ -4793,6 +4796,7 @@
   dispatch:
     CPU, Meta: range_out
     CUDA: range_cuda_out
+    PrivateUse1: range_zoom_out
     MPS: range_mps_out
   cpp_no_default_args: ['step']
 
@@ -6841,7 +6845,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sub_out
+    CPU, CUDA, PrivateUse1: sub_out
     MPS: sub_out_mps
     SparseCPU, SparseCUDA: sub_out_sparse
   tags: pointwise
@@ -9217,6 +9221,7 @@
   dispatch:
     CPU: nonzero_out_cpu
     CUDA: nonzero_out_cuda
+    PrivateUse1: nonzero_out_zoom
     MPS: nonzero_out_mps
   tags: dynamic_output_shape
 
@@ -9225,6 +9230,7 @@
   dispatch:
     CPU: nonzero_cpu
     CUDA: nonzero_cuda
+    PrivateUse1: nonzero_zoom
     MPS: nonzero_mps
   tags: [dynamic_output_shape, core]
 
@@ -12319,24 +12325,28 @@
   dispatch:
     CPU: max_unpooling2d_forward_out_cpu
     CUDA: max_unpooling2d_forward_out_cuda
+    PrivateUse1: max_unpooling2d_forward_out_zoom
 
 - func: max_unpool2d(Tensor self, Tensor indices, SymInt[2] output_size) -> Tensor
   python_module: nn
   dispatch:
     CPU: max_unpooling2d_forward_cpu
     CUDA: max_unpooling2d_forward_cuda
+    PrivateUse1: max_unpooling2d_forward_zoom
 
 - func: max_unpool3d.out(Tensor self, Tensor indices, SymInt[3] output_size, int[3] stride, int[3] padding, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
   dispatch:
     CPU: max_unpooling3d_forward_out_cpu
     CUDA: max_unpooling3d_forward_out_cuda
+    PrivateUse1: max_unpooling3d_forward_out_zoom
 
 - func: max_unpool3d(Tensor self, Tensor indices, SymInt[3] output_size, int[3] stride, int[3] padding) -> Tensor
   python_module: nn
   dispatch:
     CPU: max_unpooling3d_forward_cpu
     CUDA: max_unpooling3d_forward_cuda
+    PrivateUse1: max_unpooling3d_forward_zoom
 
 - func: reflection_pad1d.out(Tensor self, SymInt[2] padding, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
