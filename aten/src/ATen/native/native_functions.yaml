@@ -1389,6 +1389,7 @@
   dispatch:
     CPU: cat_out_cpu
     CUDA: cat_out_cuda
+    PrivateUse1: cat_out_zoom
     MPS: cat_out_mps
     QuantizedCPU: cat_out_quantized_cpu
 
@@ -4773,6 +4774,7 @@
   dispatch:
     CPU: randperm_out_cpu
     CUDA: randperm_out_cuda
+    PrivateUse1: randperm_out_zoom
     MPS: randperm_out_mps
 
 - func: range.step(Scalar start, Scalar end, Scalar step=1, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
@@ -4906,7 +4908,7 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, Meta, QuantizedCPU, QuantizedCUDA, ZeroTensor, MPS: _reshape_alias
+    CPU, CUDA, PrivateUse1, Meta, QuantizedCPU, QuantizedCUDA, ZeroTensor, MPS: _reshape_alias
     # We don't need to support mkldnn since this is handled explicitly by the reshape operator.
 
 - func: _mkldnn_reshape(Tensor self, int[] shape) -> Tensor
@@ -10142,13 +10144,13 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, Meta, MPS: unfold
+    CPU, CUDA, PrivateUse1, Meta, MPS: unfold
     QuantizedCPU, QuantizedCUDA: unfold
 
 - func: unfold_backward(Tensor grad_in, SymInt[] input_sizes, int dim, int size, int step) -> Tensor
   variants: function
   dispatch:
-    CPU, CUDA: unfold_backward
+    CPU, CUDA, PrivateUse1: unfold_backward
   autogen: unfold_backward.out
 
 - func: equal(Tensor self, Tensor other) -> bool
