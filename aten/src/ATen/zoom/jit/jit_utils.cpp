@@ -13,7 +13,7 @@
 #include <ATen/OpMathType.h>
 #include <ATen/zoom/jit/jit_utils.h>
 #include <ATen/zoom/jit/llvm_jit_strings.h>
-// #include <ATen/native/cuda/reduction_template.cuh>
+#include <ATen/native/zoom/reduction_template.cuh>
 
 #include <sstream>
 #include <fstream>
@@ -1138,97 +1138,94 @@ std::string load_code_template(const std::string& path) {
   return s;
 }
 
-// TODO (Arham): add this back when doing reduction kernels, right now just getting a minimal jitter working
-// std::string generate_reduction_code(
-//     const KernelDescriptor &desc,
-//     int vt0,
-//     bool contiguous,
-//     bool vectorized,
-//     int vec_size,
-//     int max_threads_codegen) {
-//   TORCH_INTERNAL_ASSERT(desc.nInputs == 1);
-//   TORCH_INTERNAL_ASSERT(desc.extra_args_types.size() == 0);
+std::string generate_reduction_code(
+    const KernelDescriptor &desc,
+    int vt0,
+    bool contiguous,
+    bool vectorized,
+    int vec_size,
+    int max_threads_codegen) {
+  TORCH_INTERNAL_ASSERT(desc.nInputs == 1);
+  TORCH_INTERNAL_ASSERT(desc.extra_args_types.size() == 0);
 
-//   return generate_reduction_code(
-//       desc.nOutputs,
-//       desc.f,
-//       desc.name,
-//       vt0,
-//       typeName(desc.f_inputs_type),
-//       typeName(toOpMathType(desc.f_inputs_type)),
-//       typeName(desc.result_type),
-//       contiguous,
-//       vectorized,
-//       vec_size,
-//       max_threads_codegen
-//     );
-// }
+  return generate_reduction_code(
+      desc.nOutputs,
+      desc.f,
+      desc.name,
+      vt0,
+      typeName(desc.f_inputs_type),
+      typeName(toOpMathType(desc.f_inputs_type)),
+      typeName(desc.result_type),
+      contiguous,
+      vectorized,
+      vec_size,
+      max_threads_codegen
+    );
+}
 
-// std::string generate_reduction_code(
-//     int nOutputs,
-//     const std::string& func_,
-//     const std::string& name,
-//     const int vt0,
-//     const std::string& f_inputs_type,
-//     const std::string& reduction_accum_type,
-//     const std::string& result_type,
-//     bool contiguous,
-//     bool vectorized,
-//     int vec_size,
-//     int max_threads_codegen) {
-//       std::string func = func_;
-//       at::jit::TemplateEnv env;
-//       env.s("index_type", "unsigned int");
-//       env.s("scalar_type", f_inputs_type);
-//       env.s("result_type", result_type);
-//       env.s("reduction_accum_type", reduction_accum_type);
-//       env.s("vt0", std::to_string(vt0));
-//       env.s("name", name);
-//       env.s("max_threads_lb", std::to_string(max_threads_codegen));
-//       // reductions don't support dynamic casting, so the only way to get nonstandard types
-//       // is through input
-//       if (f_inputs_type == "at::Half" || f_inputs_type == "std::complex<at::Half>") {
-//         // complex<Half> depends on complex<T> and Half dtypes.
-//         env.s("half_string", jiterator_half_support_literal);
-//       } else {
-//         env.s("half_string", "");
-//       }
-//       if (f_inputs_type == "at::BFloat16") {
-//         env.s("bfloat16_string", jiterator_bfloat16_support_literal);
-//       } else {
-//         env.s("bfloat16_string", "");
-//       }
-//       if (f_inputs_type == "std::complex<float>" ||
-//           f_inputs_type == "std::complex<double>" ||
-//           f_inputs_type == "std::complex<at::Half>" ) {
-//         // complex<Half> depends on complex<T> and Half dtypes.
-//         env.s("traits_string", get_traits_string());
-//         env.s("complex_body_string", get_complex_body_string());
-//         env.s("complex_math_string", get_complex_math_string());
-//         env.s("complex", std::to_string(1));
-// #ifdef USE_ROCM
-//         // unhipify math functions, but only if std::complex is used.
-//         func = unhipify_math_functions(func);
-// #endif
-//       } else {
-//         env.s("traits_string", "");
-//         env.s("complex_body_string", "");
-//         env.s("complex_math_string", "");
-//         env.s("complex", std::to_string(0));
-//       }
-//       if (f_inputs_type == "std::complex<at::Half>") {
-//         env.s("complex_half_body_string", get_complex_half_body_string());
-//       } else {
-//         env.s("complex_half_body_string", "");
-//       }
-//       env.s("cmath_string", get_cmath_string());
-//       env.s("functor", func);
-//       env.s("output_vec_size", std::to_string(vec_size));
-//       static auto hip_template = at::jit::CodeTemplate(
-//         jit_preamble + jit_common_types + offset_calc_template + get_reduction_template() + jit_epilogue);
-//       const auto code = hip_template.format(env);
-//       return code;
-// }
+std::string generate_reduction_code(
+    int nOutputs,
+    const std::string& func_,
+    const std::string& name,
+    const int vt0,
+    const std::string& f_inputs_type,
+    const std::string& reduction_accum_type,
+    const std::string& result_type,
+    bool contiguous,
+    bool vectorized,
+    int vec_size,
+    int max_threads_codegen) {
+      std::string func = func_;
+      at::jit::TemplateEnv env;
+      env.s("index_type", "unsigned int");
+      env.s("scalar_type", f_inputs_type);
+      env.s("result_type", result_type);
+      env.s("reduction_accum_type", reduction_accum_type);
+      env.s("vt0", std::to_string(vt0));
+      env.s("name", name);
+      env.s("max_threads_lb", std::to_string(max_threads_codegen));
+      // reductions don't support dynamic casting, so the only way to get nonstandard types
+      // is through input
+      if (f_inputs_type == "at::Half" || f_inputs_type == "std::complex<at::Half>") {
+        // complex<Half> depends on complex<T> and Half dtypes.
+        env.s("half_string", jiterator_half_support_literal);
+      } else {
+        env.s("half_string", "");
+      }
+      if (f_inputs_type == "at::BFloat16") {
+        env.s("bfloat16_string", jiterator_bfloat16_support_literal);
+      } else {
+        env.s("bfloat16_string", "");
+      }
+      if (f_inputs_type == "std::complex<float>" ||
+          f_inputs_type == "std::complex<double>" ||
+          f_inputs_type == "std::complex<at::Half>" ) {
+        // complex<Half> depends on complex<T> and Half dtypes.
+        env.s("traits_string", get_traits_string());
+        env.s("complex_body_string", get_complex_body_string());
+        env.s("complex_math_string", get_complex_math_string());
+        env.s("complex", std::to_string(1));
+        // unhipify math functions, but only if std::complex is used.
+        func = unhipify_math_functions(func);
+      } else {
+        env.s("traits_string", "");
+        env.s("complex_body_string", "");
+        env.s("complex_math_string", "");
+        env.s("complex", std::to_string(0));
+      }
+      if (f_inputs_type == "std::complex<at::Half>") {
+        env.s("complex_half_body_string", get_complex_half_body_string());
+      } else {
+        env.s("complex_half_body_string", "");
+      }
+      env.s("cmath_string", get_cmath_string());
+      env.s("functor", func);
+      env.s("output_vec_size", std::to_string(vec_size));
+      static auto hip_template = at::jit::CodeTemplate(
+        jit_preamble + jit_common_types + offset_calc_template + get_reduction_template() + jit_epilogue);
+      const auto code = hip_template.format(env);
+      return code;
+}
 
 // Acquires (possibly creating) the kernel cache directory
 std::optional<std::string> get_cache_dir() {

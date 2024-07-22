@@ -708,14 +708,14 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: all_out
+    CPU, CUDA, PrivateUse1: all_out
     MPS: all_out_mps
 
 - func: all.dims_out(Tensor self, int[]? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: all_dims_out
+    CPU, CUDA, PrivateUse1: all_dims_out
     CompositeExplicitAutograd: all_dims_out_default
   cpp_no_default_args: ['dim']
 
@@ -751,14 +751,14 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: any_out
+    CPU, CUDA, PrivateUse1: any_out
     MPS: any_out_mps
 
 - func: any.dims_out(Tensor self, int[]? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: any_dims_out
+    CPU, CUDA, PrivateUse1: any_dims_out
     CompositeExplicitAutograd: any_dims_out_default
   cpp_no_default_args: ['dim']
 
@@ -817,7 +817,7 @@
 - func: argmax.out(Tensor self, int? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: argmax_out
+    CPU, CUDA, PrivateUse1: argmax_out
     MPS: argmax_out_mps
 
 - func: argmin(Tensor self, int? dim=None, bool keepdim=False) -> Tensor
@@ -829,7 +829,7 @@
 - func: argmin.out(Tensor self, int? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: argmin_out
+    CPU, CUDA, PrivateUse1: argmin_out
     MPS: argmin_out_mps
 
 - func: acosh(Tensor self) -> Tensor
@@ -3793,7 +3793,7 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: aminmax_out
+    CPU, CUDA, PrivateUse1: aminmax_out
     MPS: aminmax_out_mps
 
 - func: _compute_linear_combination(Tensor input, Tensor coefficients) -> Tensor
@@ -3818,7 +3818,7 @@
   precomputed:
   - dim -> int dim
   dispatch:
-    CPU, CUDA: max_out
+    CPU, CUDA, PrivateUse1: max_out
     MPS: max_out_mps
 
 - func: max.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -3843,7 +3843,7 @@
 - func: amax.out(Tensor self, int[1] dim=[], bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: amax_out
+    CPU, CUDA, PrivateUse1: amax_out
     MPS: amax_out_mps
 
 # Return: (Tensor output, Tensor indices)
@@ -3927,7 +3927,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: mean_out
+    CPU, CUDA, PrivateUse1: mean_out
     MPS: mean_out_mps
     QuantizedCPU: mean_out_quantized_cpu
 
@@ -4005,7 +4005,7 @@
   precomputed:
   - dim -> int dim
   dispatch:
-    CPU, CUDA: min_out
+    CPU, CUDA, PrivateUse1: min_out
     MPS: min_out_mps
 
 - func: min.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -4023,7 +4023,7 @@
 - func: amin.out(Tensor self, int[1] dim=[], bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: amin_out
+    CPU, CUDA, PrivateUse1: amin_out
     MPS: amin_out_mps
 
 # TODO: Add this function to MPS dispatch key so that we avoid declaring it in
@@ -5756,7 +5756,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: sum_out
+    CPU, CUDA, PrivateUse1: sum_out
     MPS: sum_out_mps
 
 - func: sum.DimnameList_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
@@ -5775,7 +5775,7 @@
 
 - func: nansum.out(Tensor self, int[1]? dim=None, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: nansum_out
+    CPU, CUDA, PrivateUse1: nansum_out
     MPS: nansum_out_mps
 
 - func: sum_to_size(Tensor self, SymInt[] size) -> Tensor
@@ -5859,7 +5859,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA: std_mean
+    CPU, CUDA, PrivateUse1: std_mean
     MPS: std_mean_mps
   autogen: std_mean.correction_out
 
@@ -5903,7 +5903,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: prod
+    CPU, CUDA, PrivateUse1: prod
     MPS: prod_mps
   autogen: prod.out
   tags: core
@@ -5918,7 +5918,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: prod_out
+    CPU, CUDA, PrivateUse1: prod_out
     MPS: prod_out_mps
 
 - func: prod.dim_Dimname(Tensor self, Dimname dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
@@ -6433,7 +6433,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA: var_mean
+    CPU, CUDA, PrivateUse1: var_mean
     MPS: var_mean_mps
   autogen: var_mean.correction_out
 
@@ -9902,14 +9902,14 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: min
+    CPU, CUDA, PrivateUse1: min
     MPS: min_mps
     QuantizedCPU: min_quantized_cpu
 
 - func: min.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: min_unary_out
+    CPU, CUDA, PrivateUse1: min_unary_out
     QuantizedCPU: min_quantized_unary_out
 
 - func: fmin(Tensor self, Tensor other) -> Tensor
@@ -9930,7 +9930,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: max
+    CPU, CUDA, PrivateUse1: max
     MPS: max_mps
     QuantizedCPU: max_quantized_cpu
 
@@ -9977,7 +9977,7 @@
 - func: max.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: max_unary_out
+    CPU, CUDA, PrivateUse1: max_unary_out
     QuantizedCPU: max_quantized_unary_out
 
 - func: minimum(Tensor self, Tensor other) -> Tensor
@@ -10102,7 +10102,7 @@
   device_check: NoCheck
   structured: True
   dispatch:
-    CPU, CUDA: all_all_out
+    CPU, CUDA, PrivateUse1: all_all_out
     MPS: all_all_out_mps
 
 - func: any(Tensor self) -> Tensor
@@ -10117,7 +10117,7 @@
   device_check: NoCheck
   structured: True
   dispatch:
-    CPU, CUDA: any_all_out
+    CPU, CUDA, PrivateUse1: any_all_out
     MPS: any_all_out_mps
 
 - func: renorm.out(Tensor self, Scalar p, int dim, Scalar maxnorm, *, Tensor(a!) out) -> Tensor(a!)
@@ -14088,7 +14088,7 @@
   python_module: linalg
   structured: True
   dispatch:
-    CPU, CUDA: linalg_vector_norm_out
+    CPU, CUDA, PrivateUse1: linalg_vector_norm_out
     MPS: linalg_vector_norm_out_mps
 
 - func: linalg_matrix_norm(Tensor self, Scalar ord, int[] dim=[-2,-1], bool keepdim=False, *, ScalarType? dtype=None) -> Tensor

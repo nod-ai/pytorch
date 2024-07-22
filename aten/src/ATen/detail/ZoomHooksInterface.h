@@ -122,12 +122,6 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
 
 // NB: dummy argument to suppress "ISO C++11 requires at least one argument
 // for the "..." in a variadic macro"
-// struct TORCH_API CUDAHooksArgs {};
-
-// TORCH_DECLARE_REGISTRY(CUDAHooksRegistry, ZoomHooksInterface, CUDAHooksArgs);
-// #define REGISTER_CUDA_HOOKS(clsname) \
-//   C10_REGISTER_CLASS(CUDAHooksRegistry, clsname, clsname)
-
 struct TORCH_API ZoomHooksArgs {};
 
 TORCH_DECLARE_REGISTRY(PrivateUse1HooksRegistry, ZoomHooksInterface, ZoomHooksArgs);

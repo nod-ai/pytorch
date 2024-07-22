@@ -81,7 +81,7 @@ class ZoomError : public c10::Error {
 //         launch_registry.get_uvm_assertions_ptr_for_current_device(),  \
 //         launch_registry.insert(                                       \
 //             __FILE__, __FUNCTION__, __LINE__, #kernel, stream.id())); \
-//     C10_CUDA_KERNEL_LAUNCH_CHECK();                                   \
+//     C10_ZOOM_KERNEL_LAUNCH_CHECK();                                   \
 //   } while (0)
 
 #define HIP_DRIVER_CHECK(EXPR)                                                \

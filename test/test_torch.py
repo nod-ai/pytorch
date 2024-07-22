@@ -3919,7 +3919,8 @@ else:
         # in order to avoid synchronization, but this means
         # we can not clear the failures. So there is no way
         # to test it then recover.
-        if self.device_type != 'cuda':
+        # TODO(Arham): Zoom also checks for errors inside a kernel, replace this with zoom key later
+        if self.device_type != 'cuda' and self.device_type != 'privateuseone':
             # make src smaller. this should fail
             src = torch.zeros(num_copy - 1, dtype=dt, device=device)
             with self.assertRaises(RuntimeError):
