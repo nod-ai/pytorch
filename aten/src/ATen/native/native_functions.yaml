@@ -5034,14 +5034,14 @@
 
 - func: _prelu_kernel(Tensor self, Tensor weight) -> Tensor
   dispatch:
-    CPU, CUDA: _prelu_kernel
+    CPU, CUDA, PrivateUse1: _prelu_kernel
     QuantizedCPU: _prelu_kernel_quantized_cpu
     MkldnnCPU: mkldnn_prelu
     MPS: prelu_mps
 
 - func: _prelu_kernel_backward(Tensor grad_output, Tensor self, Tensor weight) -> (Tensor, Tensor)
   dispatch:
-    CPU, CUDA: _prelu_kernel_backward
+    CPU, CUDA, PrivateUse1: _prelu_kernel_backward
     MkldnnCPU: mkldnn_prelu_backward
     MPS: prelu_backward_mps
 
@@ -5053,6 +5053,7 @@
   dispatch:
     CPU: gelu_out_cpu
     CUDA: gelu_out_cuda
+    PrivateUse1: gelu_out_zoom
     MPS: gelu_out_mps
 
 - func: gelu_(Tensor(a!) self, *, str approximate='none') -> Tensor(a!)
@@ -5081,6 +5082,7 @@
   dispatch:
     CPU: gelu_backward_out_cpu
     CUDA: gelu_backward_out_cuda
+    PrivateUse1: gelu_backward_out_zoom
     MPS: gelu_backward_out_mps
 
 - func: gelu_backward(Tensor grad_output, Tensor self, *, str approximate='none') -> Tensor
@@ -5102,7 +5104,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: hardshrink_out
+    CPU, CUDA, PrivateUse1: hardshrink_out
 
 - func: hardshrink(Tensor self, Scalar lambd=0.5) -> Tensor
   structured_delegate: hardshrink.out
@@ -5206,7 +5208,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: silu_out
+    CPU, CUDA, PrivateUse1: silu_out
     MPS: silu_out_mps
   tags: pointwise
 
@@ -5215,7 +5217,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: silu_backward_out
+    CPU, CUDA, PrivateUse1: silu_backward_out
     MPS: silu_backward_out_mps
   tags: pointwise
 
@@ -5240,13 +5242,13 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: mish_out
+    CPU, CUDA, PrivateUse1: mish_out
     MPS: mish_out_mps
 
 - func: mish_backward(Tensor grad_output, Tensor self) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: mish_backward
+    CPU, CUDA, PrivateUse1: mish_backward
     MPS: mish_backward_mps
     CompositeImplicitAutograd: math_mish_backward
 
@@ -6040,14 +6042,14 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: threshold_out
+    CPU, CUDA, PrivateUse1: threshold_out
     MPS: threshold_out_mps
 
 - func: threshold_backward.grad_input(Tensor grad_output, Tensor self, Scalar threshold, *, Tensor(a!) grad_input) -> Tensor(a!)
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: threshold_backward_out
+    CPU, CUDA, PrivateUse1: threshold_backward_out
     MPS: threshold_backward_out_mps
     SparseCPU, SparseCUDA: threshold_backward_sparse_out
     SparseCsrCPU, SparseCsrCUDA: threshold_backward_sparse_compressed_out
@@ -11846,7 +11848,7 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: elu_out
+    CPU, CUDA, PrivateUse1: elu_out
     MPS: elu_out_mps
 
 - func: elu(Tensor self, Scalar alpha=1, Scalar scale=1, Scalar input_scale=1) -> Tensor
@@ -11859,7 +11861,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: elu_backward_out
+    CPU, CUDA, PrivateUse1: elu_backward_out
     MPS: elu_backward_out_mps
 
 - func: elu_backward(Tensor grad_output, Scalar alpha, Scalar scale, Scalar input_scale, bool is_result, Tensor self_or_result) -> Tensor
@@ -11876,7 +11878,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: glu_out
+    CPU, CUDA, PrivateUse1: glu_out
     MPS: glu_out_mps
 
 - func: glu(Tensor self, int dim=-1) -> Tensor
@@ -11889,6 +11891,7 @@
   dispatch:
     CPU: glu_backward_cpu_out
     CUDA: glu_backward_cuda_out
+    PrivateUse1: glu_backward_zoom_out
     MPS: glu_backward_mps_out
 
 - func: glu_backward(Tensor grad_output, Tensor self, int dim) -> Tensor
@@ -11896,12 +11899,13 @@
   dispatch:
     CPU: glu_backward_cpu
     CUDA: glu_backward_cuda
+    PrivateUse1: glu_backward_zoom
     MPS: glu_backward_mps
 
 - func: glu_jvp(Tensor glu, Tensor x, Tensor dx, int dim) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: glu_jvp
+    CPU, CUDA, PrivateUse1: glu_jvp
   autogen: glu_jvp.out
 
 - func: glu_backward_jvp(Tensor grad_x, Tensor grad_glu, Tensor x, Tensor dgrad_glu, Tensor dx, int dim) -> Tensor
@@ -11916,7 +11920,7 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: hardsigmoid_out
+    CPU, CUDA, PrivateUse1: hardsigmoid_out
     MPS: hardsigmoid_out_mps
     QuantizedCPU: hardsigmoid_out_quantized_cpu
 
@@ -11937,7 +11941,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: hardsigmoid_backward_out
+    CPU, CUDA, PrivateUse1: hardsigmoid_backward_out
     MPS: hardsigmoid_backward_out_mps
 
 - func: hardsigmoid_backward(Tensor grad_output, Tensor self) -> Tensor
@@ -11962,13 +11966,13 @@
 - func: hardtanh_backward.grad_input(Tensor grad_output, Tensor self, Scalar min_val, Scalar max_val, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
   dispatch:
-    CPU, CUDA: hardtanh_backward_out
+    CPU, CUDA, PrivateUse1: hardtanh_backward_out
     MPS: hardtanh_backward_out_mps
 
 - func: hardtanh_backward(Tensor grad_output, Tensor self, Scalar min_val, Scalar max_val) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: hardtanh_backward
+    CPU, CUDA, PrivateUse1: hardtanh_backward
     MPS: hardtanh_backward_mps
 
 - func: hardtanh_(Tensor(a!) self, Scalar min_val=-1, Scalar max_val=1) -> Tensor(a!)
@@ -11982,27 +11986,27 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: hardswish_out
+    CPU, CUDA, PrivateUse1: hardswish_out
     MPS: hardswish_out_mps
 
 - func: hardswish(Tensor self) -> Tensor
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: hardswish
+    CPU, CUDA, PrivateUse1: hardswish
     MPS: hardswish_mps
 
 - func: hardswish_(Tensor(a!) self) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: hardswish_
+    CPU, CUDA, PrivateUse1: hardswish_
     MPS: hardswish_mps_
 
 - func: hardswish_backward(Tensor grad_output, Tensor self) -> Tensor
   python_module: nn
   dispatch:
-    CPU, CUDA: hardswish_backward
+    CPU, CUDA, PrivateUse1: hardswish_backward
     MPS: hardswish_backward_mps
   autogen: hardswish_backward.out
 
@@ -12012,7 +12016,7 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: leaky_relu_out
+    CPU, CUDA, PrivateUse1: leaky_relu_out
     MPS: leaky_relu_out_mps
     QuantizedCPU: leaky_relu_out_quantized_cpu
 
@@ -12029,7 +12033,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: leaky_relu_backward_out
+    CPU, CUDA, PrivateUse1: leaky_relu_backward_out
     MPS: leaky_relu_backward_out_mps
 
 - func: leaky_relu_backward(Tensor grad_output, Tensor self, Scalar negative_slope, bool self_is_result) -> Tensor
@@ -12057,6 +12061,7 @@
   dispatch:
     CPU: log_sigmoid_forward_out_cpu
     CUDA: log_sigmoid_forward_out_cuda
+    PrivateUse1: log_sigmoid_forward_out_zoom
     MPS: log_sigmoid_forward_out_mps
 
 - func: log_sigmoid_forward(Tensor self) -> (Tensor output, Tensor buffer)
@@ -12065,6 +12070,7 @@
   dispatch:
     CPU: log_sigmoid_forward_cpu
     CUDA: log_sigmoid_forward_cuda
+    PrivateUse1: log_sigmoid_forward_zoom
     MPS: log_sigmoid_forward_mps
 
 - func: log_sigmoid_backward.grad_input(Tensor grad_output, Tensor self, Tensor buffer, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -12072,6 +12078,7 @@
   dispatch:
     CPU: log_sigmoid_backward_cpu_out
     CUDA: log_sigmoid_backward_cuda_out
+    PrivateUse1: log_sigmoid_backward_zoom_out
     MPS: log_sigmoid_backward_mps_out
 
 - func: log_sigmoid_backward(Tensor grad_output, Tensor self, Tensor buffer) -> Tensor
@@ -12079,6 +12086,7 @@
   dispatch:
     CPU: log_sigmoid_backward_cpu
     CUDA: log_sigmoid_backward_cuda
+    PrivateUse1: log_sigmoid_backward_zoom
     MPS: log_sigmoid_backward_mps
 
 - func: rrelu_with_noise.out(Tensor self, Tensor noise, Scalar lower=0.125, Scalar upper=0.3333333333333333, bool training=False, Generator? generator=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -12114,7 +12122,7 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: softplus_out
+    CPU, CUDA, PrivateUse1: softplus_out
     MPS: softplus_out_mps
 
 - func: softplus(Tensor self, Scalar beta=1, Scalar threshold=20) -> Tensor
@@ -12127,7 +12135,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: softplus_backward_out
+    CPU, CUDA, PrivateUse1: softplus_backward_out
     MPS: softplus_backward_out_mps
 
 - func: softplus_backward(Tensor grad_output, Tensor self, Scalar beta, Scalar threshold) -> Tensor
@@ -12140,7 +12148,7 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA: softshrink_out
+    CPU, CUDA, PrivateUse1: softshrink_out
     MPS: softshrink_out_mps
 
 - func: softshrink(Tensor self, Scalar lambd=0.5) -> Tensor
@@ -12153,7 +12161,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: softshrink_backward_out
+    CPU, CUDA, PrivateUse1: softshrink_backward_out
     MPS: softshrink_backward_out_mps
 
 - func: softshrink_backward(Tensor grad_output, Tensor self, Scalar lambd) -> Tensor

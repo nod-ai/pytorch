@@ -787,6 +787,18 @@ Tensor log_sigmoid_backward_cuda(const Tensor& grad_output, const Tensor& input,
   return iter.output();
 }
 
+Tensor log_sigmoid_backward_zoom(const Tensor& grad_output, const Tensor& input, const Tensor& buffer) {
+  auto grad_input = at::empty_like(grad_output);
+  // NOTE: buffer is only used by CPU dispatch, we just ignore it here
+  auto iter = at::TensorIteratorConfig()
+      .add_output(grad_input)
+      .add_const_input(input)
+      .add_const_input(grad_output)
+      .build();
+  log_sigmoid_backward_stub(kPrivateUse1, iter);
+  return iter.output();
+}
+
 Tensor log_sigmoid_backward_cpu(const Tensor& grad_output, const Tensor& input, const Tensor& buffer) {
   auto grad_input = at::empty_like(grad_output);
   auto iter = at::TensorIteratorConfig()
@@ -807,6 +819,17 @@ Tensor& log_sigmoid_backward_cuda_out(const Tensor& grad_output, const Tensor& i
       .add_const_input(grad_output)
       .build();
   log_sigmoid_backward_stub(kCUDA, iter);
+  return grad_input;
+}
+
+Tensor& log_sigmoid_backward_zoom_out(const Tensor& grad_output, const Tensor& input,
+                                      const Tensor& buffer, Tensor& grad_input) {
+  auto iter = TensorIteratorConfig()
+      .add_output(grad_input)
+      .add_const_input(input)
+      .add_const_input(grad_output)
+      .build();
+  log_sigmoid_backward_stub(kPrivateUse1, iter);
   return grad_input;
 }
 
