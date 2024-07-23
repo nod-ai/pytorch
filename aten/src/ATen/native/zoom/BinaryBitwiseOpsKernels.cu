@@ -73,9 +73,9 @@ void bitwise_xor_kernel_zoom(TensorIteratorBase& iter) {
   });
 }
 
-REGISTER_DISPATCH(bitwise_and_stub, &bitwise_and_kernel_zoom);
-REGISTER_DISPATCH(bitwise_or_stub, &bitwise_or_kernel_zoom);
-REGISTER_DISPATCH(bitwise_xor_stub, &bitwise_xor_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(bitwise_and_stub, &bitwise_and_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(bitwise_or_stub, &bitwise_or_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(bitwise_xor_stub, &bitwise_xor_kernel_zoom);
 
 
 } // namespace at::native

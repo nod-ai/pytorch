@@ -120,9 +120,9 @@ void logical_xor_kernel_zoom(TensorIterator& iter) {
   }
 }
 
-REGISTER_DISPATCH(logical_and_stub, &logical_and_kernel_zoom);
-REGISTER_DISPATCH(logical_or_stub, &logical_or_kernel_zoom);
-REGISTER_DISPATCH(logical_xor_stub, &logical_xor_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(logical_and_stub, &logical_and_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(logical_or_stub, &logical_or_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(logical_xor_stub, &logical_xor_kernel_zoom);
 
 
 } // namespace at::native

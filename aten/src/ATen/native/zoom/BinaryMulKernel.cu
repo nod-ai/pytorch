@@ -43,6 +43,6 @@ void mul_kernel_zoom(TensorIteratorBase& iter) {
   }
 }
 
-REGISTER_DISPATCH(mul_stub, &mul_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(mul_stub, &mul_kernel_zoom);
 
 } // namespace at::native

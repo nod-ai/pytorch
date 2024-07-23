@@ -33,7 +33,7 @@ void hypot_kernel_zoom(TensorIteratorBase& iter) {
       });
 }
 
-REGISTER_DISPATCH(atan2_stub, &atan2_kernel_zoom);
-REGISTER_DISPATCH(hypot_stub, &hypot_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(atan2_stub, &atan2_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(hypot_stub, &hypot_kernel_zoom);
 
 } // namespace at::native

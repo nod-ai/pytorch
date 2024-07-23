@@ -48,6 +48,6 @@ void div_trunc_kernel_zoom(TensorIteratorBase& iter) {
 }
 } // namespace binary_internal
 
-REGISTER_DISPATCH(div_trunc_stub, &binary_internal::div_trunc_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(div_trunc_stub, &binary_internal::div_trunc_kernel_zoom);
 
 } // namespace at::native

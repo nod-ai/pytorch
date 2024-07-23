@@ -55,7 +55,7 @@ void fmod_kernel_zoom(TensorIteratorBase& iter) {
   }
 }
 
-REGISTER_DISPATCH(remainder_stub, &remainder_kernel_zoom);
-REGISTER_DISPATCH(fmod_stub, &fmod_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(remainder_stub, &remainder_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(fmod_stub, &fmod_kernel_zoom);
 
 } // namespace at::native

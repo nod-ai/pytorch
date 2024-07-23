@@ -69,11 +69,11 @@ void xlog1py_kernel_zoom(TensorIteratorBase& iter) {
   });
 }
 
-REGISTER_DISPATCH(smooth_l1_stub, &smooth_l1_kernel_zoom);
-REGISTER_DISPATCH(huber_stub, &huber_kernel_zoom);
-REGISTER_DISPATCH(mse_stub, &mse_kernel_zoom);
-REGISTER_DISPATCH(xlogy_stub, &xlogy_kernel_zoom);
-REGISTER_DISPATCH(xlog1py_stub, &xlog1py_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(smooth_l1_stub, &smooth_l1_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(huber_stub, &huber_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(mse_stub, &mse_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(xlogy_stub, &xlogy_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(xlog1py_stub, &xlog1py_kernel_zoom);
 
 // DO NOT ADD ANY NEW KERNELS HERE
 // CUDA compilation times grow quickly.  It's perfectly acceptable to have a file per kernel.

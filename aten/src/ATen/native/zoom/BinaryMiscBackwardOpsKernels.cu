@@ -124,8 +124,8 @@ void tanh_backward_kernel_zoom(TensorIteratorBase& iter) {
   }
 }
 
-REGISTER_DISPATCH(sigmoid_backward_stub, &sigmoid_backward_kernel_zoom);
-REGISTER_DISPATCH(logit_backward_stub, &logit_backward_kernel_zoom);
-REGISTER_DISPATCH(tanh_backward_stub, &tanh_backward_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(sigmoid_backward_stub, &sigmoid_backward_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(logit_backward_stub, &logit_backward_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(tanh_backward_stub, &tanh_backward_kernel_zoom);
 
 } // namespace at::native

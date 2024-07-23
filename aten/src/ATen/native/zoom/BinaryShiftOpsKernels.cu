@@ -38,7 +38,7 @@ void rshift_kernel_zoom(TensorIteratorBase& iter) {
   });
 }
 
-REGISTER_DISPATCH(lshift_stub, &lshift_kernel_zoom);
-REGISTER_DISPATCH(rshift_stub, &rshift_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(lshift_stub, &lshift_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(rshift_stub, &rshift_kernel_zoom);
 
 } // namespace at::native
