@@ -10345,6 +10345,7 @@
   variants: function
   dispatch:
     CUDA: _amp_foreach_non_finite_check_and_unscale_cuda_
+    PrivateUse1: _amp_foreach_non_finite_check_and_unscale_zoom_
     CPU: _amp_foreach_non_finite_check_and_unscale_cpu_
   autogen: _amp_foreach_non_finite_check_and_unscale, _amp_foreach_non_finite_check_and_unscale.out
 
@@ -10352,6 +10353,7 @@
   variants: function
   dispatch:
     CUDA: _amp_update_scale_cuda_
+    PrivateUse1: _amp_update_scale_zoom_
     CPU: _amp_update_scale_cpu_
   autogen: _amp_update_scale, _amp_update_scale.out
 
@@ -12173,6 +12175,7 @@
   dispatch:
     CPU: adaptive_avg_pool2d_out_cpu
     CUDA: adaptive_avg_pool2d_out_cuda
+    PrivateUse1: adaptive_avg_pool2d_out_zoom
     MPS: adaptive_avg_pool2d_out_mps
     MkldnnCPU: mkldnn_adaptive_avg_pool2d_out_stub
 
@@ -12198,6 +12201,7 @@
   dispatch:
     CPU: adaptive_avg_pool2d_cpu
     CUDA: adaptive_avg_pool2d_cuda
+    PrivateUse1: adaptive_avg_pool2d_zoom
     MPS: adaptive_avg_pool2d_mps
     QuantizedCPU: adaptive_avg_pool2d_quantized_cpu
     QuantizedCUDA: adaptive_avg_pool2d_quantized_cuda
@@ -12209,6 +12213,7 @@
   dispatch:
     CPU: adaptive_avg_pool2d_backward_cpu
     CUDA: adaptive_avg_pool2d_backward_cuda
+    PrivateUse1: adaptive_avg_pool2d_backward_zoom
     MPS: adaptive_avg_pool2d_backward_mps
   autogen: _adaptive_avg_pool2d_backward.out
   tags: core
@@ -12218,6 +12223,7 @@
   dispatch:
     CPU: adaptive_avg_pool3d_out_cpu
     CUDA: adaptive_avg_pool3d_out_cuda
+    PrivateUse1: adaptive_avg_pool3d_out_zoom
     QuantizedCPU: adaptive_avg_pool3d_out_quantized_cpu
 
 - func: adaptive_avg_pool3d(Tensor self, SymInt[3] output_size) -> Tensor
@@ -12229,6 +12235,7 @@
   dispatch:
     CPU: adaptive_avg_pool3d_cpu
     CUDA: adaptive_avg_pool3d_cuda
+    PrivateUse1: adaptive_avg_pool3d_zoom
     QuantizedCPU: adaptive_avg_pool3d_quantized_cpu
   autogen: _adaptive_avg_pool3d.out
   tags: core
@@ -12238,12 +12245,14 @@
   dispatch:
     CPU: adaptive_avg_pool3d_backward_out_cpu
     CUDA: adaptive_avg_pool3d_backward_out_cuda
+    PrivateUse1: adaptive_avg_pool3d_backward_out_zoom
 
 - func: _adaptive_avg_pool3d_backward(Tensor grad_output, Tensor self) -> Tensor
   python_module: nn
   dispatch:
     CPU: adaptive_avg_pool3d_backward_cpu
     CUDA: adaptive_avg_pool3d_backward_cuda
+    PrivateUse1: adaptive_avg_pool3d_backward_zoom
   autogen: _adaptive_avg_pool3d_backward.out
 
 # Return: (Tensor output, Tensor indices)
@@ -12253,6 +12262,7 @@
   dispatch:
     CPU: adaptive_max_pool2d_out_cpu
     CUDA: adaptive_max_pool2d_out_cuda
+    PrivateUse1: adaptive_max_pool2d_out_zoom
     MPS: adaptive_max_pool2d_out_mps
 
 # Return: (Tensor output, Tensor indices)
@@ -12266,6 +12276,7 @@
   dispatch:
     CPU: adaptive_max_pool2d_backward_out_cpu
     CUDA: adaptive_max_pool2d_backward_out_cuda
+    PrivateUse1: adaptive_max_pool2d_backward_out_zoom
     MPS: adaptive_max_pool2d_backward_out_mps
 
 - func: adaptive_max_pool2d_backward(Tensor grad_output, Tensor self, Tensor indices) -> Tensor
@@ -12279,6 +12290,7 @@
   dispatch:
     CPU: adaptive_max_pool3d_out_cpu
     CUDA: adaptive_max_pool3d_out_cuda
+    PrivateUse1: adaptive_max_pool3d_out_zoom
 
 # Return: (Tensor output, Tensor indices)
 - func: adaptive_max_pool3d(Tensor self, int[3] output_size) -> (Tensor, Tensor)
@@ -12291,6 +12303,7 @@
   dispatch:
     CPU: adaptive_max_pool3d_backward_out_cpu
     CUDA: adaptive_max_pool3d_backward_out_cuda
+    PrivateUse1: adaptive_max_pool3d_backward_out_zoom
 
 - func: adaptive_max_pool3d_backward(Tensor grad_output, Tensor self, Tensor indices) -> Tensor
   python_module: nn
@@ -12306,6 +12319,7 @@
   dispatch:
     CPU: avg_pool2d_out_cpu
     CUDA: avg_pool2d_out_cuda
+    PrivateUse1: avg_pool2d_out_zoom
     MPS: avg_pool2d_out_mps
     MkldnnCPU: mkldnn_avg_pool2d_out
 
@@ -12323,6 +12337,7 @@
   dispatch:
     CPU: avg_pool2d_backward_out_cpu
     CUDA: avg_pool2d_backward_out_cuda
+    PrivateUse1: avg_pool2d_backward_out_zoom
     MPS: avg_pool2d_backward_out_mps
     MkldnnCPU: mkldnn_avg_pool2d_backward_out
 
@@ -12339,6 +12354,7 @@
   dispatch:
     CPU: avg_pool3d_out_cpu
     CUDA: avg_pool3d_out_cuda
+    PrivateUse1: avg_pool3d_out_zoom
     MkldnnCPU: mkldnn_avg_pool3d_out
 
 - func: avg_pool3d(Tensor self, int[3] kernel_size, int[3] stride=[], int[3] padding=0, bool ceil_mode=False, bool count_include_pad=True, int? divisor_override=None) -> Tensor
@@ -12355,6 +12371,7 @@
   dispatch:
     CPU: avg_pool3d_backward_out_cpu
     CUDA: avg_pool3d_backward_out_cuda
+    PrivateUse1: avg_pool3d_backward_out_zoom
     MkldnnCPU: mkldnn_avg_pool3d_backward_out
 
 - func: avg_pool3d_backward(Tensor grad_output, Tensor self, int[3] kernel_size, int[3] stride, int[3] padding, bool ceil_mode, bool count_include_pad, int? divisor_override) -> Tensor
@@ -14970,7 +14987,7 @@
 
 - func: special_airy_ai.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_airy_ai_out
+    CPU, CUDA, PrivateUse1: special_airy_ai_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
