@@ -329,6 +329,7 @@ def compute_ufunc_zoom(g: NativeFunctionsGroup) -> str:
     # Next, build the conditionals
     sig = StructuredImplSignature(g, ufunc.kernel_name(g, DispatchKey.PrivateUse1))
     dtype_cases = []
+    # TODO(Arham): replace REGISTER_PRIVATEUSE1_DISPATCH below and dispatch key above
     for dtype, inner_ufunc_sigs in ufunctor_sigs.items():
         dtype_cases.append(
             f"""
@@ -355,7 +356,7 @@ AT_DISPATCH_CASE(at::ScalarType::{dtype},
     {dtype_cases_str}
   );
 }}
-REGISTER_DISPATCH({stub_sig.name}, &{stub_sig.kernel_name});
+REGISTER_PRIVATEUSE1_DISPATCH({stub_sig.name}, &{stub_sig.kernel_name});
 
 {sig.defn()} {{
   {stub_sig.direct_call(sig.arguments())};
