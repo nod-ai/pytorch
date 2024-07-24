@@ -38,5 +38,5 @@ void bessel_j1_kernel_zoom(TensorIteratorBase& iterator) {
 
 } // anonymous namespace
 
-REGISTER_DISPATCH(special_bessel_j1_stub, &bessel_j1_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(special_bessel_j1_stub, &bessel_j1_kernel_zoom);
 } // namespace at::native

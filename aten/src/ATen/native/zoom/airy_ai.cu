@@ -38,5 +38,5 @@ void airy_ai_kernel_zoom(TensorIteratorBase& iterator) {
 
 } // anonymous namespace
 
-REGISTER_DISPATCH(special_airy_ai_stub, &airy_ai_kernel_zoom);
+REGISTER_PRIVATEUSE1_DISPATCH(special_airy_ai_stub, &airy_ai_kernel_zoom);
 } // namespace at::native

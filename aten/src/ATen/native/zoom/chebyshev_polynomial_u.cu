@@ -27,5 +27,5 @@ namespace at::native {
             } // chebyshev_polynomial_u_kernel_zoom
         } // namespace (anonymous)
 
-        REGISTER_DISPATCH(chebyshev_polynomial_u_stub, &chebyshev_polynomial_u_kernel_zoom);
+        REGISTER_PRIVATEUSE1_DISPATCH(chebyshev_polynomial_u_stub, &chebyshev_polynomial_u_kernel_zoom);
 } // namespace at::native
