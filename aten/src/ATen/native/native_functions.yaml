@@ -271,6 +271,7 @@
   variants: function
   dispatch:
     CUDA: fused_dropout_cuda
+    PrivateUse1: fused_dropout_zoom
   tags: nondeterministic_seeded
   autogen: _fused_dropout.out
 
@@ -278,6 +279,7 @@
   variants: function
   dispatch:
     CUDA: masked_scale_cuda
+    PrivateUse1: masked_scale_zoom
   autogen: _masked_scale.out
 
 - func: native_dropout(Tensor input, float p, bool? train) -> (Tensor, Tensor)
@@ -285,6 +287,7 @@
   dispatch:
     CPU: native_dropout_cpu
     CUDA: native_dropout_cuda
+    PrivateUse1: native_dropout_zoom
     NestedTensorCPU, NestedTensorCUDA: native_dropout_nested
   tags: [nondeterministic_seeded, core]
   autogen: native_dropout.out
@@ -293,6 +296,7 @@
   dispatch:
     CPU, NestedTensorCPU, NestedTensorCUDA: native_dropout_backward
     CUDA: native_dropout_backward_cuda
+    PrivateUse1: native_dropout_backward_zoom
   autogen: native_dropout_backward.out
   tags: pointwise
 
@@ -2293,6 +2297,7 @@
   dispatch:
     CPU: embedding_dense_backward_cpu
     CUDA: embedding_dense_backward_cuda
+    PrivateUse1: embedding_dense_backward_zoom
     MPS: embedding_dense_backward_mps
   autogen: embedding_dense_backward.out
   tags: core
@@ -2301,6 +2306,7 @@
   dispatch:
     CPU: embedding_renorm_cpu_
     CUDA: embedding_renorm_cuda_
+    PrivateUse1: embedding_renorm_zoom_
   autogen: embedding_renorm, embedding_renorm.out
 
 - func: embedding_sparse_backward(Tensor grad, Tensor indices, int num_weights, int padding_idx, bool scale_grad_by_freq) -> Tensor
@@ -2319,6 +2325,7 @@
   dispatch:
     CPU: _embedding_bag_forward_only_cpu
     CUDA: _embedding_bag_forward_only_cuda
+    PrivateUse1: _embedding_bag_forward_only_zoom
   autogen: _embedding_bag_forward_only.out
 
 - func: _rowwise_prune(Tensor weight, Tensor mask, ScalarType compressed_indices_dtype) -> (Tensor, Tensor)
@@ -2340,6 +2347,7 @@
   dispatch:
     CPU: _embedding_bag_cpu
     CUDA: _embedding_bag_cuda
+    PrivateUse1: _embedding_bag_zoom
   autogen: _embedding_bag.out
   tags: core
 
@@ -2355,12 +2363,14 @@
   dispatch:
     CPU: _embedding_bag_dense_backward_cpu
     CUDA: _embedding_bag_dense_backward_cuda
+    PrivateUse1: _embedding_bag_dense_backward_zoom
   autogen: _embedding_bag_dense_backward.out
 
 - func: _embedding_bag_per_sample_weights_backward(Tensor grad, Tensor weight, Tensor indices, Tensor offsets, Tensor offset2bag, int mode, int padding_idx=-1) -> Tensor
   dispatch:
     CPU: _embedding_bag_per_sample_weights_backward_cpu
     CUDA: _embedding_bag_per_sample_weights_backward_cuda
+    PrivateUse1: _embedding_bag_per_sample_weights_backward_zoom
   autogen: _embedding_bag_per_sample_weights_backward.out
 
 - func: empty.names(int[] size, *, Dimname[]? names, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None, MemoryFormat? memory_format=None) -> Tensor
@@ -12447,6 +12457,7 @@
   dispatch:
     CPU: max_pool2d_with_indices_out_cpu
     CUDA: max_pool2d_with_indices_out_cuda
+    PrivateUse1: max_pool2d_with_indices_out_zoom
     MPS: max_pool2d_with_indices_out_mps
 
 # Return: (Tensor output, Tensor indices)
@@ -12461,6 +12472,7 @@
   dispatch:
     CPU: max_pool2d_with_indices_backward_out_cpu
     CUDA: max_pool2d_with_indices_backward_out_cuda
+    PrivateUse1: max_pool2d_with_indices_backward_out_zoom
     MPS: max_pool2d_with_indices_backward_out_mps
 
 - func: max_pool2d_with_indices_backward(Tensor grad_output, Tensor self, int[2] kernel_size, int[2] stride, int[2] padding, int[2] dilation, bool ceil_mode, Tensor indices) -> Tensor
@@ -12474,6 +12486,7 @@
   dispatch:
     CPU: max_pool3d_with_indices_out_cpu
     CUDA: max_pool3d_with_indices_out_cuda
+    PrivateUse1: max_pool3d_with_indices_out_zoom
 
 # Return: (Tensor output, Tensor indices)
 - func: max_pool3d_with_indices(Tensor self, int[3] kernel_size, int[3] stride=[], int[3] padding=0, int[3] dilation=1, bool ceil_mode=False) -> (Tensor, Tensor)
@@ -12481,6 +12494,7 @@
   dispatch:
     CPU: max_pool3d_with_indices_cpu
     CUDA: max_pool3d_with_indices_cuda
+    PrivateUse1: max_pool3d_with_indices_zoom
   tags: core
 
 - func: max_pool3d_with_indices_backward.grad_input(Tensor grad_output, Tensor self, int[3] kernel_size, int[3] stride, int[3] padding, int[3] dilation, bool ceil_mode, Tensor indices, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -12488,12 +12502,14 @@
   dispatch:
     CPU: max_pool3d_with_indices_backward_out_cpu
     CUDA: max_pool3d_with_indices_backward_out_cuda
+    PrivateUse1: max_pool3d_with_indices_backward_out_zoom
 
 - func: max_pool3d_with_indices_backward(Tensor grad_output, Tensor self, int[3] kernel_size, int[3] stride, int[3] padding, int[3] dilation, bool ceil_mode, Tensor indices) -> Tensor
   python_module: nn
   dispatch:
     CPU: max_pool3d_with_indices_backward_cpu
     CUDA: max_pool3d_with_indices_backward_cuda
+    PrivateUse1: max_pool3d_with_indices_backward_zoom
 
 - func: max_unpool2d.out(Tensor self, Tensor indices, SymInt[2] output_size, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13158,16 +13174,19 @@
   python_module: nn
   dispatch:
     CUDA: conv_depthwise2d_cuda_out
+    PrivateUse1: conv_depthwise2d_zoom_out
 
 - func: _conv_depthwise2d(Tensor self, Tensor weight, SymInt[2] kernel_size, Tensor? bias, SymInt[2] stride, SymInt[2] padding, SymInt[2] dilation) -> Tensor
   python_module: nn
   dispatch:
     CUDA: conv_depthwise2d_cuda
+    PrivateUse1: conv_depthwise2d_zoom
 
 - func: conv_depthwise3d(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias, SymInt[3] stride, SymInt[3] padding, SymInt[3] dilation) -> Tensor
   python_module: nn
   dispatch:
     CUDA: conv_depthwise3d_cuda
+    PrivateUse1: conv_depthwise3d_zoom
   autogen: conv_depthwise3d.out
 
 - func: slow_conv3d.out(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, *, Tensor(a!) out) -> Tensor(a!)
