@@ -61,7 +61,11 @@ inline C10_DEVICE scalar_t min_propagate_nan(scalar_t a, scalar_t b) {
 #include <c10/cuda/CUDAMathCompat.h>
 #define compat_pow c10::cuda::compat::pow
 #elif defined(__HIPCC__)
-#include <c10/hip/HIPMathCompat.h>
+  #ifdef USE_ZOOM
+    #include <c10/zoom/HIPMathCompat.h>
+  #else
+    #include <c10/hip/HIPMathCompat.h>
+  #endif
 #define compat_pow c10::hip::compat::pow
 #else
 #define compat_pow std::pow

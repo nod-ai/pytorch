@@ -2846,7 +2846,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: gcd_out
+    CPU, CUDA, PrivateUse1: gcd_out
   tags: pointwise
 
 - func: gcd(Tensor self, Tensor other) -> Tensor
@@ -2862,7 +2862,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: lcm_out
+    CPU, CUDA, PrivateUse1: lcm_out
   tags: pointwise
 
 - func: lcm(Tensor self, Tensor other) -> Tensor
@@ -2897,6 +2897,7 @@
   dispatch:
     CPU, QuantizedCPU: grid_sampler_2d_cpu
     CUDA: grid_sampler_2d_cuda
+    PrivateUse1: grid_sampler_2d_zoom
     MPS: grid_sampler_2d_mps
   autogen: grid_sampler_2d.out
   tags: core
@@ -2908,6 +2909,7 @@
   dispatch:
     CPU: grid_sampler_2d_backward_cpu
     CUDA: grid_sampler_2d_backward_cuda
+    PrivateUse1: grid_sampler_2d_backward_zoom
   autogen: grid_sampler_2d_backward.out
 
 # See NOTE [ grid_sample CPU fallback ]
@@ -2922,6 +2924,7 @@
   dispatch:
     CPU: grid_sampler_3d_cpu
     CUDA: grid_sampler_3d_cuda
+    PrivateUse1: grid_sampler_3d_zoom
   autogen: grid_sampler_3d.out
 
 # `grid_sampler_3d_backward` takes in `output_mask` to optimize performance for
@@ -2931,6 +2934,7 @@
   dispatch:
     CPU: grid_sampler_3d_backward_cpu
     CUDA: grid_sampler_3d_backward_cuda
+    PrivateUse1: grid_sampler_3d_backward_zoom
   autogen: grid_sampler_3d_backward.out
 
 - func: hann_window(int window_length, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
@@ -2984,14 +2988,14 @@
 
 - func: native_group_norm(Tensor input, Tensor? weight, Tensor? bias, SymInt N, SymInt C, SymInt HxW, int group, float eps) -> (Tensor, Tensor, Tensor)
   dispatch:
-    CPU, CUDA: native_group_norm
+    CPU, CUDA, PrivateUse1: native_group_norm
     CompositeExplicitAutograd: math_group_norm
   autogen: native_group_norm.out
   tags: core
 
 - func: native_group_norm_backward(Tensor grad_out, Tensor input, Tensor mean, Tensor rstd, Tensor? weight, SymInt N, SymInt C, SymInt HxW, int group, bool[3] output_mask) -> (Tensor, Tensor, Tensor)
   dispatch:
-    CPU, CUDA: native_group_norm_backward
+    CPU, CUDA, PrivateUse1: native_group_norm_backward
   autogen: native_group_norm_backward.out
   tags: core
 
@@ -3814,11 +3818,11 @@
 
 - func: _compute_linear_combination(Tensor input, Tensor coefficients) -> Tensor
   dispatch:
-    CPU, CUDA: _compute_linear_combination
+    CPU, CUDA, PrivateUse1: _compute_linear_combination
 
 - func: _compute_linear_combination.out(Tensor input, Tensor coefficients, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: _compute_linear_combination_out
+    CPU, CUDA, PrivateUse1: _compute_linear_combination_out
 
 - func: max.dim(Tensor self, int dim, bool keepdim=False) -> (Tensor values, Tensor indices)
   device_check: NoCheck   # TensorIterator
@@ -9829,7 +9833,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: igamma_out
+    CPU, CUDA, PrivateUse1: igamma_out
   tags: pointwise
 
 - func: igamma(Tensor self, Tensor other) -> Tensor
@@ -9846,7 +9850,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: igammac_out
+    CPU, CUDA, PrivateUse1: igammac_out
   tags: pointwise
 
 - func: igammac(Tensor self, Tensor other) -> Tensor
@@ -12404,6 +12408,7 @@
   dispatch:
     CPU: fractional_max_pool2d_out_cpu
     CUDA: fractional_max_pool2d_out_cuda
+    PrivateUse1: fractional_max_pool2d_out_zoom
 
 # Return: (Tensor output, Tensor indices)
 - func: fractional_max_pool2d(Tensor self, int[2] kernel_size, int[2] output_size, Tensor random_samples) -> (Tensor, Tensor)
@@ -12416,6 +12421,7 @@
   dispatch:
     CPU: fractional_max_pool2d_backward_cpu
     CUDA: fractional_max_pool2d_backward_cuda
+    PrivateUse1: fractional_max_pool2d_backward_zoom
 
 - func: fractional_max_pool2d_backward(Tensor grad_output, Tensor self, int[2] kernel_size, int[2] output_size, Tensor indices) -> Tensor
   python_module: nn
@@ -12432,6 +12438,7 @@
   dispatch:
     CPU: fractional_max_pool3d_out_cpu
     CUDA: fractional_max_pool3d_out_cuda
+    PrivateUse1: fractional_max_pool3d_out_zoom
 
 # Return: (Tensor output, Tensor indices)
 - func: fractional_max_pool3d(Tensor self, int[3] kernel_size, int[3] output_size, Tensor random_samples) -> (Tensor, Tensor)
@@ -12443,12 +12450,14 @@
   dispatch:
     CPU: fractional_max_pool3d_backward_out_cpu
     CUDA: fractional_max_pool3d_backward_out_cuda
+    PrivateUse1: fractional_max_pool3d_backward_out_zoom
 
 - func: fractional_max_pool3d_backward(Tensor grad_output, Tensor self, int[3] kernel_size, int[3] output_size, Tensor indices) -> Tensor
   python_module: nn
   dispatch:
     CPU: fractional_max_pool3d_backward_cpu
     CUDA: fractional_max_pool3d_backward_cuda
+    PrivateUse1: fractional_max_pool3d_backward_zoom
 
 # Return: (Tensor output, Tensor indices)
 - func: max_pool2d_with_indices.out(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool ceil_mode=False, *, Tensor(a!) out, Tensor(b!) indices) -> (Tensor(a!), Tensor(b!))
@@ -13243,12 +13252,14 @@
   dispatch:
     CPU: im2col_out_cpu
     CUDA: im2col_out_cuda
+    PrivateUse1: im2col_out_zoom
 
 - func: im2col(Tensor self, int[2] kernel_size, int[2] dilation, int[2] padding, int[2] stride) -> Tensor
   python_module: nn
   dispatch:
     CPU: im2col_cpu
     CUDA: im2col_cuda
+    PrivateUse1: im2col_zoom
 
 - func: isfinite(Tensor self) -> Tensor
   variants: function, method
@@ -15308,7 +15319,7 @@
 - func: special_hermite_polynomial_h.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_hermite_polynomial_h_out
+    CPU, CUDA, PrivateUse1: special_hermite_polynomial_h_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15357,7 +15368,7 @@
 - func: special_hermite_polynomial_he.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_hermite_polynomial_he_out
+    CPU, CUDA, PrivateUse1: special_hermite_polynomial_he_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15792,6 +15803,7 @@
   dispatch:
     CPU: _fused_adam_kernel_cpu_
     CUDA: _fused_adam_kernel_cuda_
+    PrivateUse1: _fused_adam_kernel_zoom_
   autogen: _fused_adam, _fused_adam.out
 
 - func: _fused_adam_.tensor_lr(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] exp_avgs, Tensor(d!)[] exp_avg_sqs, Tensor(e!)[] max_exp_avg_sqs, Tensor[] state_steps, *, Tensor lr, float beta1, float beta2, float weight_decay, float eps, bool amsgrad, bool maximize, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()
@@ -15802,6 +15814,7 @@
   dispatch:
     CPU: _fused_adam_kernel_cpu_
     CUDA: _fused_adam_kernel_cuda_
+    PrivateUse1: _fused_adam_kernel_zoom_
   autogen: _fused_adam.tensor_lr, _fused_adam.tensor_lr_out
 
 - func: _fused_adamw_(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] exp_avgs, Tensor(d!)[] exp_avg_sqs, Tensor(e!)[] max_exp_avg_sqs, Tensor[] state_steps, *, float lr, float beta1, float beta2, float weight_decay, float eps, bool amsgrad, bool maximize, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()
@@ -15810,6 +15823,7 @@
   dispatch:
     CPU: _fused_adamw_kernel_cpu_
     CUDA: _fused_adamw_kernel_cuda_
+    PrivateUse1: _fused_adamw_kernel_zoom_
   autogen: _fused_adamw, _fused_adamw.out
 
 - func: _fused_adamw_.tensor_lr(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] exp_avgs, Tensor(d!)[] exp_avg_sqs, Tensor(e!)[] max_exp_avg_sqs, Tensor[] state_steps, *, Tensor lr, float beta1, float beta2, float weight_decay, float eps, bool amsgrad, bool maximize, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()
@@ -15820,6 +15834,7 @@
   dispatch:
     CPU: _fused_adamw_kernel_cpu_
     CUDA: _fused_adamw_kernel_cuda_
+    PrivateUse1: _fused_adamw_kernel_zoom_
   autogen: _fused_adamw.tensor_lr, _fused_adamw.tensor_lr_out
 
 - func: _fused_sgd_(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] momentum_buffer_list, *, float weight_decay, float momentum, float lr, float dampening, bool nesterov, bool maximize, bool is_first_step, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()
@@ -15828,6 +15843,7 @@
   dispatch:
     CPU: _fused_sgd_kernel_cpu_
     CUDA: _fused_sgd_kernel_cuda_
+    PrivateUse1: _fused_sgd_kernel_zoom_
   autogen: _fused_sgd, _fused_sgd.out
 
 - func: _fused_sgd_.tensor_lr(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] momentum_buffer_list, *, float weight_decay, float momentum, Tensor lr, float dampening, bool nesterov, bool maximize, bool is_first_step, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()
@@ -15838,6 +15854,7 @@
   dispatch:
     CPU: _fused_sgd_kernel_cpu_
     CUDA: _fused_sgd_kernel_cuda_
+    PrivateUse1: _fused_sgd_kernel_zoom_
   autogen: _fused_sgd.tensor_lr, _fused_sgd.tensor_lr_out
 
 - func: _fused_adagrad_(Tensor(a!)[] self, Tensor(b!)[] grads, Tensor(c!)[] state_sums, Tensor(d!)[] state_steps, *, float lr, float lr_decay, float weight_decay, float eps, bool maximize, Tensor? grad_scale=None, Tensor? found_inf=None) -> ()

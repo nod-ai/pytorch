@@ -34,4 +34,4 @@ inline int GET_BLOCKS(const int64_t N, const int64_t max_threads_per_block=HIP_N
   return static_cast<int>(block_num);
 }
 
-}  // namespace at::cuda::detail
+}  // namespace at::zoom::detail

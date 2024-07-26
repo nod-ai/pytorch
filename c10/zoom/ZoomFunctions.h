@@ -83,7 +83,12 @@ void __inline__ memcpy_and_sync(
         c10::DeviceType::PrivateUse1, reinterpret_cast<uintptr_t>(stream));
   }
 
-  C10_ZOOM_CHECK(hipMemcpyWithStream(dst, src, nbytes, kind, stream));
+  #if defined(TORCH_HIP_VERSION) && (TORCH_HIP_VERSION >= 301)
+    C10_ZOOM_CHECK(hipMemcpyWithStream(dst, src, nbytes, kind, stream));
+  #else
+    C10_ZOOM_CHECK(hipMemcpyAsync(dst, src, nbytes, kind, stream));
+    C10_ZOOM_CHECK(hipStreamSynchronize(stream));
+  #endif
 
 }
 

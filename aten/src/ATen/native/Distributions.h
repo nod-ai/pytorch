@@ -17,7 +17,11 @@
 #define compat_abs c10::cuda::compat::abs
 #define compat_log1p c10::cuda::compat::log1p
 #elif defined(__HIPCC__)
-#include <c10/hip/HIPMathCompat.h>
+  #ifdef USE_ZOOM
+    #include <c10/zoom/HIPMathCompat.h>
+  #else
+    #include <c10/hip/HIPMathCompat.h>
+  #endif
 #define compat_exp c10::hip::compat::exp
 #define compat_ceil c10::hip::compat::ceil
 #define compat_floor c10::hip::compat::floor
