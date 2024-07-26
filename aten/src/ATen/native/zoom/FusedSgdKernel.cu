@@ -88,11 +88,10 @@ struct FusedSgdMathFunctor {
     const auto n = tl.numel_for_tensor[tensor_loc] - chunk_idx * chunk_size;
 
     #if defined(ROCM_VERSION) && ROCM_VERSION >= 60000 
-      #pragma message("SGD USING FASTER LOAD")
       const auto use_faster_load_store =
           (n % kILP == 0) && (chunk_size % kILP == 0) && all_aligned;
     #else
-      #pragma message("SGD DISABLING FASTER LOAD")
+      #pragma message("Detected ROCm < 6.0, disabling faster load store for fused SGD")
       const auto use_faster_load_store{false};
     #endif
     if (use_faster_load_store) {
