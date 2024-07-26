@@ -4328,12 +4328,14 @@
   dispatch:
     CPU: batch_norm_cpu
     CUDA: batch_norm_cuda
+    PrivateUse1: batch_norm_zoom
     MPS: batch_norm_mps
     MkldnnCPU: mkldnn_batch_norm
 
 - func: native_batch_norm.out(Tensor input, Tensor? weight, Tensor? bias, Tensor? running_mean, Tensor? running_var, bool training, float momentum, float eps, *, Tensor(a!) out, Tensor(b!) save_mean, Tensor(c!) save_invstd) -> (Tensor(a!), Tensor(b!), Tensor(c!))
   dispatch:
     CUDA: batch_norm_cuda_out
+    PrivateUse1: batch_norm_zoom_out
     MPS: batch_norm_mps_out
     CPU: batch_norm_cpu_out
 
@@ -4342,6 +4344,7 @@
   dispatch:
     CPU: _batch_norm_legit_cpu
     CUDA: _batch_norm_legit_cuda
+    PrivateUse1: _batch_norm_legit_zoom
     MPS: _batch_norm_legit_mps
     MkldnnCPU: _mkldnn_batch_norm_legit
   autogen: _native_batch_norm_legit_functional
@@ -4360,12 +4363,14 @@
   dispatch:
     CPU: _batch_norm_legit_cpu_out
     CUDA: _batch_norm_legit_cuda_out
+    PrivateUse1: _batch_norm_legit_zoom_out
     MPS: _batch_norm_legit_mps_out
 
 - func: _native_batch_norm_legit.no_stats(Tensor input, Tensor? weight, Tensor? bias, bool training, float momentum, float eps) -> (Tensor, Tensor, Tensor)
   dispatch:
     CPU: _batch_norm_legit_no_stats_cpu
     CUDA: _batch_norm_legit_no_stats_cuda
+    PrivateUse1: _batch_norm_legit_no_stats_zoom
     MPS: _batch_norm_legit_no_stats_mps
     MkldnnCPU: _mkldnn_batch_norm_legit_no_stats
   tags: core
@@ -4374,36 +4379,43 @@
   dispatch:
     CPU: _batch_norm_legit_no_stats_cpu_out
     CUDA: _batch_norm_legit_no_stats_cuda_out
+    PrivateUse1: _batch_norm_legit_no_stats_zoom_out
     MPS: _batch_norm_legit_no_stats_mps_out
 
 - func: batch_norm_stats(Tensor input, float eps) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_stats_cuda
+    PrivateUse1: batch_norm_stats_zoom
   autogen: batch_norm_stats.out
 
 - func: batch_norm_elemt(Tensor input, Tensor? weight, Tensor? bias, Tensor mean, Tensor invstd, float eps) -> Tensor
   dispatch:
     CUDA: batch_norm_elemt_cuda
+    PrivateUse1: batch_norm_elemt_zoom
 
 - func: batch_norm_elemt.out(Tensor input, Tensor? weight, Tensor? bias, Tensor mean, Tensor invstd, float eps, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
     CUDA: batch_norm_elemt_cuda_out
+    PrivateUse1: batch_norm_elemt_zoom_out
 
 # for backward compatibility
 - func: batch_norm_gather_stats(Tensor input, Tensor mean, Tensor invstd, Tensor? running_mean, Tensor? running_var, float momentum, float eps, int count) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_gather_stats_cuda
+    PrivateUse1: batch_norm_gather_stats_zoom
   autogen: batch_norm_gather_stats.out
 
 - func: batch_norm_gather_stats_with_counts(Tensor input, Tensor mean, Tensor invstd, Tensor? running_mean, Tensor? running_var, float momentum, float eps, Tensor counts) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_gather_stats_with_counts_cuda
+    PrivateUse1: batch_norm_gather_stats_with_counts_zoom
   autogen: batch_norm_gather_stats_with_counts.out
 
 - func: native_batch_norm_backward(Tensor grad_out, Tensor input, Tensor? weight, Tensor? running_mean, Tensor? running_var, Tensor? save_mean, Tensor? save_invstd, bool train, float eps, bool[3] output_mask) -> (Tensor, Tensor, Tensor)
   dispatch:
     CPU: batch_norm_backward_cpu
     CUDA: batch_norm_backward_cuda
+    PrivateUse1: batch_norm_backward_zoom
     MPS: batch_norm_backward_mps
     MkldnnCPU: mkldnn_batch_norm_backward
   autogen: native_batch_norm_backward.out
@@ -4411,17 +4423,20 @@
 - func: batch_norm_backward_reduce(Tensor grad_out, Tensor input, Tensor mean, Tensor invstd, Tensor? weight, bool input_g, bool weight_g, bool bias_g) -> (Tensor, Tensor, Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_backward_reduce_cuda
+    PrivateUse1: batch_norm_backward_reduce_zoom
   autogen: batch_norm_backward_reduce.out
 
 - func: batch_norm_backward_elemt(Tensor grad_out, Tensor input, Tensor mean, Tensor invstd, Tensor? weight, Tensor sum_dy, Tensor sum_dy_xmu, Tensor count) -> Tensor
   dispatch:
     CUDA: batch_norm_backward_elemt_cuda
+    PrivateUse1: batch_norm_backward_elemt_zoom
   autogen: batch_norm_backward_elemt.out
 
 - func: batch_norm_update_stats(Tensor input, Tensor? running_mean, Tensor? running_var, float momentum) -> (Tensor, Tensor)
   dispatch:
     CPU: batch_norm_update_stats_cpu
     CUDA: batch_norm_update_stats_cuda
+    PrivateUse1: batch_norm_update_stats_zoom
   autogen: batch_norm_update_stats.out
 
 - func: is_vulkan_available() -> bool
@@ -4898,6 +4913,7 @@
   dispatch:
     CPU: repeat_interleave_cpu
     CUDA: repeat_interleave_cuda
+    PrivateUse1: repeat_interleave_zoom
     MPS: repeat_interleave_mps
   tags: dynamic_output_shape
   autogen: repeat_interleave.Tensor_out
@@ -6628,6 +6644,7 @@
   dispatch:
     CPU: _batch_norm_with_update_cpu
     CUDA: _batch_norm_with_update_cuda
+    PrivateUse1: _batch_norm_with_update_zoom
     MPS: _batch_norm_with_update_mps
     MkldnnCPU: _batch_norm_with_update_mkldnn
   autogen: _batch_norm_with_update_functional
@@ -6636,6 +6653,7 @@
   dispatch:
     CPU: _batch_norm_with_update_cpu_out
     CUDA: _batch_norm_with_update_cuda_out
+    PrivateUse1: _batch_norm_with_update_zoom_out
     MPS: _batch_norm_with_update_mps_out
 
 - func: _batch_norm_no_update(Tensor input, Tensor? weight, Tensor? bias, Tensor? running_mean, Tensor? running_var, float momentum, float eps) -> (Tensor, Tensor, Tensor, Tensor)
@@ -7797,6 +7815,7 @@
 - func: _thnn_fused_lstm_cell(Tensor input_gates, Tensor hidden_gates, Tensor cx, Tensor? input_bias=None, Tensor? hidden_bias=None) -> (Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_lstm_cell_cuda
+    PrivateUse1: _thnn_fused_lstm_cell_zoom
   autogen: _thnn_fused_lstm_cell.out
 
 # NB: The composite version of this function below is a simple wrapper that duplicates some of the outputs
@@ -7805,6 +7824,7 @@
 - func: _thnn_fused_lstm_cell_backward_impl(Tensor? grad_hy, Tensor? grad_cy, Tensor cx, Tensor cy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_lstm_cell_backward_impl_cuda
+    PrivateUse1: _thnn_fused_lstm_cell_backward_impl_zoom
   autogen: _thnn_fused_lstm_cell_backward_impl.out
 
 - func: _thnn_fused_lstm_cell_backward(Tensor? grad_hy, Tensor? grad_cy, Tensor cx, Tensor cy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
@@ -7814,11 +7834,13 @@
 - func: _thnn_fused_gru_cell(Tensor input_gates, Tensor hidden_gates, Tensor hx, Tensor? input_bias=None, Tensor? hidden_bias=None) -> (Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_gru_cell_cuda
+    PrivateUse1: _thnn_fused_gru_cell_zoom
   autogen: _thnn_fused_gru_cell.out
 
 - func: _thnn_fused_gru_cell_backward(Tensor grad_hy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_gru_cell_backward_cuda
+    PrivateUse1: _thnn_fused_gru_cell_backward_zoom
   autogen: _thnn_fused_gru_cell_backward.out
 
 - func: _thnn_differentiable_gru_cell_backward(Tensor grad_hy, Tensor input_gates, Tensor hidden_gates, Tensor hx, Tensor? input_bias, Tensor? hidden_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
@@ -10157,7 +10179,7 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: renorm_out
+    CPU, CUDA, PrivateUse1: renorm_out
     MPS: renorm_out_mps
 
 - func: renorm(Tensor self, Scalar p, int dim, Scalar maxnorm) -> Tensor
@@ -11787,6 +11809,7 @@
   dispatch:
     CPU: nll_loss2d_forward_out_cpu
     CUDA: nll_loss2d_forward_out_cuda
+    PrivateUse1: nll_loss2d_forward_out_zoom
     MPS: nll_loss2d_forward_out_mps
 
 - func: nll_loss2d_forward(Tensor self, Tensor target, Tensor? weight, int reduction, SymInt ignore_index) -> (Tensor output, Tensor total_weight)
@@ -11794,6 +11817,7 @@
   dispatch:
     CPU: nll_loss2d_forward_cpu
     CUDA: nll_loss2d_forward_cuda
+    PrivateUse1: nll_loss2d_forward_zoom
     MPS: nll_loss2d_forward_mps
 
 - func: nll_loss2d_backward.grad_input(Tensor grad_output, Tensor self, Tensor target, Tensor? weight, int reduction, SymInt ignore_index, Tensor total_weight, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -11801,6 +11825,7 @@
   dispatch:
     CPU: nll_loss2d_backward_out_cpu
     CUDA: nll_loss2d_backward_out_cuda
+    PrivateUse1: nll_loss2d_backward_out_zoom
     MPS: nll_loss2d_backward_out_mps
 
 - func: nll_loss2d_backward(Tensor grad_output, Tensor self, Tensor target, Tensor? weight, int reduction, SymInt ignore_index, Tensor total_weight) -> Tensor
@@ -11808,6 +11833,7 @@
   dispatch:
     CPU: nll_loss2d_backward_cpu
     CUDA: nll_loss2d_backward_cuda
+    PrivateUse1: nll_loss2d_backward_zoom
     MPS: nll_loss2d_backward_mps
 
 - func: smooth_l1_loss.out(Tensor self, Tensor target, int reduction=Mean, float beta=1.0, *, Tensor(a!) out) -> Tensor(a!)
@@ -12133,12 +12159,14 @@
   dispatch:
     CPU: rrelu_with_noise_out_cpu
     CUDA: rrelu_with_noise_out_cuda
+    PrivateUse1: rrelu_with_noise_out_zoom
 
 - func: rrelu_with_noise(Tensor self, Tensor noise, Scalar lower=0.125, Scalar upper=0.3333333333333333, bool training=False, Generator? generator=None) -> Tensor
   python_module: nn
   dispatch:
     CPU: rrelu_with_noise_cpu
     CUDA: rrelu_with_noise_cuda
+    PrivateUse1: rrelu_with_noise_zoom
   tags: nondeterministic_seeded
 
 - func: rrelu_with_noise_backward(Tensor grad_output, Tensor self, Tensor noise, Scalar lower, Scalar upper, bool training, bool self_is_result) -> Tensor
@@ -12153,6 +12181,7 @@
   dispatch:
     CPU: rrelu_with_noise_cpu_
     CUDA: rrelu_with_noise_cuda_
+    PrivateUse1: rrelu_with_noise_zoom_
 
 - func: softplus.out(Tensor self, Scalar beta=1, Scalar threshold=20, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
@@ -12570,6 +12599,7 @@
     CPU: reflection_pad1d_out_cpu
     QuantizedCPU: reflection_pad1d_out_quantized_cpu
     CUDA: reflection_pad1d_out_cuda
+    PrivateUse1: reflection_pad1d_out_zoom
     MPS: reflection_pad1d_out_mps
 
 - func: reflection_pad1d(Tensor self, SymInt[2] padding) -> Tensor
@@ -12583,6 +12613,7 @@
   dispatch:
     CPU: reflection_pad1d_backward_out_cpu
     CUDA: reflection_pad1d_backward_out_cuda
+    PrivateUse1: reflection_pad1d_backward_out_zoom
     MPS: reflection_pad1d_backward_out_mps
 
 - func: reflection_pad1d_backward(Tensor grad_output, Tensor self, SymInt[2] padding) -> Tensor
@@ -12594,6 +12625,7 @@
   dispatch:
     CPU, QuantizedCPU: reflection_pad2d_out_cpu
     CUDA: reflection_pad2d_out_cuda
+    PrivateUse1: reflection_pad2d_out_zoom
     MPS: reflection_pad2d_out_mps
 
 - func: reflection_pad2d(Tensor self, SymInt[4] padding) -> Tensor
@@ -12602,6 +12634,7 @@
     CPU: reflection_pad2d_cpu
     QuantizedCPU: reflection_pad2d_quantized_cpu
     CUDA: reflection_pad2d_cuda
+    PrivateUse1: reflection_pad2d_zoom
     MPS: reflection_pad2d_mps
   tags: core
 
@@ -12610,6 +12643,7 @@
   dispatch:
     CPU: reflection_pad2d_backward_out_cpu
     CUDA: reflection_pad2d_backward_out_cuda
+    PrivateUse1: reflection_pad2d_backward_out_zoom
     MPS: reflection_pad2d_backward_out_mps
 
 - func: reflection_pad2d_backward(Tensor grad_output, Tensor self, SymInt[4] padding) -> Tensor
@@ -12617,6 +12651,7 @@
   dispatch:
     CPU: reflection_pad2d_backward_cpu
     CUDA: reflection_pad2d_backward_cuda
+    PrivateUse1: reflection_pad2d_backward_zoom
     MPS: reflection_pad2d_backward_mps
 
 - func: reflection_pad3d.out(Tensor self, SymInt[6] padding, *, Tensor(a!) out) -> Tensor(a!)
@@ -12625,6 +12660,7 @@
   dispatch:
     CPU: reflection_pad3d_out_cpu
     CUDA: reflection_pad3d_out_cuda
+    PrivateUse1: reflection_pad3d_out_zoom
     MPS: reflection_pad3d_out_mps
 
 - func: reflection_pad3d(Tensor self, SymInt[6] padding) -> Tensor
@@ -12638,6 +12674,7 @@
   dispatch:
     CPU: reflection_pad3d_backward_out_cpu
     CUDA: reflection_pad3d_backward_out_cuda
+    PrivateUse1: reflection_pad3d_backward_out_zoom
     MPS: reflection_pad3d_backward_out_mps
 
 - func: reflection_pad3d_backward(Tensor grad_output, Tensor self, SymInt[6] padding) -> Tensor
@@ -12650,6 +12687,7 @@
   dispatch:
     CPU: replication_pad1d_out_cpu
     CUDA: replication_pad1d_out_cuda
+    PrivateUse1: replication_pad1d_out_zoom
     MPS: replication_pad1d_out_mps
 
 - func: replication_pad1d(Tensor self, SymInt[2] padding) -> Tensor
@@ -12662,6 +12700,7 @@
   dispatch:
     CPU: replication_pad1d_backward_out_cpu
     CUDA: replication_pad1d_backward_out_cuda
+    PrivateUse1: replication_pad1d_backward_out_zoom
     MPS: replication_pad1d_backward_out_mps
 
 - func: replication_pad1d_backward(Tensor grad_output, Tensor self, SymInt[2] padding) -> Tensor
@@ -12674,6 +12713,7 @@
   dispatch:
     CPU: replication_pad2d_out_cpu
     CUDA: replication_pad2d_out_cuda
+    PrivateUse1: replication_pad2d_out_zoom
     MPS: replication_pad2d_out_mps
 
 - func: replication_pad2d(Tensor self, SymInt[4] padding) -> Tensor
@@ -12686,6 +12726,7 @@
   dispatch:
     CPU: replication_pad2d_backward_out_cpu
     CUDA: replication_pad2d_backward_out_cuda
+    PrivateUse1: replication_pad2d_backward_out_zoom
     MPS: replication_pad2d_backward_out_mps
 
 - func: replication_pad2d_backward(Tensor grad_output, Tensor self, SymInt[4] padding) -> Tensor
@@ -12693,6 +12734,7 @@
   dispatch:
     CPU: replication_pad2d_backward_cpu
     CUDA: replication_pad2d_backward_cuda
+    PrivateUse1: replication_pad2d_backward_zoom
     MPS: replication_pad2d_backward_mps
 
 - func: replication_pad3d.out(Tensor self, SymInt[6] padding, *, Tensor(a!) out) -> Tensor(a!)
@@ -12701,6 +12743,7 @@
   dispatch:
     CPU: replication_pad3d_out_cpu
     CUDA: replication_pad3d_out_cuda
+    PrivateUse1: replication_pad3d_out_zoom
     MPS: replication_pad3d_out_mps
 
 - func: replication_pad3d(Tensor self, SymInt[6] padding) -> Tensor
@@ -12714,6 +12757,7 @@
   dispatch:
     CPU: replication_pad3d_backward_out_cpu
     CUDA: replication_pad3d_backward_out_cuda
+    PrivateUse1: replication_pad3d_backward_out_zoom
     MPS: replication_pad3d_backward_out_mps
 
 - func: replication_pad3d_backward(Tensor grad_output, Tensor self, SymInt[6] padding) -> Tensor
@@ -12721,6 +12765,7 @@
   dispatch:
     CPU: replication_pad3d_backward_cpu
     CUDA: replication_pad3d_backward_cuda
+    PrivateUse1: replication_pad3d_backward_zoom
     MPS: replication_pad3d_backward_mps
 
 - func: _pad_circular(Tensor self, SymInt[] pad) -> Tensor
@@ -13141,6 +13186,7 @@
   dispatch:
     CPU: slow_conv_transpose2d_structured_cpu
     CUDA: slow_conv_transpose2d_structured_cuda
+    PrivateUse1: slow_conv_transpose2d_structured_zoom
 
 - func: slow_conv_transpose2d(Tensor self, Tensor weight, SymInt[2] kernel_size, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2] output_padding=0, SymInt[2] dilation=1) -> Tensor
   python_module: nn
@@ -13151,12 +13197,14 @@
   dispatch:
     CPU: slow_conv_transpose3d_out_cpu
     CUDA: slow_conv_transpose3d_out_cuda
+    PrivateUse1: slow_conv_transpose3d_out_zoom
 
 - func: slow_conv_transpose3d(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] output_padding=0, SymInt[3] dilation=1) -> Tensor
   python_module: nn
   dispatch:
     CPU: slow_conv_transpose3d_cpu
     CUDA: slow_conv_transpose3d_cuda
+    PrivateUse1: slow_conv_transpose3d_zoom
 
 - func: thnn_conv2d.out(Tensor self, Tensor weight, SymInt[2] kernel_size, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13234,6 +13282,7 @@
   dispatch:
     CPU: slow_conv_dilated2d_cpu
     CUDA: slow_conv_dilated2d_cuda
+    PrivateUse1: slow_conv_dilated2d_zoom
   autogen: slow_conv_dilated2d.out
 
 - func: slow_conv_dilated3d(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] dilation=1) -> Tensor
@@ -13241,6 +13290,7 @@
   dispatch:
     CPU: slow_conv_dilated3d_cpu
     CUDA: slow_conv_dilated3d_cuda
+    PrivateUse1: slow_conv_dilated3d_zoom
   autogen: slow_conv_dilated3d.out
 
 - func: col2im.out(Tensor self, SymInt[2] output_size, int[2] kernel_size, int[2] dilation, int[2] padding, int[2] stride, *, Tensor(a!) out) -> Tensor(a!)
@@ -13297,6 +13347,7 @@
   variants: method
   dispatch:
     CUDA: record_stream_cuda
+    PrivateUse1: record_stream_zoom
 
 - func: isposinf(Tensor self) -> Tensor
   variants: function, method
@@ -15572,7 +15623,7 @@
 
 - func: special_scaled_modified_bessel_k0.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_scaled_modified_bessel_k0_out
+    CPU, CUDA, PrivateUse1: special_scaled_modified_bessel_k0_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15587,7 +15638,7 @@
 
 - func: special_scaled_modified_bessel_k1.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_scaled_modified_bessel_k1_out
+    CPU, CUDA, PrivateUse1: special_scaled_modified_bessel_k1_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True

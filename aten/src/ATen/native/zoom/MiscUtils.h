@@ -2,7 +2,7 @@
 #pragma once
 #include <ATen/zoom/ZoomException.h>
 #include <ATen/zoom/ZoomContext.h>
-// #include <ATen/hip/HIPConfig.h>
+// #include <ATen/zoom/HIPConfig.h>
 #include <ATen/zoom/PinnedMemoryAllocator.h>
 
 namespace at {
