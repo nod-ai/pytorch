@@ -220,7 +220,6 @@ void slow_conv_dilated_all_zoom_template(
     output.zero_();
   }
 
-#if defined(USE_ROCM)
   /* When using ROCm, the sum evaluation is inaccurate for double
      tensors. The reason is currently unknown. Hence, we use gemv for
      computing `grad_output_n.sum(dims)` until the ROCm-sum issue is
@@ -246,9 +245,6 @@ void slow_conv_dilated_all_zoom_template(
       /* beta=*/static_cast<scalar_t>(1),                  \
       /*    y=*/grad_bias.mutable_data_ptr<scalar_t>(),    \
       /* incy=*/1)
-#else
-#define CALCULATE_GRAD_BIAS grad_bias += grad_output_n.sum(dims)
-#endif
 
   // Helpers
   Tensor grad_output_n;

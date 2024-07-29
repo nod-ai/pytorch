@@ -13,9 +13,9 @@
 #include <ATen/zoom/PeerToPeerAccess.h>
 // #include <ATen/cuda/PinnedMemoryAllocator.h>
 #include <ATen/zoom/PinnedMemoryAllocator.h>
-// #include <ATen/cuda/nvrtc_stub/ATenNVRTC.h>
+#include <ATen/zoom/hiprtc_stub/ATenHIPRTC.h>
 #include <ATen/zoom/detail/ZoomHooks.h>
-// #include <ATen/native/cuda/CuFFTPlanCache.h>
+// #include <ATen/native/cuda/HIPFFTPlanCache.h>
 #include <c10/util/Exception.h>
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/zoom/ZoomFunctions.h>
@@ -52,7 +52,7 @@ void setHasPrimaryContext(bool (*func)(DeviceIndex));
 
 namespace at::zoom::detail {
 
-// const at::zoom::NVRTC& nvrtc();
+const at::zoom::HIPRTC& hiprtc();
 DeviceIndex current_device();
 
 // static void (*magma_init_fn)() = nullptr;
@@ -155,6 +155,36 @@ bool ZoomHooks::isPinnedPtr(const void* data) const {
 
 bool ZoomHooks::hasROCM() const {
   return at::zoom::is_available();
+}
+
+// #if defined(USE_DIRECT_NVRTC) || defined(USE_DIRECT_HIPRTC)
+  static std::pair<std::unique_ptr<at::DynamicLibrary>, at::zoom::HIPRTC*> load_hiprtc() {
+    return std::make_pair(nullptr, at::zoom::load_hiprtc());
+  }
+// #else
+//   static std::pair<std::unique_ptr<at::DynamicLibrary>, at::zoom::HIPRTC*> load_hiprtc() {
+//   #if defined(_WIN32)
+//     std::string libcaffe2_hiprtc = "caffe2_hiprtc.dll";
+//   #elif defined(__APPLE__)
+//     std::string libcaffe2_hiprtc = "libcaffe2_hiprtc.dylib";
+//   #else
+//     std::string libcaffe2_hiprtc = "libcaffe2_hiprtc.so";
+//   #endif
+//     std::unique_ptr<at::DynamicLibrary> libhiprtc_stub(
+//         new at::DynamicLibrary(libcaffe2_hiprtc.c_str()));
+//     auto fn = (at::zoom::HIPRTC * (*)()) libhiprtc_stub->sym("load_hiprtc");
+//     return std::make_pair(std::move(libhiprtc_stub), fn());
+//   }
+// #endif
+
+const at::zoom::HIPRTC& hiprtc() {
+  // must hold onto DynamicLibrary otherwise it will unload
+  static auto handle = load_hiprtc();
+  return *handle.second;
+}
+
+const at::zoom::HIPRTC& ZoomHooks::hiprtc() const {
+  return at::zoom::detail::hiprtc();
 }
 
 DeviceIndex current_device() {

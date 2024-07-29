@@ -32,12 +32,8 @@ void initZoomHooks() {
     if (!zoom_hooks) {
       zoom_hooks = new ZoomHooksInterface();
     }
+    RegisterPrivateUse1HooksInterface(zoom_hooks);
   });
-  RegisterPrivateUse1HooksInterface(zoom_hooks);
-  // if (zoom_hooks == nullptr) {
-  //   zoom_hooks = new ZoomHooksInterface();
-  //   RegisterPrivateUse1HooksInterface(zoom_hooks);
-  // }
 }
 
 const ZoomHooksInterface& getZoomHooks() {

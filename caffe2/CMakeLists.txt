@@ -701,13 +701,12 @@ endif()
 #       append_filelist("libtorch_zoom_distributed_extra_sources" Caffe2_ZOOM_SRCS)
 #     endif()
 #   endif()
-#   # caffe2_nvrtc's stubs to driver APIs are useful for HIP.
-#   # See NOTE [ ATen NVRTC Stub and HIP ]
-#   add_library(caffe2_nvrtc SHARED ${ATen_HIPRTC_STUB_SRCS})
-#   target_link_libraries(caffe2_nvrtc ${PYTORCH_HIP_LIBRARIES} ${ROCM_HIPRTC_LIB})
-#   target_include_directories(caffe2_nvrtc PRIVATE ${CMAKE_BINARY_DIR})
-#   target_compile_definitions(caffe2_nvrtc PRIVATE USE_ROCM __HIP_PLATFORM_AMD__)
-#   install(TARGETS caffe2_nvrtc DESTINATION "${TORCH_INSTALL_LIB_DIR}")
+  # See NOTE [ ATen NVRTC Stub and HIP ]
+#   hip_add_library(caffe2_hiprtc SHARED ${ATen_HIPRTC_STUB_SRCS})
+#   target_link_libraries(caffe2_hiprtc ${PYTORCH_HIP_LIBRARIES} ${ROCM_HIPRTC_LIB})
+#   target_include_directories(caffe2_hiprtc PRIVATE ${CMAKE_BINARY_DIR} ${ROCM_SOURCE_DIR}/include)
+#   target_compile_definitions(caffe2_hiprtc PRIVATE USE_ROCM __HIP_PLATFORM_AMD__)
+#   install(TARGETS caffe2_hiprtc DESTINATION "${TORCH_INSTALL_LIB_DIR}")
 # endif()
 
 if(NOT NO_API AND NOT BUILD_LITE_INTERPRETER)
@@ -986,7 +985,8 @@ elseif(USE_ZOOM)
   set(CUDA_LINK_LIBRARIES_KEYWORD PRIVATE)
   # list(APPEND Caffe2_ZOOM_SRCS ${GENERATED_CXX_TORCH_CUDA})
 
-  hip_add_library(torch_zoom ${Caffe2_ZOOM_SRCS})
+  # TODO(Arham): disentangle this and build caffe2_hiprtc instead
+  hip_add_library(torch_zoom ${Caffe2_ZOOM_SRCS} ${ATen_HIPRTC_STUB_SRCS})
   set(CUDA_LINK_LIBRARIES_KEYWORD)
   torch_compile_options(torch_zoom)  # see cmake/public/utils.cmake
 elseif(USE_CUDA)

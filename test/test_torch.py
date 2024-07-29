@@ -48,7 +48,7 @@ from torch.testing._internal.common_device_type import (
     expectedFailureXLA,
     instantiate_device_type_tests,
     onlyCUDA, onlyCPU,
-    dtypes, dtypesIfCUDA, dtypesIfCPU, deviceCountAtLeast,
+    dtypes, dtypesIfCUDA, dtypesIfZoom, dtypesIfCPU, deviceCountAtLeast,
     skipMeta, PYTORCH_CUDA_MEMCHECK, largeTensorTest, onlyNativeDeviceTypes,
     get_all_device_types, skipXLA)
 from typing import Tuple
@@ -1368,11 +1368,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'avg_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'avg_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1826,24 +1829,30 @@ else:
     @skipIfMps
     def test_nondeterministic_alert_histc(self, device):
         a = torch.tensor([], device=device)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         for op_call in [torch.histc, torch.Tensor.histc]:
             self.check_nondeterministic_alert(
                 lambda: op_call(a, min=0, max=3),
-                '_histc_cuda',
-                torch.device(device).type == 'cuda')
+                f'_histc_{device_type}',
+                is_cuda or is_zoom)
 
     @skipIfMps
     def test_nondeterministic_alert_bincount(self, device):
         a = torch.tensor([], device=device, dtype=torch.long)
         weights = torch.tensor([], device=device)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         for op_call in [torch.bincount, torch.Tensor.bincount]:
             # Error should only be raised when device is CUDA and weights are
             # given
             self.check_nondeterministic_alert(
                 lambda: op_call(a, weights),
-                '_bincount_cuda',
-                torch.device(device).type == 'cuda')
+                f'_bincount_{device_type}',
+                is_cuda or is_zoom)
 
             self.check_nondeterministic_alert(
                 lambda: op_call(a),
@@ -1853,6 +1862,10 @@ else:
     # Ensures that kthvalue throws nondeterministic alerts in the correct cases
     @dtypes(torch.double)
     def test_nondeterministic_alert_kthvalue(self, device, dtype):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
+
         def test_func(call_type):
             S = 10
             k = 5
@@ -1871,8 +1884,8 @@ else:
         for call_type in ['function', 'method', 'out']:
             self.check_nondeterministic_alert(
                 lambda: test_func('function'),
-                'kthvalue CUDA',
-                torch.device(device).type == 'cuda')
+                'kthvalue CUDA' if is_cuda else 'kthvalue Zoom',
+                is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -2179,6 +2192,7 @@ else:
     @dtypes(*floating_types())
     @dtypesIfCPU(*floating_types_and(torch.bfloat16, torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half))
+    @dtypesIfZoom(*floating_types_and(torch.half))
     def test_bernoulli_p(self, device, dtype):
         for trivial_p in ([0, 1], [1, 0, 1, 1, 0, 1]):
             x = torch.tensor(trivial_p, dtype=dtype, device=device)
@@ -2201,6 +2215,7 @@ else:
     @dtypes(*floating_types())
     @dtypesIfCPU(*all_types_and(torch.bool, torch.half))
     @dtypesIfCUDA(*all_types_and(torch.bool, torch.half))
+    @dtypesIfZoom(*all_types_and(torch.bool, torch.half))
     def test_bernoulli_self(self, device, dtype):
 
         def isBinary(t):
@@ -2229,6 +2244,7 @@ else:
     @slowTest
     @dtypes(*floating_types_and(torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half))
+    @dtypesIfZoom(*floating_types_and(torch.half))
     def test_bernoulli_edge_cases(self, device, dtype):
         # Need to draw a lot of samples to cover every random floating point number.
         a = torch.zeros(10000, 10000, dtype=dtype, device=device)  # probability of drawing "1" is 0
@@ -2320,6 +2336,7 @@ else:
     @skipIfNoSciPy
     @dtypes(*floating_types_and(torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half, torch.bfloat16))
+    @dtypesIfZoom(*floating_types_and(torch.half, torch.bfloat16))
     def test_normal_kstest(self, device, dtype):
         from scipy import stats
         size = 1000
@@ -2911,6 +2928,7 @@ else:
     @dtypes(*all_types_and_complex_and(torch.bool))
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool))
     def test_diff(self, device, dtype):
         shapes = (
             (1,),
@@ -3333,6 +3351,7 @@ else:
 
     # FIXME: move to elementwise ternary test suite
     @dtypesIfCUDA(*set(get_all_math_dtypes('cuda')))
+    @dtypesIfZoom(*set(get_all_math_dtypes('cuda')))
     @dtypes(*set(get_all_math_dtypes('cpu')))
     def test_addcmul(self, device, dtype):
         # Returns floating or integral scalar corresponding to dtype
@@ -3805,6 +3824,7 @@ else:
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_operations_to_large_input(self, device, dtype):
         index = torch.tensor([[1], [2]], device=device, dtype=torch.long)
         test_data = [
@@ -3832,6 +3852,7 @@ else:
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_scalar(self, device, dtype):
         index = torch.tensor([[1], [2]], device=device, dtype=torch.long)
         test_data = [
@@ -3871,6 +3892,7 @@ else:
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_non_unique_index(self, device, dtype):
         height = 2
         width = 2
@@ -4365,6 +4387,7 @@ else:
     # FIXME: move to elementwise ternary test suite
     @onlyNativeDeviceTypes
     @dtypesIfCUDA(*set(get_all_math_dtypes('cuda')))
+    @dtypesIfZoom(*set(get_all_math_dtypes('cuda')))
     @dtypes(*set(get_all_math_dtypes('cpu')))
     def test_addcdiv(self, device, dtype):
         # Returns floating or integral scalar corresponding to dtype
@@ -5316,6 +5339,7 @@ else:
     # FIXME: move to test distributions
     @skipIfMps
     @dtypesIfCUDA(torch.float, torch.double, torch.half)
+    @dtypesIfZoom(torch.float, torch.double, torch.half)
     @dtypes(torch.float, torch.double, torch.half)
     def test_multinomial(self, device, dtype):
         def make_prob_dist(shape, is_contiguous):
@@ -6244,6 +6268,7 @@ else:
         scaler.update()
 
     @dtypesIfCUDA(torch.float, torch.double, torch.half)
+    @dtypesIfZoom(torch.float, torch.double, torch.half)
     @dtypesIfCPU(torch.float, torch.double, torch.bfloat16, torch.half)
     @dtypes(torch.float, torch.double)
     def test_multinomial_cpu(self, device, dtype):
@@ -6535,6 +6560,9 @@ class TestDevicePrecision(TestCase):
         self.assertEqual(x.to(torch.int).device, torch.device(devices[1]))
 
     @dtypesIfCUDA(torch.half, torch.float, torch.double,
+                  torch.int8, torch.short, torch.int, torch.long,
+                  torch.uint8)
+    @dtypesIfZoom(torch.half, torch.float, torch.double,
                   torch.int8, torch.short, torch.int, torch.long,
                   torch.uint8)
     @dtypes(torch.float, torch.double,

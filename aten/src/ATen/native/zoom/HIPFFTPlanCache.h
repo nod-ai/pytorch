@@ -7,7 +7,7 @@
 #include <c10/util/irange.h>
 
 #include <hipfft/hipfft.h>
-#include <hipfft/hipffXt.h>
+#include <hipfft/hipfftXt.h>
 
 #include <limits>
 #include <list>

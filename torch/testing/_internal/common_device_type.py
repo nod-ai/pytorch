@@ -1318,6 +1318,12 @@ class dtypesIfCUDA(dtypes):
     def __init__(self, *args):
         super().__init__(*args, device_type='cuda')
 
+# Overrides specified dtypes on Zoom.
+class dtypesIfZoom(dtypes):
+
+    def __init__(self, *args):
+        super().__init__(*args, device_type='zoom')
+
 class dtypesIfMPS(dtypes):
 
     def __init__(self, *args):

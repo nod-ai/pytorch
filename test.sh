@@ -40,11 +40,11 @@ pattern="Assertion Error: (*\n)"
 
 # Extract error messages, count frequencies, sort by frequency (descending), and save to output file
 # Pattern to search for
-pattern="AssertionError: (.+?)(?=\n|$)"
+pattern="(AssertionError|RuntimeError): (.+?)(?=\n|$)"
 
 # Extract error messages, count frequencies, sort by frequency (descending), and save to output file
 grep -oP "$pattern" "$log_file" | 
-sed 's/^AssertionError: //g' |
+sed 's/^(AssertionError|RuntimeError): //g' |
 awk '{print substr($0, 1, 100)}' |  # Limit to first 100 characters
 sort | 
 uniq -c | 

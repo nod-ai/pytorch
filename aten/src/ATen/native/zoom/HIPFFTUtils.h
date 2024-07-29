@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <hipfft/hipfft.h>
-#include <hipfft/hipffXt.h>
+#include <hipfft/hipfftXt.h>
 
 namespace at { namespace native {
 

@@ -97,7 +97,7 @@ struct IntDivider<unsigned int> {
   }
 
   C10_HOST_DEVICE inline unsigned int div(unsigned int n) const {
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+#if defined(__HIP_DEVICE_COMPILE__)
     // 't' is the higher 32-bits of unsigned 32-bit multiplication of 'n' and
     // 'm1'.
     unsigned int t = __umulhi(n, m1);

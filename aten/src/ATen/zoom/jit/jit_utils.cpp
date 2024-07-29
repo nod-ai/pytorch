@@ -8,7 +8,7 @@
 #include <c10/zoom/ZoomException.h>
 #include <c10/zoom/ZoomMiscFunctions.h>
 #include <ATen/zoom/jit/OffsetCalculator.cuh>
-// #include <ATen/cuda/nvrtc_stub/ATenNVRTC.h>
+#include <ATen/zoom/hiprtc_stub/ATenHIPRTC.h>
 #include <ATen/code_template.h>
 #include <ATen/OpMathType.h>
 #include <ATen/zoom/jit/jit_utils.h>
@@ -737,9 +737,9 @@ static std::string unhipify_math_functions(const std::string &original) {
 // TODO: refactor codegenOutputQuery into its own file
 //   that can be included by both files
 // See NOTE [ USE OF NVRTC AND DRIVER API ]
-// const at::zoom::NVRTC& nvrtc() {
-//   return at::globalContext().getNVRTC();
-// }
+const at::zoom::HIPRTC& hiprtc() {
+  return at::globalContext().getHIPRTC();
+}
 
 // query codegen output arch and target
 // TODO refactor so this function is usable both from jit and from aten
@@ -750,7 +750,7 @@ void codegenOutputQuery(
     int& hiprtc_major,
     int& hiprtc_minor,
     bool& compile_to_sass) {
-  ZOOM_HIPRTC_CHECK(hiprtcVersion(&hiprtc_major, &hiprtc_minor));
+  ZOOM_HIPRTC_CHECK(hiprtc().hiprtcVersion(&hiprtc_major, &hiprtc_minor));
   hip_major = prop->major;
   hip_minor = prop->minor;
   compile_to_sass = false;
@@ -762,7 +762,7 @@ void initializeZoomContext() {
   // lazily construct context if non-existing yet;
   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
   hipCtx_t pctx = nullptr;
-  HIP_DRIVER_CHECK(hipCtxGetCurrent(&pctx));
+  HIP_DRIVER_CHECK(at::globalContext().getHIPRTC().hipCtxGetCurrent(&pctx));
   if (!pctx) {
     std::unique_lock<std::mutex> hipFreeMutexLock(
         *(c10::zoom::getFreeMutex()));
@@ -1314,7 +1314,7 @@ hiprtcFunction jit_pwise_function(
     prop, hip_major, hip_minor, hiprtc_major, hiprtc_minor, compile_to_sass);
 
   // Objects used whether loading from the cache or jit compiling
-  // const auto& nvrtc = at::globalContext().getNVRTC();
+  const auto& hiprtc = at::globalContext().getHIPRTC();
   hiprtcFunction compiled_kernel_;
   std::string name = kernel_name + "_kernel";
 
@@ -1351,9 +1351,9 @@ hiprtcFunction jit_pwise_function(
     } else {
       // TODO: try passing the "mapped" file directly to cuModuleLoadCall instead of using an intermediate buffer
       std::vector<char> buffer(std::istreambuf_iterator<char>(readin), {});
-      HIP_DRIVER_CHECK(hipModuleLoadData(&(compiled_kernel_.module), buffer.data()));
+      HIP_DRIVER_CHECK(hiprtc.hipModuleLoadData(&(compiled_kernel_.module), buffer.data()));
       HIP_DRIVER_CHECK(
-        hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
+        hiprtc.hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
       readin.close();
       return compiled_kernel_;
     }
@@ -1363,7 +1363,7 @@ hiprtcFunction jit_pwise_function(
 
   // Creates the NVRTC program
   hiprtcProgram program;
-  ZOOM_HIPRTC_CHECK(hiprtcCreateProgram(
+  ZOOM_HIPRTC_CHECK(hiprtc.hiprtcCreateProgram(
       &program, code.c_str(), nullptr, 0, nullptr, nullptr));
 
   std::vector<const char*> args = {"--std=c++17"};
@@ -1377,34 +1377,34 @@ hiprtcFunction jit_pwise_function(
   #endif
 
   const auto compilation_result =
-      hiprtcCompileProgram(program, args.size(), args.data());
+      hiprtc.hiprtcCompileProgram(program, args.size(), args.data());
 
   // Throws an error on compilation failure
   if (compilation_result != HIPRTC_SUCCESS) {
     size_t logsize;
-    ZOOM_HIPRTC_CHECK(hiprtcGetProgramLogSize(program, &logsize));
+    ZOOM_HIPRTC_CHECK(hiprtc.hiprtcGetProgramLogSize(program, &logsize));
     std::string log(logsize, '\0');
-    ZOOM_HIPRTC_CHECK(hiprtcGetProgramLog(program, &log[0]));
+    ZOOM_HIPRTC_CHECK(hiprtc.hiprtcGetProgramLog(program, &log[0]));
     throw std::runtime_error(code + log);
   }
 
   size_t ptx_size = 0;
   std::vector<char> ptx;
 
-  const auto getSize = hiprtcGetCodeSize;
-  const auto getFunc = hiprtcGetCode;
+  const auto getSize = hiprtc.hiprtcGetCodeSize;
+  const auto getFunc = hiprtc.hiprtcGetCode;
 
 
   ZOOM_HIPRTC_CHECK(getSize(program, &ptx_size));
   ptx.resize(ptx_size);
   ZOOM_HIPRTC_CHECK(getFunc(program, ptx.data()));
 
-  HIP_DRIVER_CHECK(hipModuleLoadData(&(compiled_kernel_.module), ptx.data()));
+  HIP_DRIVER_CHECK(hiprtc.hipModuleLoadData(&(compiled_kernel_.module), ptx.data()));
 
   HIP_DRIVER_CHECK(
-     hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
+     hiprtc.hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
   // TODO: use guards to avoid leaking
-  ZOOM_HIPRTC_CHECK(hiprtcDestroyProgram(&program));
+  ZOOM_HIPRTC_CHECK(hiprtc.hiprtcDestroyProgram(&program));
 
   if (cache_dir.has_value()) {
     // Writes the program to the cache if caching
@@ -1446,10 +1446,10 @@ void launch_jitted_pwise_function(
     const dim3 kBlockSize,
     const int smem) {
   initializeZoomContext();
-  // const auto& nvrtc = at::globalContext().getNVRTC();
+  const auto& hiprtc = at::globalContext().getHIPRTC();
   // Launches kernel on current stream
   auto stream = c10::zoom::getCurrentZoomStream();
-  HIP_DRIVER_CHECK(hipModuleLaunchKernel(
+  HIP_DRIVER_CHECK(hiprtc.hipModuleLaunchKernel(
     function.function,
     nBlocks.x,
     nBlocks.y,

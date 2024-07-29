@@ -6,10 +6,6 @@
 
 #include <ATen/NumericUtils.h>
 
-// #if !(defined(USE_ROCM) || ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 800))))
-// #include <cuda_bf16.h>
-// #endif
-
 template <typename T>
 struct AtomicFPOp;
 

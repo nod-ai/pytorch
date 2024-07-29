@@ -7,12 +7,12 @@
 #include <ATen/detail/PrivateUse1HooksInterface.h>
 
 // Forward-declares at::Generator and at::zoom::NVRTC
-// namespace at {
-// struct Generator;
-// namespace cuda {
-// struct NVRTC;
-// } // namespace cuda
-// } // namespace at
+namespace at {
+struct Generator;
+namespace zoom {
+struct HIPRTC;
+} // namespace zoom
+} // namespace at
 
 // NB: Class must live in `at` due to limitations of Registry.h.
 namespace at {
@@ -89,6 +89,10 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
 
   virtual bool hasROCM() const {
     return false;
+  }
+
+  virtual const at::zoom::HIPRTC& hiprtc() const {
+    TORCH_CHECK(false, "HIPRTC requires Zoom. ", ZOOM_HELP);
   }
 
   virtual bool hasPrimaryContext(DeviceIndex device_index) const override {

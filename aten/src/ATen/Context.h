@@ -173,6 +173,9 @@ class TORCH_API Context {
   static const at::cuda::NVRTC& getNVRTC() {
     return detail::getCUDAHooks().nvrtc();
   }
+  static const at::zoom::HIPRTC& getHIPRTC() {
+    return detail::getZoomHooks().hiprtc();
+  }
 
   static bool setFlushDenormal(bool on);
 

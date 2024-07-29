@@ -21,7 +21,7 @@ namespace at { namespace zoom {
 //
 // IT IS AN ERROR TO TRY TO CALL ANY nvrtc* or cu* FUNCTION DIRECTLY.
 // INSTEAD USE, e.g.
-//   detail::getCUDAHooks().nvrtc().cuLoadModule(...)
+//   detail::getZoomHooks().nvrtc().cuLoadModule(...)
 // or
 //   globalContext().getNVRTC().cuLoadModule(...)
 //
