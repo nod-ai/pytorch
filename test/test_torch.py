@@ -1381,11 +1381,14 @@ else:
         input = torch.randn(2, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_avg_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_avg_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1394,11 +1397,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_avg_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_avg_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1407,11 +1413,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'max_pool3d_with_indices_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'max_pool3d_with_indices_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1420,11 +1429,14 @@ else:
         input = torch.randn(2, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_max_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_max_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1433,11 +1445,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'fractional_max_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'fractional_max_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1446,11 +1461,14 @@ else:
         input = torch.randn(2, 3, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'fractional_max_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'fractional_max_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @dtypes(*floating_types_and(torch.half))
     @onlyNativeDeviceTypes
@@ -1613,11 +1631,14 @@ else:
         input = torch.randn(2, 3, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad1d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad1d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_ReflectionPad2d(self, device):
@@ -1625,11 +1646,14 @@ else:
         input = torch.randn(2, 3, 8, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1638,11 +1662,14 @@ else:
         input = torch.randn(2, 3, 8, 8, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad3d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad3d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1651,11 +1678,14 @@ else:
         input = torch.randn(2, 3, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad1d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad1d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_ReplicationPad2d(self, device):
@@ -1663,13 +1693,16 @@ else:
         input = torch.randn(2, 3, 4, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         # Nondeterministic alert should only be raised if the forward call was
         # nondeterministic
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
         with DeterministicGuard(True):
             res = module(input)
@@ -1690,23 +1723,28 @@ else:
         input = torch.randn(2, 3, 4, 4, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchDynamo("Warning is not raised.")
     def test_nondeterministic_alert_NLLLoss(self, device):
         module = torch.nn.NLLLoss()
         input = torch.randn(2, 3, 5, 5, device=device)
         target = torch.rand(2, 5, 5, device=device).mul(3).floor().long()
-
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: module(input, target),
-            'nll_loss2d_forward_out_cuda_template',
-            torch.device(device).type == 'cuda')
+            f'nll_loss2d_forward_out_{device_type}_template',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_CTCLoss(self, device):
@@ -1717,11 +1755,14 @@ else:
         target_lengths = [30, 25, 20]
         res = module(input, target, input_lengths, target_lengths)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
             'ctc_loss_backward_gpu',
-            torch.device(device).type == 'cuda')
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_EmbeddingBag_max(self, device):
@@ -1731,22 +1772,28 @@ else:
         input = torch.randint(0, 3, (4, 3), device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'embedding_bag_backward_cuda_max',
-            torch.device(device).type == 'cuda')
+            f'embedding_bag_backward_{device_type}_max',
+            is_cuda or is_zoom)
 
     @dtypes(*all_types_and_complex_and(torch.bool))
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_cumsum(self, device, dtype):
         input = make_tensor((10,), dtype=dtype, device=device, low=-9, high=9)
-        should_alert = torch.device(device).type == 'cuda' and (dtype.is_floating_point or dtype.is_complex)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
+        should_alert = (is_cuda or is_zoom) and (dtype.is_floating_point or dtype.is_complex)
 
         for op_call in [torch.Tensor.cumsum, torch.cumsum]:
             self.check_nondeterministic_alert(
                 lambda: op_call(input, 0),
-                'cumsum_cuda_kernel',
+                f'cumsum_{device_type}_kernel',
                 should_alert)
 
     @expectedFailureMeta  # expected a non-determinitic error, but it was not raised
@@ -1834,11 +1881,14 @@ else:
         grid = torch.empty(1, 1, 1, 2, device=device)
         res = torch.nn.functional.grid_sample(input, grid, align_corners=False)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'grid_sampler_2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'grid_sampler_2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1847,11 +1897,14 @@ else:
         grid = torch.empty(1, 1, 1, 2, 3, device=device)
         res = torch.nn.functional.grid_sample(input, grid, align_corners=False)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'grid_sampler_3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'grid_sampler_3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     def test_invalid_shapes_grid_sampler(self, device):
         make_arg = partial(
