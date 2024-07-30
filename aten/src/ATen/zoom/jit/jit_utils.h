@@ -8,7 +8,6 @@
 #include <c10/util/irange.h>
 #include <ATen/zoom/jit/macros.h>
 #include <hip/hiprtc.h>
-// #include <ATen/cuda/detail/LazyNVRTC.h>
 
 namespace at { namespace zoom { namespace jit {
 

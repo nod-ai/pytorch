@@ -1,21 +1,16 @@
-
-// #include <ATen/cuda/CUDAGeneratorImpl.h>
 #include <ATen/zoom/ZoomGeneratorImpl.h>
 #include <ATen/Context.h>
 #include <ATen/DeviceGuard.h>
 #include <ATen/DynamicLibrary.h>
 #include <ATen/core/Vitals.h>
 // #include <ATen/cuda/CUDAConfig.h>
-// #include <ATen/cuda/CUDADevice.h>
 #include <ATen/zoom/ZoomDevice.h>
-// #include <ATen/cuda/Exceptions.h>
 #include <c10/zoom/ZoomException.h>
 #include <ATen/zoom/PeerToPeerAccess.h>
-// #include <ATen/cuda/PinnedMemoryAllocator.h>
 #include <ATen/zoom/PinnedMemoryAllocator.h>
 #include <ATen/zoom/hiprtc_stub/ATenHIPRTC.h>
 #include <ATen/zoom/detail/ZoomHooks.h>
-// #include <ATen/native/cuda/HIPFFTPlanCache.h>
+// #include <ATen/native/zoom/HIPFFTPlanCache.h>
 #include <c10/util/Exception.h>
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/zoom/ZoomFunctions.h>
@@ -32,12 +27,6 @@
 // #if defined(USE_ROCM)
 // #include <miopen/version.h>
 // #endif
-
-// #ifndef USE_ROCM
-// #include <ATen/cuda/detail/LazyNVRTC.h>
-// #endif
-
-// #include <cuda.h>
 
 #include <sstream>
 #include <cstddef>

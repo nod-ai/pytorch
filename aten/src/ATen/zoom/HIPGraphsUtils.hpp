@@ -3,7 +3,7 @@
 #include <ATen/zoom/ZoomGeneratorImpl.h>
 #include <ATen/zoom/ZoomEvent.h>
 #include <ATen/zoom/PhiloxUtils.hpp>
-// #include <ATen/cuda/detail/CUDAHooks.h>"
+// #include <ATen/zoom/detail/CUDAHooks.h>"
 #include <ATen/zoom/detail/ZoomHooks.h>
 #include <ATen/detail/ZoomHooksInterface.h>
 #include <c10/core/StreamGuard.h>

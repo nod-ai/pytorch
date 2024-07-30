@@ -1772,7 +1772,7 @@ void gemv<float>(CUDABLAS_GEMV_ARGTYPES(float)) {
 template <>
 void gemv<at::Half>(CUDABLAS_GEMV_ARGTYPES(at::Half)) {
   // In general, hipblas regards matrices as column-major.
-  // The hipblasS/Dgemv usages in cuda::blas::gemv<float>/<double> above
+  // The hipblasS/Dgemv usages in zoom::blas::gemv<float>/<double> above
   // require that external blas::gemv callers obey the following convention:
   //
   // If "a" is row-major with shape (output, summed) in blas::gemv's caller,

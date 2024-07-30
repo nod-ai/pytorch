@@ -5,14 +5,10 @@
 #include <cstdint>
 
 #include <hip/hip_runtime.h>
-
-#ifdef HIPSOLVER_VERSION
-#include <hipsolver/hipsolver.h>
-#endif
-
 #include <c10/core/Allocator.h>
 #include <c10/zoom/ZoomFunctions.h>
 
+#include <hipsolver/hipsolver.h>
 #include <hipblas/hipblas.h>
 #ifndef DISABLE_HIPBLASLT
 #include <hipblaslt/hipblaslt.h>
@@ -78,8 +74,8 @@ hipblasHandle_t getCurrentHIPBlasHandle();
 #ifndef DISABLE_HIPBLASLT
 hipblasLtHandle_t getCurrentHIPBlasLtHandle();
 #endif
-// TODO (Arham), optionally integrate hipsolver libs
-#if defined(HIPSOLVER_VERSION)
+
+#if defined(hipsolverVersionMajor)
 hipsolverDnHandle_t getCurrentHIPSolverDnHandle();
 #endif
 

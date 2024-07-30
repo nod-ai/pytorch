@@ -129,6 +129,34 @@ do {                                                          \
 #define TORCH_WARN_DISABLE_HIPBLASLT TORCH_WARN_ONCE("hipblasLt temporarily disabled in Zoom backend, using hipblas instead")
 #define TORCH_CHECK_DISABLE_HIPBLAS_LT TORCH_CHECK(false, "Error: hipblasLt routine called, but hipblasLt is disabled in the Zoom backend")
 
+#ifdef hipsolverVersionMajor
+
+namespace at::zoom::solver {
+C10_EXPORT const char* hipsolverGetErrorMessage(hipsolverStatus_t status);
+
+constexpr const char* _hipsolver_backend_suggestion =            \
+  "If you keep seeing this error, you may use "                 \
+  "`torch.backends.zoom.preferred_linalg_library()` to try "    \
+  "linear algebra operators with other supported backends. "    \
+  "See https://pytorch.org/docs/stable/backends.html#torch.backends.cuda.preferred_linalg_library";
+
+} // namespace at::zoom::solver
+
+#define TORCH_HIPSOLVER_CHECK(EXPR)                                      \
+  do {                                                                  \
+    hipsolverStatus_t __err = EXPR;                                      \                                                          \
+      TORCH_CHECK(                                                      \
+          __err == CUSOLVER_STATUS_SUCCESS,                             \
+          "hipsolver error: ",                                           \
+          at::zoom::solver::hipsolverGetErrorMessage(__err),             \
+          ", when calling `" #EXPR "`. ",                               \
+          at::zoom::solver::_hipsolver_backend_suggestion);              \                                                                 \
+  } while (0)
+
+#else
+#define TORCH_HIPSOLVER_CHECK(EXPR) EXPR
+#endif
+
 namespace c10::zoom {
 
 /// In the event of a CUDA failure, formats a nice error message about that

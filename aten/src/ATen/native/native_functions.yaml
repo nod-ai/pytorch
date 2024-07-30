@@ -169,11 +169,13 @@
   dispatch:
     CPU: _assert_async_cpu
     CUDA: _assert_async_cuda
+    PrivateUse1: _assert_async_zoom
 
 - func: _assert_async.msg(Tensor self, str assert_msg) -> ()
   dispatch:
     CPU: _assert_async_msg_cpu
     CUDA: _assert_async_msg_cuda
+    PrivateUse1: _assert_async_msg_zoom
 
 - func: _assert_scalar(Scalar self, str assert_msg) -> ()
   dispatch:
@@ -1947,6 +1949,7 @@
   dispatch:
     CPU: cummax_helper_cpu
     CUDA: cummax_helper_cuda
+    PrivateUse1: cummax_helper_zoom
 
 - func: cummin(Tensor self, int dim) -> (Tensor values, Tensor indices)
   device_check: NoCheck   # TensorIterator
@@ -1971,6 +1974,7 @@
   dispatch:
     CPU: cummin_helper_cpu
     CUDA: cummin_helper_cuda
+    PrivateUse1: cummin_helper_zoom
 
 - func: cummaxmin_backward(Tensor grad, Tensor input, Tensor indices, int dim) -> Tensor
   variants: function
@@ -3061,6 +3065,7 @@
   dispatch:
     CPU: _validate_compressed_sparse_indices_cpu
     CUDA: _validate_compressed_sparse_indices_cuda
+    PrivateUse1: _validate_compressed_sparse_indices_zoom
 
 - func: _cufft_get_plan_cache_size(DeviceIndex device_index) -> int
 
@@ -3984,6 +3989,7 @@
   dispatch:
     CPU: median_cpu
     CUDA: median_cuda
+    PrivateUse1: median_zoom
     MPS: median_mps
   autogen: median.out
 
@@ -5329,14 +5335,14 @@
 - func: logit(Tensor self, float? eps=None) -> Tensor
   variants: function, method
   dispatch:
-    CPU, CUDA: logit
+    CPU, CUDA, PrivateUse1: logit
     MPS: logit_mps
   tags: pointwise
 
 - func: logit_(Tensor(a!) self, float? eps=None) -> Tensor(a!)
   variants: function, method
   dispatch:
-    CPU, CUDA: logit_
+    CPU, CUDA, PrivateUse1: logit_
   tags: pointwise
 
 - func: logit.out(Tensor self, float? eps=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -6370,6 +6376,7 @@
   dispatch:
     CPU: _unique_cpu
     CUDA: _unique_cuda
+    PrivateUse1: _unique_zoom
   autogen: _unique.out
 
 - func: unique_dim(Tensor self, int dim, bool sorted=True, bool return_inverse=False, bool return_counts=False) -> (Tensor, Tensor, Tensor)
@@ -6377,6 +6384,7 @@
   dispatch:
     CPU: unique_dim_cpu
     CUDA: unique_dim_cuda
+    PrivateUse1: unique_dim_zoom
   tags: dynamic_output_shape
   autogen: unique_dim.out
 
@@ -6385,6 +6393,7 @@
   dispatch:
     CPU: unique_consecutive_cpu
     CUDA: unique_consecutive_cuda
+    PrivateUse1: unique_consecutive_zoom
     MPS: unique_consecutive_mps
   tags: dynamic_output_shape
   autogen: unique_consecutive.out
@@ -6394,6 +6403,7 @@
   dispatch:
     CPU: unique_dim_consecutive_cpu
     CUDA: unique_dim_consecutive_cuda
+    PrivateUse1: unique_dim_consecutive_zoom
     MPS: unique_dim_consecutive_mps
   tags: dynamic_output_shape
   autogen: unique_dim_consecutive.out
@@ -6407,6 +6417,7 @@
   dispatch:
     CPU: _unique2_cpu
     CUDA: _unique2_cuda
+    PrivateUse1: _unique2_zoom
     MPS: _unique2_mps
   tags: dynamic_output_shape
   autogen: _unique2.out
@@ -6552,6 +6563,7 @@
   dispatch:
     CPU: weight_norm_cpu
     CUDA: weight_norm_cuda
+    PrivateUse1: weight_norm_zoom
     MPS: weight_norm_mps
   autogen: _weight_norm_interface.out
 
@@ -6560,6 +6572,7 @@
   dispatch:
     CPU: weight_norm_backward_cpu
     CUDA: weight_norm_backward_cuda
+    PrivateUse1: weight_norm_backward_zoom
     MPS: weight_norm_backward_mps
   autogen: _weight_norm_interface_backward.out
 
@@ -6801,7 +6814,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: norm_out
+    CPU, CUDA, PrivateUse1: norm_out
     MPS: norm_out_mps
 
 # These four redispatch in their implementation, so OK to be CompositeImplicitAutograd
@@ -8016,7 +8029,7 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, MPS: is_set_to
+    CPU, CUDA, PrivateUse1, MPS: is_set_to
 
 - func: masked_fill_.Scalar(Tensor(a!) self, Tensor mask, Scalar value) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
@@ -9391,7 +9404,7 @@
 - func: triangular_solve.X(Tensor self, Tensor A, bool upper=True, bool transpose=False, bool unitriangular=False, *, Tensor(a!) X, Tensor(b!) M) -> (Tensor(a!) solution, Tensor(b!) cloned_coefficient)
   structured: True
   dispatch:
-    CPU, CUDA: triangular_solve_out
+    CPU, CUDA, PrivateUse1: triangular_solve_out
     MPS: triangular_solve_mps_out
     SparseCsrCPU: triangular_solve_out_sparse_csr_cpu
     SparseCsrCUDA: triangular_solve_out_sparse_csr_cuda
@@ -9407,14 +9420,14 @@
 - func: linalg_solve_triangular.out(Tensor self, Tensor B, *, bool upper, bool left=True, bool unitriangular=False, Tensor(a!) out) -> Tensor(a!)
   python_module: linalg
   dispatch:
-    CPU, CUDA: linalg_solve_triangular_out
+    CPU, CUDA, PrivateUse1: linalg_solve_triangular_out
     MPS: linalg_solve_triangular_mps_out
 
 - func: linalg_solve_triangular(Tensor self, Tensor B, *, bool upper, bool left=True, bool unitriangular=False) -> Tensor
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_solve_triangular
+    CPU, CUDA, PrivateUse1: linalg_solve_triangular
     MPS: linalg_solve_triangular_mps
 
 - func: linalg_vander(Tensor x, *, SymInt? N=None) -> Tensor
@@ -9453,12 +9466,12 @@
 
 - func: cholesky.out(Tensor self, bool upper=False, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: cholesky_out
+    CPU, CUDA, PrivateUse1: cholesky_out
 
 - func: cholesky(Tensor self, bool upper=False) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: cholesky
+    CPU, CUDA, PrivateUse1: cholesky
 
 - func: cholesky_solve.out(Tensor self, Tensor input2, bool upper=False, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
@@ -9474,16 +9487,17 @@
   dispatch:
     CPU: _cholesky_solve_helper_cpu
     CUDA: _cholesky_solve_helper_cuda
+    PrivateUse1: _cholesky_solve_helper_zoom
   autogen: _cholesky_solve_helper.out
 
 - func: cholesky_inverse(Tensor self, bool upper=False) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: cholesky_inverse
+    CPU, CUDA, PrivateUse1: cholesky_inverse
 
 - func: cholesky_inverse.out(Tensor self, bool upper=False, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: cholesky_inverse_out
+    CPU, CUDA, PrivateUse1: cholesky_inverse_out
 
 - func: qr.Q(Tensor self, bool some=True, *, Tensor(a!) Q, Tensor(b!) R) -> (Tensor(a!) Q, Tensor(b!) R)
 
@@ -9492,12 +9506,12 @@
 
 - func: geqrf.a(Tensor self, *, Tensor(a!) a, Tensor(b!) tau) -> (Tensor(a!) a, Tensor(b!) tau)
   dispatch:
-    CPU, CUDA: geqrf_out
+    CPU, CUDA, PrivateUse1: geqrf_out
 
 - func: geqrf(Tensor self) -> (Tensor a, Tensor tau)
   variants: method, function
   dispatch:
-    CPU, CUDA: geqrf
+    CPU, CUDA, PrivateUse1: geqrf
 
 # orgqr, alias for linalg_householder_product
 - func: orgqr(Tensor self, Tensor input2) -> Tensor
@@ -9507,12 +9521,12 @@
 
 - func: ormqr.out(Tensor self, Tensor input2, Tensor input3, bool left=True, bool transpose=False, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: ormqr_out
+    CPU, CUDA, PrivateUse1: ormqr_out
 
 - func: ormqr(Tensor self, Tensor input2, Tensor input3, bool left=True, bool transpose=False) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: ormqr
+    CPU, CUDA, PrivateUse1: ormqr
 
 - func: _lu_with_info(Tensor self, bool pivot=True, bool check_errors=True) -> (Tensor LU, Tensor pivots, Tensor info)
   variants: function
@@ -12864,6 +12878,7 @@
   dispatch:
     CPU: upsample_linear1d_out_cpu
     CUDA: upsample_linear1d_out_cuda
+    PrivateUse1: upsample_linear1d_out_zoom
     MPS: upsample_linear1d_out_mps
 
 - func: upsample_linear1d(Tensor self, SymInt[1] output_size, bool align_corners, float? scales=None) -> Tensor
@@ -12876,6 +12891,7 @@
   dispatch:
     CPU: upsample_linear1d_backward_out_cpu
     CUDA: upsample_linear1d_backward_out_cuda
+    PrivateUse1: upsample_linear1d_backward_out_zoom
     MPS: upsample_linear1d_backward_out_mps
 
 - func: upsample_linear1d_backward(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, bool align_corners, float? scales=None) -> Tensor
@@ -12888,6 +12904,7 @@
   dispatch:
     CPU: upsample_bilinear2d_out_cpu
     CUDA: upsample_bilinear2d_out_cuda
+    PrivateUse1: upsample_bilinear2d_out_zoom
     MPS: upsample_bilinear2d_out_mps
 
 - func: upsample_bilinear2d(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -12902,6 +12919,7 @@
   dispatch:
     CPU: upsample_bilinear2d_backward_out_cpu
     CUDA: upsample_bilinear2d_backward_out_cuda
+    PrivateUse1: upsample_bilinear2d_backward_out_zoom
     MPS: upsample_bilinear2d_backward_out_mps
 
 - func: upsample_bilinear2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -12914,6 +12932,7 @@
   dispatch:
     CPU: _upsample_bilinear2d_aa_out_cpu
     CUDA: _upsample_bilinear2d_aa_out_cuda
+    PrivateUse1: _upsample_bilinear2d_aa_out_zoom
 
 - func: _upsample_bilinear2d_aa(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12925,6 +12944,7 @@
   dispatch:
     CPU: _upsample_bilinear2d_aa_backward_out_cpu
     CUDA: _upsample_bilinear2d_aa_backward_out_cuda
+    PrivateUse1: _upsample_bilinear2d_aa_backward_out_zoom
 
 - func: _upsample_bilinear2d_aa_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12936,6 +12956,7 @@
   dispatch:
     CPU: upsample_bicubic2d_out_cpu
     CUDA: upsample_bicubic2d_out_cuda
+    PrivateUse1: upsample_bicubic2d_out_zoom
 
 - func: upsample_bicubic2d(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12947,6 +12968,7 @@
   dispatch:
     CPU: upsample_bicubic2d_backward_out_cpu
     CUDA: upsample_bicubic2d_backward_out_cuda
+    PrivateUse1: upsample_bicubic2d_backward_out_zoom
 
 - func: upsample_bicubic2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12958,6 +12980,7 @@
   dispatch:
     CPU: _upsample_bicubic2d_aa_out_cpu
     CUDA: _upsample_bicubic2d_aa_out_cuda
+    PrivateUse1: _upsample_bicubic2d_aa_out_zoom
 
 - func: _upsample_bicubic2d_aa(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12969,6 +12992,7 @@
   dispatch:
     CPU: _upsample_bicubic2d_aa_backward_out_cpu
     CUDA: _upsample_bicubic2d_aa_backward_out_cuda
+    PrivateUse1: _upsample_bicubic2d_aa_backward_out_zoom
 
 - func: _upsample_bicubic2d_aa_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12980,6 +13004,7 @@
   dispatch:
     CPU: upsample_trilinear3d_out_cpu
     CUDA: upsample_trilinear3d_out_cuda
+    PrivateUse1: upsample_trilinear3d_out_zoom
 
 - func: upsample_trilinear3d(Tensor self, SymInt[3] output_size, bool align_corners, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -12991,6 +13016,7 @@
   dispatch:
     CPU: upsample_trilinear3d_backward_out_cpu
     CUDA: upsample_trilinear3d_backward_out_cuda
+    PrivateUse1: upsample_trilinear3d_backward_out_zoom
 
 - func: upsample_trilinear3d_backward(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, bool align_corners, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13002,6 +13028,7 @@
   dispatch:
     CPU: upsample_nearest1d_out_cpu
     CUDA: upsample_nearest1d_out_cuda
+    PrivateUse1: upsample_nearest1d_out_zoom
     MPS: upsample_nearest1d_out_mps
 
 - func: _upsample_nearest_exact1d.out(Tensor self, SymInt[1] output_size, float? scales=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -13010,6 +13037,7 @@
   dispatch:
     CPU: _upsample_nearest_exact1d_out_cpu
     CUDA: _upsample_nearest_exact1d_out_cuda
+    PrivateUse1: _upsample_nearest_exact1d_out_zoom
     MPS: _upsample_nearest_exact1d_out_mps
 
 - func: upsample_nearest1d(Tensor self, SymInt[1] output_size, float? scales=None) -> Tensor
@@ -13026,6 +13054,7 @@
   dispatch:
     CPU: upsample_nearest1d_backward_out_cpu
     CUDA: upsample_nearest1d_backward_out_cuda
+    PrivateUse1: upsample_nearest1d_backward_out_zoom
     MPS: upsample_nearest1d_backward_out_mps
 
 - func: _upsample_nearest_exact1d_backward.grad_input(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, float? scales=None, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -13034,6 +13063,7 @@
   dispatch:
     CPU: _upsample_nearest_exact1d_backward_out_cpu
     CUDA: _upsample_nearest_exact1d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact1d_backward_out_zoom
     MPS: _upsample_nearest_exact1d_backward_out_mps
 
 - func: upsample_nearest1d_backward(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, float? scales=None) -> Tensor
@@ -13050,6 +13080,7 @@
   dispatch:
     CPU: upsample_nearest2d_out_cpu
     CUDA: upsample_nearest2d_out_cuda
+    PrivateUse1: upsample_nearest2d_out_zoom
     MPS: upsample_nearest2d_out_mps
 
 - func: _upsample_nearest_exact2d.out(Tensor self, SymInt[2] output_size, float? scales_h=None, float? scales_w=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -13058,6 +13089,7 @@
   dispatch:
     CPU: _upsample_nearest_exact2d_out_cpu
     CUDA: _upsample_nearest_exact2d_out_cuda
+    PrivateUse1: _upsample_nearest_exact2d_out_zoom
     MPS: _upsample_nearest_exact2d_out_mps
 
 - func: upsample_nearest2d(Tensor self, SymInt[2] output_size, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13078,6 +13110,7 @@
   dispatch:
     CPU: upsample_nearest2d_backward_out_cpu
     CUDA: upsample_nearest2d_backward_out_cuda
+    PrivateUse1: upsample_nearest2d_backward_out_zoom
     MPS: upsample_nearest2d_backward_out_mps
 
 - func: _upsample_nearest_exact2d_backward.grad_input(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, float? scales_h=None, float? scales_w=None, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -13086,6 +13119,7 @@
   dispatch:
     CPU: _upsample_nearest_exact2d_backward_out_cpu
     CUDA: _upsample_nearest_exact2d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact2d_backward_out_zoom
     MPS: _upsample_nearest_exact2d_backward_out_mps
 
 - func: upsample_nearest2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13102,6 +13136,7 @@
   dispatch:
     CPU: upsample_nearest3d_out_cpu
     CUDA: upsample_nearest3d_out_cuda
+    PrivateUse1: upsample_nearest3d_out_zoom
 
 - func: _upsample_nearest_exact3d.out(Tensor self, SymInt[3] output_size, float? scales_d=None, float? scales_h=None, float? scales_w=None, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13109,6 +13144,7 @@
   dispatch:
     CPU: _upsample_nearest_exact3d_out_cpu
     CUDA: _upsample_nearest_exact3d_out_cuda
+    PrivateUse1: _upsample_nearest_exact3d_out_zoom
 
 - func: upsample_nearest3d(Tensor self, SymInt[3] output_size, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13128,6 +13164,7 @@
   dispatch:
     CPU: upsample_nearest3d_backward_out_cpu
     CUDA: upsample_nearest3d_backward_out_cuda
+    PrivateUse1: upsample_nearest3d_backward_out_zoom
 
 - func: _upsample_nearest_exact3d_backward.grad_input(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, float? scales_d=None, float? scales_h=None, float? scales_w=None, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
@@ -13135,6 +13172,7 @@
   dispatch:
     CPU: _upsample_nearest_exact3d_backward_out_cpu
     CUDA: _upsample_nearest_exact3d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact3d_backward_out_zoom
 
 - func: upsample_nearest3d_backward(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13663,7 +13701,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA: special_zeta_out
+    CPU, CUDA, PrivateUse1: special_zeta_out
   tags: pointwise
 
 - func: special_zeta.self_scalar_out(Scalar self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
@@ -14142,7 +14180,7 @@
   variants: function
   structured: True
   dispatch:
-    CPU, CUDA: linalg_lu_factor_ex_out
+    CPU, CUDA, PrivateUse1: linalg_lu_factor_ex_out
 
 # linalg.lu
 - func: linalg_lu(Tensor A, *, bool pivot=True) -> (Tensor P, Tensor L, Tensor U)
@@ -14200,7 +14238,7 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_ldl_factor_ex_out
+    CPU, CUDA, PrivateUse1: linalg_ldl_factor_ex_out
 
 - func: linalg_ldl_factor(Tensor self, *, bool hermitian=False) -> (Tensor LD, Tensor pivots)
   python_module: linalg
@@ -14220,7 +14258,7 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_ldl_solve_out
+    CPU, CUDA, PrivateUse1: linalg_ldl_solve_out
 
 - func: linalg_lstsq(Tensor self, Tensor b, float? rcond=None, *, str? driver=None) -> (Tensor solution, Tensor residuals, Tensor rank, Tensor singular_values)
   python_module: linalg
@@ -14233,7 +14271,7 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_lstsq_out
+    CPU, CUDA, PrivateUse1: linalg_lstsq_out
   tags: dynamic_output_shape
 
 # torch.linalg.matmul, alias for torch.matmul
@@ -14285,12 +14323,12 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_eig
+    CPU, CUDA, PrivateUse1: linalg_eig
 
 - func: linalg_eig.out(Tensor self, *, Tensor(a!) eigenvalues, Tensor(b!) eigenvectors) -> (Tensor(a!) eigenvalues, Tensor(b!) eigenvectors)
   python_module: linalg
   dispatch:
-    CPU, CUDA: linalg_eig_out
+    CPU, CUDA, PrivateUse1: linalg_eig_out
 
 - func: _linalg_eigvals(Tensor self) -> Tensor
   python_module: linalg
@@ -14313,7 +14351,7 @@
 - func: _linalg_eigh.eigenvalues(Tensor A, str UPLO="L", bool compute_v=True, *, Tensor(a!) eigenvalues, Tensor(b!) eigenvectors) -> (Tensor(a!) eigenvalues, Tensor(b!) eigenvectors)
   structured: True
   dispatch:
-    CPU, CUDA: _linalg_eigh_out
+    CPU, CUDA, PrivateUse1: _linalg_eigh_out
 
 - func: linalg_eigh(Tensor self, str UPLO="L") -> (Tensor eigenvalues, Tensor eigenvectors)
   python_module: linalg
