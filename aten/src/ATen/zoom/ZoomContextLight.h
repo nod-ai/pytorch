@@ -58,25 +58,26 @@ inline bool is_available() {
     return c10::zoom::device_count() > 0;
 }
 
-hipDeviceProp_t* getCurrentDeviceProperties();
+TORCH_ZOOM_API hipDeviceProp_t* getCurrentDeviceProperties();
 
-int warp_size();
+TORCH_ZOOM_API int warp_size();
 
-hipDeviceProp_t* getDeviceProperties(c10::DeviceIndex device);
+TORCH_ZOOM_API hipDeviceProp_t* getDeviceProperties(c10::DeviceIndex device);
 
-bool canDeviceAccessPeer(
+TORCH_ZOOM_API bool canDeviceAccessPeer(
     c10::DeviceIndex device,
     c10::DeviceIndex peer_device);
 
-c10::Allocator* getZoomDeviceAllocator();
+TORCH_ZOOM_API c10::Allocator* getZoomDeviceAllocator();
 
-hipblasHandle_t getCurrentHIPBlasHandle();
+TORCH_ZOOM_API hipblasHandle_t getCurrentHIPBlasHandle();
 #ifndef DISABLE_HIPBLASLT
-hipblasLtHandle_t getCurrentHIPBlasLtHandle();
+TORCH_ZOOM_API hipblasLtHandle_t getCurrentHIPBlasLtHandle();
 #endif
 
+
 #if defined(hipsolverVersionMajor)
-hipsolverDnHandle_t getCurrentHIPSolverDnHandle();
+TORCH_ZOOM_API hipsolverDnHandle_t getCurrentHIPSolverDnHandle();
 #endif
 
 } // namespace at::zoom

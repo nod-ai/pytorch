@@ -81,5 +81,5 @@ extern "C" typedef struct HIPRTC {
 #undef CREATE_MEMBER
 } HIPRTC;
 
-extern "C" HIPRTC* load_hiprtc();
+extern "C" TORCH_ZOOM_API HIPRTC* load_hiprtc();
 }} // at::zoom

@@ -20,19 +20,19 @@ namespace at::zoom {
 // call between host and device, and passed the corresponding context from the
 // allocation. This is currently invoked by at::native::copy_kernel_cuda.
 //
-c10::Allocator* getCachingHostAllocator();
+TORCH_ZOOM_API c10::Allocator* getCachingHostAllocator();
 
 // Records an event in the specified stream. The allocation corresponding to the
 // input `ptr`/`ctx` will not be re-used until the event has occurred.
-bool CachingHostAllocator_recordEvent(
+TORCH_ZOOM_API bool CachingHostAllocator_recordEvent(
     void* ptr,
     void* ctx,
     c10::zoom::ZoomStream stream);
 
 // Releases cached pinned memory allocations via cudaHostFree
-void CachingHostAllocator_emptyCache();
+TORCH_ZOOM_API void CachingHostAllocator_emptyCache();
 
-inline at::DataPtr HostAlloc(size_t size) {
+inline TORCH_ZOOM_API at::DataPtr HostAlloc(size_t size) {
   return getCachingHostAllocator()->allocate(size);
 }
 

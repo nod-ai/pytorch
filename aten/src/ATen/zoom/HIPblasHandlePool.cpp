@@ -77,12 +77,6 @@ using CuBlasPoolType = DeviceThreadHandlePool<hipblasHandle_t, createCublasHandl
 
 } // namespace
 
-void clearCublasWorkspaces() {
-  // #if !defined(USE_ROCM)
-  //     cublas_handle_stream_to_workspace().clear();
-  // #endif
-}
-
 size_t parseChosenWorkspaceSize() {
   const char * val = getenv("HIPBLAS_WORKSPACE_CONFIG");
   /* :4096:2:16:8 default, 32MiB for Hopper */

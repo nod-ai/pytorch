@@ -19,9 +19,9 @@ namespace zoom {
 
 // Standalone way to get a unique mempool id usable as a pool=... argument
 // to HIPGraph::capture_begin
-MempoolId_t graph_pool_handle();
+TORCH_ZOOM_API MempoolId_t graph_pool_handle();
 
-struct HIPGraph {
+struct TORCH_ZOOM_API HIPGraph {
   HIPGraph();
   ~HIPGraph();
 

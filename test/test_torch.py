@@ -242,6 +242,7 @@ class TestTorchDeviceType(TestCase):
         a = make_tensor((10,), dtype=dtype, device=device, low=-9, high=9)
 
         module = torch.cuda if (torch.device(device).type == 'cuda') else torch
+        module = torch.zoom if (torch.device(device).type == 'zoom') else module
         expected_storage_type = getattr(module, torch.storage._dtype_to_storage_type_map()[dtype])
 
         self.assertEqual(a.storage_type(), expected_storage_type)

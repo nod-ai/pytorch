@@ -5,7 +5,7 @@
 
 namespace at::zoom {
 
-inline at::Allocator* getPinnedMemoryAllocator() {
+inline TORCH_ZOOM_API at::Allocator* getPinnedMemoryAllocator() {
   return getCachingHostAllocator();
 }
 } // namespace at::zoom

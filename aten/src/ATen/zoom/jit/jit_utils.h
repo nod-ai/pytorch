@@ -210,6 +210,6 @@ inline std::string typeName(ScalarType t) {
 }
 #undef TYPE_NAME_CASE
 
-void initializeZoomContext();
+TORCH_ZOOM_API void initializeZoomContext();
 
 }}}  // namespace at::zoom::jit

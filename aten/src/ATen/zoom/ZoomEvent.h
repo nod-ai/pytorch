@@ -26,7 +26,7 @@ namespace at::zoom {
 * called before the event is ever recorded, it will use the current device.
 * Later streams that record the event must match this device.
 */
-struct ZoomEvent {
+struct TORCH_ZOOM_API ZoomEvent {
   // Constructors
   // Default value for `flags` is specified below - it's cudaEventDisableTiming
   ZoomEvent() noexcept = default;

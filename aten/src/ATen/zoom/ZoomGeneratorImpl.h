@@ -123,7 +123,7 @@ struct ZoomGeneratorState : public c10::intrusive_ptr_target {
   c10::intrusive_ptr<ZoomGeneratorState> clone();
 };
 
-struct ZoomGeneratorImpl : public c10::GeneratorImpl {
+struct TORCH_ZOOM_API ZoomGeneratorImpl : public c10::GeneratorImpl {
   // Constructors
   ZoomGeneratorImpl(DeviceIndex device_index = -1);
   ZoomGeneratorImpl(
@@ -173,9 +173,9 @@ struct ZoomGeneratorImpl : public c10::GeneratorImpl {
 
 namespace zoom::detail {
 
-const Generator& getDefaultZoomGenerator(
+TORCH_ZOOM_API const Generator& getDefaultZoomGenerator(
     DeviceIndex device_index = -1);
-Generator createZoomGenerator(DeviceIndex device_index = -1);
+TORCH_ZOOM_API Generator createZoomGenerator(DeviceIndex device_index = -1);
 
 } // namespace zoom::detail
 } // namespace at

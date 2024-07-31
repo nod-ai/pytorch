@@ -7,7 +7,7 @@
 
 namespace at { namespace native {
 
-void resize_bytes_zoom(StorageImpl* storage, size_t size_bytes);
+TORCH_ZOOM_API void resize_bytes_zoom(StorageImpl* storage, size_t size_bytes);
 
 static inline void maybe_resize_storage_zoom(TensorImpl* self, size_t new_size_bytes) {
   // It does not make sense to try to resize a storage

@@ -773,6 +773,10 @@ libtorch_python_cuda_sources = libtorch_python_cuda_core_sources + [
     "torch/csrc/cuda/Tensor.cpp",
 ]
 
+libtorch_python_zoom_sources = [
+    "torch/csrc/zoom/Module.cpp",
+]
+
 libtorch_python_xpu_sources = [
     "torch/csrc/xpu/Event.cpp",
     "torch/csrc/xpu/Module.cpp",
