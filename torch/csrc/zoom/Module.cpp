@@ -27,11 +27,11 @@
 #include <c10/util/irange.h>
 
 // #include <torch/csrc/HIPIPCTypes.h>
-// #include <torch/csrc/Generator.h>
-// #include <torch/csrc/zoom/ZoomPluggableAllocator.h>
-// #include <torch/csrc/zoom/THCP.h>
-// #include <torch/csrc/zoom/memory_snapshot.h>
-// #include <torch/csrc/zoom/python_comm.h>
+#include <torch/csrc/Generator.h>
+#include <torch/csrc/zoom/ZoomPluggableAllocator.h>
+#include <torch/csrc/zoom/THCP.h>
+#include <torch/csrc/zoom/memory_snapshot.h>
+#include <torch/csrc/zoom/python_comm.h>
 #include <torch/csrc/profiler/python/combined_traceback.h>
 #include <torch/csrc/python_headers.h>
 #include <torch/csrc/utils/device_lazy_init.h>
@@ -446,7 +446,7 @@ PyObject* THCPModule_zoomSynchronize(PyObject* _unused, PyObject* noargs) {
 
 // PyObject* THCPModule_zoomIPCCollect(PyObject* _unused, PyObject* noargs) {
 //   HANDLE_TH_ERRORS
-//   torch::CudaIPCCollect();
+//   torch::zoomIPCCollect();
 //   Py_RETURN_NONE;
 //   END_HANDLE_TH_ERRORS
 // }
@@ -477,7 +477,7 @@ PyObject* THCPModule_zoomLockMutex(PyObject* module, PyObject* noargs) {
   // This has to be a busy loop because we **absolutely need to** hold the GIL
   // or it's a recipe for a deadlock otherwise (if we let other Python threads
   // run while we have the zoomMutex, but not the GIL, they might try to e.g.
-  // free a CUDA tensor and acquire the zoomMutex without giving up the GIL,
+  // free a Zoom tensor and acquire the zoomMutex without giving up the GIL,
   // because it happens deep within THC).
   while (true) {
     if (mutex->try_lock())
@@ -512,26 +512,26 @@ PyObject* THCPModule_hasPrimaryContext(PyObject* _unused, PyObject* arg) {
   END_HANDLE_TH_ERRORS
 }
 
-// PyObject* THCPModule_setMemoryFraction(PyObject* _unused, PyObject* args) {
-//   HANDLE_TH_ERRORS
-//   PyObject* fraction_o = nullptr;
-//   PyObject* device_o = nullptr;
-//   if (!PyArg_ParseTuple(args, "OO", &fraction_o, &device_o)) {
-//     THPUtils_invalidArguments(
-//         args,
-//         nullptr,
-//         "set_memory_fraction",
-//         1,
-//         "(double fraction, int device);");
-//     return nullptr;
-//   }
-//   double fraction = PyFloat_AsDouble(fraction_o);
-//   auto device_index = THPUtils_unpackDeviceIndex(device_o);
+PyObject* THCPModule_setMemoryFraction(PyObject* _unused, PyObject* args) {
+  HANDLE_TH_ERRORS
+  PyObject* fraction_o = nullptr;
+  PyObject* device_o = nullptr;
+  if (!PyArg_ParseTuple(args, "OO", &fraction_o, &device_o)) {
+    THPUtils_invalidArguments(
+        args,
+        nullptr,
+        "set_memory_fraction",
+        1,
+        "(double fraction, int device);");
+    return nullptr;
+  }
+  double fraction = PyFloat_AsDouble(fraction_o);
+  auto device_index = THPUtils_unpackDeviceIndex(device_o);
 
-//   c10::zoom::ZoomCachingAllocator::setMemoryFraction(fraction, device_index);
-//   END_HANDLE_TH_ERRORS
-//   Py_RETURN_NONE;
-// }
+  c10::zoom::ZoomCachingAllocator::setMemoryFraction(fraction, device_index);
+  END_HANDLE_TH_ERRORS
+  Py_RETURN_NONE;
+}
 
 PyObject* THCPModule_emptyCache(PyObject* _unused, PyObject* noargs) {
   HANDLE_TH_ERRORS
@@ -996,306 +996,306 @@ void addStorageDeleterFns(
   }
 }
 
-// static void registerCudaPluggableAllocator(PyObject* module) {
-//   auto m = py::handle(module).cast<py::module>();
+static void registerZoomPluggableAllocator(PyObject* module) {
+  auto m = py::handle(module).cast<py::module>();
 
-//   // NOLINTNEXTLINE(bugprone-unused-raii)
-//   py::class_<
-//       c10::zoom::ZoomCachingAllocator::ZoomAllocator,
-//       std::shared_ptr<c10::zoom::ZoomCachingAllocator::ZoomAllocator>>(
-//       m, "_zoom_ZoomAllocator");
-//   m.def("_zoom_getAllocator", []() {
-//     return py::cast(torch::zoom::ZoomPluggableAllocator::getCurrentAllocator());
-//   });
+  // NOLINTNEXTLINE(bugprone-unused-raii)
+  py::class_<
+      c10::zoom::ZoomCachingAllocator::ZoomAllocator,
+      std::shared_ptr<c10::zoom::ZoomCachingAllocator::ZoomAllocator>>(
+      m, "_zoom_ZoomAllocator");
+  m.def("_zoom_getAllocator", []() {
+    return py::cast(torch::zoom::ZoomPluggableAllocator::getCurrentAllocator());
+  });
 
-//   m.def(
-//       "_zoom_changeCurrentAllocator",
-//       [](const std::shared_ptr<c10::zoom::ZoomCachingAllocator::ZoomAllocator>&
-//              allocator) {
-//         torch::zoom::ZoomPluggableAllocator::changeCurrentAllocator(allocator);
-//       });
-//   py::class_<
-//       torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator,
-//       c10::zoom::ZoomCachingAllocator::ZoomAllocator,
-//       std::shared_ptr<
-//           torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator>>(
-//       m, "_ZoomPluggableAllocator")
-//       .def(
-//           "set_init_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(int);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_init_fn(func);
-//           })
-//       .def(
-//           "set_reset_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void();
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_reset_fn(func);
-//           })
-//       .def(
-//           "set_memory_fraction_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(double, int);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_memory_fraction_fn(func);
-//           })
-//       .def(
-//           "set_base_alloc_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void*(void*, size_t*);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_base_alloc_fn(func);
-//           })
-//       .def(
-//           "set_record_stream_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(void*, hipStream_t);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_record_stream_fn(func);
-//           })
-//       .def(
-//           "set_begin_allocate_to_pool",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(
-//                 int, c10::zoom::MempoolId_t, std::function<bool(hipStream_t)>);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_begin_allocate_to_pool(func);
-//           })
-//       .def(
-//           "set_end_allocate_to_pool_fn",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(int, c10::zoom::MempoolId_t);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_end_allocate_to_pool_fn(func);
-//           })
-//       .def(
-//           "set_release_pool",
-//           [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
-//              uint64_t func_ptr) {
-//             using FuncType = void(int, c10::zoom::MempoolId_t);
-//             std::function<FuncType> func =
-//                 // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//                 reinterpret_cast<FuncType*>(func_ptr);
-//             self.set_release_pool(func);
-//           });
-//   m.def("_zoom_customAllocator", [](uint64_t malloc_ptr, uint64_t free_ptr) {
-//     using MallocFuncType = void*(size_t, int, hipStream_t);
-//     using FreeFuncType = void(void*, size_t, int, hipStream_t);
-//     std::function<MallocFuncType> malloc_fn =
-//         // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//         reinterpret_cast<MallocFuncType*>(malloc_ptr);
-//     std::function<FreeFuncType> free_fn =
-//         // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//         reinterpret_cast<FreeFuncType*>(free_ptr);
-//     return torch::zoom::ZoomPluggableAllocator::createCustomAllocator(
-//         malloc_fn, free_fn);
-//   });
+  m.def(
+      "_zoom_changeCurrentAllocator",
+      [](const std::shared_ptr<c10::zoom::ZoomCachingAllocator::ZoomAllocator>&
+             allocator) {
+        torch::zoom::ZoomPluggableAllocator::changeCurrentAllocator(allocator);
+      });
+  py::class_<
+      torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator,
+      c10::zoom::ZoomCachingAllocator::ZoomAllocator,
+      std::shared_ptr<
+          torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator>>(
+      m, "_ZoomPluggableAllocator")
+      .def(
+          "set_init_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(int);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_init_fn(func);
+          })
+      .def(
+          "set_reset_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void();
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_reset_fn(func);
+          })
+      .def(
+          "set_memory_fraction_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(double, int);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_memory_fraction_fn(func);
+          })
+      .def(
+          "set_base_alloc_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void*(void*, size_t*);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_base_alloc_fn(func);
+          })
+      .def(
+          "set_record_stream_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(void*, hipStream_t);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_record_stream_fn(func);
+          })
+      .def(
+          "set_begin_allocate_to_pool",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(
+                int, c10::zoom::MempoolId_t, std::function<bool(hipStream_t)>);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_begin_allocate_to_pool(func);
+          })
+      .def(
+          "set_end_allocate_to_pool_fn",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(int, c10::zoom::MempoolId_t);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_end_allocate_to_pool_fn(func);
+          })
+      .def(
+          "set_release_pool",
+          [](torch::zoom::ZoomPluggableAllocator::ZoomPluggableAllocator& self,
+             uint64_t func_ptr) {
+            using FuncType = void(int, c10::zoom::MempoolId_t);
+            std::function<FuncType> func =
+                // NOLINTNEXTLINE(performance-no-int-to-ptr)
+                reinterpret_cast<FuncType*>(func_ptr);
+            self.set_release_pool(func);
+          });
+  m.def("_zoom_customAllocator", [](uint64_t malloc_ptr, uint64_t free_ptr) {
+    using MallocFuncType = void*(size_t, int, hipStream_t);
+    using FreeFuncType = void(void*, size_t, int, hipStream_t);
+    std::function<MallocFuncType> malloc_fn =
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        reinterpret_cast<MallocFuncType*>(malloc_ptr);
+    std::function<FreeFuncType> free_fn =
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        reinterpret_cast<FreeFuncType*>(free_ptr);
+    return torch::zoom::ZoomPluggableAllocator::createCustomAllocator(
+        malloc_fn, free_fn);
+  });
 
-//   // NOLINTNEXTLINE(bugprone-unused-raii)
-//   py::class_<
-//       c10::zoom::ZoomCachingAllocator::AllocatorState,
-//       std::shared_ptr<c10::zoom::ZoomCachingAllocator::AllocatorState>>(
-//       m, "_zoom_ZoomAllocator_AllocatorState");
+  // NOLINTNEXTLINE(bugprone-unused-raii)
+  py::class_<
+      c10::zoom::ZoomCachingAllocator::AllocatorState,
+      std::shared_ptr<c10::zoom::ZoomCachingAllocator::AllocatorState>>(
+      m, "_zoom_ZoomAllocator_AllocatorState");
 
-//   m.def(
-//       "_zoom_getCheckpointState",
-//       [](c10::DeviceIndex device, c10::zoom::MempoolId_t id) {
-//         return c10::zoom::ZoomCachingAllocator::getCheckpointState(device, id);
-//       });
+  m.def(
+      "_zoom_getCheckpointState",
+      [](c10::DeviceIndex device, c10::zoom::MempoolId_t id) {
+        return c10::zoom::ZoomCachingAllocator::getCheckpointState(device, id);
+      });
 
-//   m.def("_free_And_Remove_DeleterFn", [](size_t storage_impl_ptr) {
-//     // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//     c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
-//     auto alloc = c10::zoom::ZoomCachingAllocator::get();
-//     auto data_ptr = storage_impl->data_ptr().get();
-//     bool succeeded = storage_impl->mutable_data_ptr().compare_exchange_deleter(
-//         alloc->raw_deleter(), c10::detail::deleteNothing);
-//     TORCH_CHECK(succeeded, "Expected standard deleter");
-//     c10::zoom::ZoomCachingAllocator::raw_delete(data_ptr);
-//   });
+  m.def("_free_And_Remove_DeleterFn", [](size_t storage_impl_ptr) {
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
+    auto alloc = c10::zoom::ZoomCachingAllocator::get();
+    auto data_ptr = storage_impl->data_ptr().get();
+    bool succeeded = storage_impl->mutable_data_ptr().compare_exchange_deleter(
+        alloc->raw_deleter(), c10::detail::deleteNothing);
+    TORCH_CHECK(succeeded, "Expected standard deleter");
+    c10::zoom::ZoomCachingAllocator::raw_delete(data_ptr);
+  });
 
-//   m.def(
-//       "_set_storage_access_error_msg", [](const at::Tensor& t, std::string s) {
-//         t.unsafeGetTensorImpl()
-//             ->release_storage_and_set_meta_custom_data_ptr_error_msg_(s);
-//       });
+  m.def(
+      "_set_storage_access_error_msg", [](const at::Tensor& t, std::string s) {
+        t.unsafeGetTensorImpl()
+            ->release_storage_and_set_meta_custom_data_ptr_error_msg_(s);
+      });
 
-//   m.def("_has_Standard_Deleter", [](size_t storage_impl_ptr) {
-//     // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//     c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
-//     auto alloc = c10::zoom::ZoomCachingAllocator::get();
-//     return (storage_impl->data_ptr().get_deleter() == alloc->raw_deleter());
-//   });
+  m.def("_has_Standard_Deleter", [](size_t storage_impl_ptr) {
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
+    auto alloc = c10::zoom::ZoomCachingAllocator::get();
+    return (storage_impl->data_ptr().get_deleter() == alloc->raw_deleter());
+  });
 
-//   m.def("_set_cached_tensors_enabled", [](bool enabled) {
-//     at::caching::set_cached_tensors_enabled(enabled);
-//   });
+  m.def("_set_cached_tensors_enabled", [](bool enabled) {
+    at::caching::set_cached_tensors_enabled(enabled);
+  });
 
-//   m.def("_add_cached_tensor", [](const at::Tensor& t) {
-//     at::caching::add_cached_tensor(t);
-//   });
+  m.def("_add_cached_tensor", [](const at::Tensor& t) {
+    at::caching::add_cached_tensor(t);
+  });
 
-//   m.def("_remove_cached_tensor", [](const at::Tensor& t) {
-//     at::caching::remove_cached_tensor(t);
-//   });
+  m.def("_remove_cached_tensor", [](const at::Tensor& t) {
+    at::caching::remove_cached_tensor(t);
+  });
 
-//   m.def("_is_cached_tensor", [](const at::Tensor& t) {
-//     return at::caching::is_cached_tensor(t);
-//   });
+  m.def("_is_cached_tensor", [](const at::Tensor& t) {
+    return at::caching::is_cached_tensor(t);
+  });
 
-//   m.def("_storage_Use_Count", [](size_t storage_impl_ptr) {
-//     // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//     c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
-//     return c10::raw::weak_intrusive_ptr::use_count(storage_impl);
-//   });
+  m.def("_storage_Use_Count", [](size_t storage_impl_ptr) {
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    c10::StorageImpl* storage_impl = (c10::StorageImpl*)storage_impl_ptr;
+    return c10::raw::weak_intrusive_ptr::use_count(storage_impl);
+  });
 
-//   m.def(
-//       "_tensors_data_ptrs_at_indices_equal",
-//       [](py::list& tensors, py::list& data_ptrs, py::list& indices) {
-//         for (size_t i = 0, end = indices.size(); i < end; ++i) {
-//           auto index = indices[i].cast<int64_t>();
-//           auto t = tensors[index].cast<at::Tensor>();
-//           auto data_ptr = data_ptrs[index].cast<int64_t>();
-//           if (reinterpret_cast<int64_t>(t.data_ptr()) != data_ptr) {
-//             return false;
-//           }
-//         }
-//         return true;
-//       });
+  m.def(
+      "_tensors_data_ptrs_at_indices_equal",
+      [](py::list& tensors, py::list& data_ptrs, py::list& indices) {
+        for (size_t i = 0, end = indices.size(); i < end; ++i) {
+          auto index = indices[i].cast<int64_t>();
+          auto t = tensors[index].cast<at::Tensor>();
+          auto data_ptr = data_ptrs[index].cast<int64_t>();
+          if (reinterpret_cast<int64_t>(t.data_ptr()) != data_ptr) {
+            return false;
+          }
+        }
+        return true;
+      });
 
-//   m.def(
-//       "_construct_Zoom_Tensor_From_Storage_And_Metadata",
-//       [](py::dict& metadata, c10::Storage s) {
-//         auto dtype_arg = metadata["dtype"].ptr();
-//         auto meta = scalarTypeToTypeMeta(toScalarType(dtype_arg));
+  m.def(
+      "_construct_Zoom_Tensor_From_Storage_And_Metadata",
+      [](py::dict& metadata, c10::Storage s) {
+        auto dtype_arg = metadata["dtype"].ptr();
+        auto meta = scalarTypeToTypeMeta(toScalarType(dtype_arg));
 
-//         constexpr c10::DispatchKeySet zoom_dks(c10::DispatchKey::PrivateUse1);
-//         at::Tensor tensor = at::detail::make_tensor_base<c10::TensorImpl>(
-//             std::move(s), zoom_dks, meta);
+        constexpr c10::DispatchKeySet zoom_dks(c10::DispatchKey::PrivateUse1);
+        at::Tensor tensor = at::detail::make_tensor_base<c10::TensorImpl>(
+            std::move(s), zoom_dks, meta);
 
-//         tensor.unsafeGetTensorImpl()->set_sizes_and_strides(
-//             metadata["size"].cast<std::vector<int64_t>>(),
-//             metadata["stride"].cast<std::vector<int64_t>>());
-//         tensor.unsafeGetTensorImpl()->set_storage_offset(
-//             metadata["storage_offset"].cast<int64_t>());
-//         return tensor;
-//       });
+        tensor.unsafeGetTensorImpl()->set_sizes_and_strides(
+            metadata["size"].cast<std::vector<int64_t>>(),
+            metadata["stride"].cast<std::vector<int64_t>>());
+        tensor.unsafeGetTensorImpl()->set_storage_offset(
+            metadata["storage_offset"].cast<int64_t>());
+        return tensor;
+      });
 
-//   m.def(
-//       "_zoom_beginAllocateCurrentStreamToPool",
-//       [](c10::DeviceIndex device, at::zoom::MempoolId_t mempool_id) {
-//         auto stream = c10::zoom::getCurrentZoomStream(device);
-//         TORCH_CHECK(stream, "Expected stream capture to be under way");
-//         c10::zoom::ZoomCachingAllocator::beginAllocateToPool(
-//             device, mempool_id, [stream](hipStream_t target) {
-//               return target == stream;
-//             });
-//       });
+  m.def(
+      "_zoom_beginAllocateCurrentStreamToPool",
+      [](c10::DeviceIndex device, c10::zoom::MempoolId_t mempool_id) {
+        auto stream = c10::zoom::getCurrentZoomStream(device);
+        TORCH_CHECK(stream, "Expected stream capture to be under way");
+        c10::zoom::ZoomCachingAllocator::beginAllocateToPool(
+            device, mempool_id, [stream](hipStream_t target) {
+              return target == stream;
+            });
+      });
 
-//   m.def(
-//       "_zoom_endAllocateCurrentStreamToPool",
-//       [](c10::DeviceIndex device, at::zoom::MempoolId_t mempool_id) {
-//         c10::zoom::ZoomCachingAllocator::endAllocateToPool(device, mempool_id);
-//       });
+  m.def(
+      "_zoom_endAllocateCurrentStreamToPool",
+      [](c10::DeviceIndex device, c10::zoom::MempoolId_t mempool_id) {
+        c10::zoom::ZoomCachingAllocator::endAllocateToPool(device, mempool_id);
+      });
 
-//   m.def(
-//       "_zoom_releasePool",
-//       [](c10::DeviceIndex device, at::zoom::MempoolId_t mempool_id) {
-//         c10::zoom::ZoomCachingAllocator::releasePool(device, mempool_id);
-//       });
+  m.def(
+      "_zoom_releasePool",
+      [](c10::DeviceIndex device, c10::zoom::MempoolId_t mempool_id) {
+        c10::zoom::ZoomCachingAllocator::releasePool(device, mempool_id);
+      });
 
-//   m.def(
-//       "_zoom_checkPoolLiveAllocations",
-//       [](c10::DeviceIndex device,
-//          at::zoom::MempoolId_t mempool_id,
-//          const py::set& expected_live_allocations) {
-//         std::unordered_set<void*> allocations;
-//         allocations.reserve(expected_live_allocations.size());
-//         for (auto& elem : expected_live_allocations) {
-//           // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//           allocations.insert(reinterpret_cast<void*>(py::cast<size_t>(elem)));
-//         }
-//         return c10::zoom::ZoomCachingAllocator::checkPoolLiveAllocations(
-//             device, mempool_id, allocations);
-//       });
+  m.def(
+      "_zoom_checkPoolLiveAllocations",
+      [](c10::DeviceIndex device,
+         c10::zoom::MempoolId_t mempool_id,
+         const py::set& expected_live_allocations) {
+        std::unordered_set<void*> allocations;
+        allocations.reserve(expected_live_allocations.size());
+        for (auto& elem : expected_live_allocations) {
+          // NOLINTNEXTLINE(performance-no-int-to-ptr)
+          allocations.insert(reinterpret_cast<void*>(py::cast<size_t>(elem)));
+        }
+        return c10::zoom::ZoomCachingAllocator::checkPoolLiveAllocations(
+            device, mempool_id, allocations);
+      });
 
-//   m.def(
-//       "_zoom_setCheckpointPoolState",
-//       [](c10::DeviceIndex device,
-//          std::shared_ptr<c10::zoom::ZoomCachingAllocator::AllocatorState> pps,
-//          const std::vector<size_t>& stale_storages_ptr,
-//          const std::vector<size_t>& storages_to_add_deleters_to_ptr = {}) {
-//         std::unordered_set<c10::StorageImpl*> ptr_set;
-//         // iterate on std::vector for determinism
-//         std::vector<c10::StorageImpl*> ptrs;
-//         for (size_t ptr_int : stale_storages_ptr) {
-//           // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//           c10::StorageImpl* ptr = (c10::StorageImpl*)ptr_int;
-//           if (!ptr_set.count(ptr)) {
-//             ptrs.push_back(ptr);
-//             ptr_set.insert(ptr);
-//           }
-//         }
-//         auto delta = c10::zoom::ZoomCachingAllocator::setCheckpointPoolState(
-//             device, std::move(pps));
-//         auto& freed_pointers = delta.ptrs_freed;
+  m.def(
+      "_zoom_setCheckpointPoolState",
+      [](c10::DeviceIndex device,
+         std::shared_ptr<c10::zoom::ZoomCachingAllocator::AllocatorState> pps,
+         const std::vector<size_t>& stale_storages_ptr,
+         const std::vector<size_t>& storages_to_add_deleters_to_ptr = {}) {
+        std::unordered_set<c10::StorageImpl*> ptr_set;
+        // iterate on std::vector for determinism
+        std::vector<c10::StorageImpl*> ptrs;
+        for (size_t ptr_int : stale_storages_ptr) {
+          // NOLINTNEXTLINE(performance-no-int-to-ptr)
+          c10::StorageImpl* ptr = (c10::StorageImpl*)ptr_int;
+          if (!ptr_set.count(ptr)) {
+            ptrs.push_back(ptr);
+            ptr_set.insert(ptr);
+          }
+        }
+        auto delta = c10::zoom::ZoomCachingAllocator::setCheckpointPoolState(
+            device, std::move(pps));
+        auto& freed_pointers = delta.ptrs_freed;
 
-//         std::unordered_set<void*> allocd_set;
-//         for (auto& data_ptr : delta.dataptrs_allocd) {
-//           allocd_set.insert(data_ptr.get());
-//         }
-//         std::unordered_set<void*> freed_pointer_set;
-//         size_t definite_freed_count = 0;
-//         for (void* ptr : freed_pointers) {
-//           if (!allocd_set.count(ptr)) {
-//             definite_freed_count += 1;
-//           }
-//           freed_pointer_set.insert((ptr));
-//         }
-//         // that block has already been freed,
-//         // so even those this will error, so too will the allocator
-//         // when the corresponding tensor dies because there is no
-//         // live tensor corresponding to it
-//         TORCH_CHECK(
-//             ptr_set.size() >= definite_freed_count,
-//             "Any stale tensors which are being manually freed"
-//             " must be passed to set checkpoint");
+        std::unordered_set<void*> allocd_set;
+        for (auto& data_ptr : delta.dataptrs_allocd) {
+          allocd_set.insert(data_ptr.get());
+        }
+        std::unordered_set<void*> freed_pointer_set;
+        size_t definite_freed_count = 0;
+        for (void* ptr : freed_pointers) {
+          if (!allocd_set.count(ptr)) {
+            definite_freed_count += 1;
+          }
+          freed_pointer_set.insert((ptr));
+        }
+        // that block has already been freed,
+        // so even those this will error, so too will the allocator
+        // when the corresponding tensor dies because there is no
+        // live tensor corresponding to it
+        TORCH_CHECK(
+            ptr_set.size() >= definite_freed_count,
+            "Any stale tensors which are being manually freed"
+            " must be passed to set checkpoint");
 
-//         removeStorageDeleterFns(ptrs, freed_pointer_set);
-//         std::vector<c10::StorageImpl*> storages_to_add_deleters_to;
-//         storages_to_add_deleters_to.reserve(
-//             storages_to_add_deleters_to_ptr.size());
-//         for (size_t ptr_int : storages_to_add_deleters_to_ptr) {
-//           // NOLINTNEXTLINE(performance-no-int-to-ptr)
-//           storages_to_add_deleters_to.push_back((c10::StorageImpl*)ptr_int);
-//         }
+        removeStorageDeleterFns(ptrs, freed_pointer_set);
+        std::vector<c10::StorageImpl*> storages_to_add_deleters_to;
+        storages_to_add_deleters_to.reserve(
+            storages_to_add_deleters_to_ptr.size());
+        for (size_t ptr_int : storages_to_add_deleters_to_ptr) {
+          // NOLINTNEXTLINE(performance-no-int-to-ptr)
+          storages_to_add_deleters_to.push_back((c10::StorageImpl*)ptr_int);
+        }
 
-//         addStorageDeleterFns(storages_to_add_deleters_to, delta);
-//       });
-// }
+        addStorageDeleterFns(storages_to_add_deleters_to, delta);
+      });
+}
 
 static void bindGetDeviceProperties(PyObject* module) {
   // Add method to torch.zoom
@@ -1439,10 +1439,10 @@ static struct PyMethodDef _THCPModule_methods[] = {
      METH_NOARGS,
      nullptr},
     {"_zoom_hasPrimaryContext", THCPModule_hasPrimaryContext, METH_O, nullptr},
-    // {"_zoom_setMemoryFraction",
-    //  THCPModule_setMemoryFraction,
-    //  METH_VARARGS,
-    //  nullptr},
+    {"_zoom_setMemoryFraction",
+     THCPModule_setMemoryFraction,
+     METH_VARARGS,
+     nullptr},
     {"_zoom_emptyCache", THCPModule_emptyCache, METH_NOARGS, nullptr},
     {"_zoom_memoryStats", THCPModule_memoryStats, METH_O, nullptr},
     {"_zoom_resetAccumulatedMemoryStats",
@@ -1527,7 +1527,7 @@ void initModule(PyObject* module) {
 //   shared::initCudnnBindings(module);
 // #endif
   registerZoomDeviceProperties(module);
-  // registerCudaPluggableAllocator(module);
+  registerZoomPluggableAllocator(module);
 }
 
 } // namespace torch::zoom

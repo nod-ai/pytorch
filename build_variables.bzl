@@ -775,6 +775,14 @@ libtorch_python_cuda_sources = libtorch_python_cuda_core_sources + [
 
 libtorch_python_zoom_sources = [
     "torch/csrc/zoom/Module.cpp",
+    "torch/csrc/zoom/Event.cpp",
+    "torch/csrc/zoom/python_comm.cpp",
+    "torch/csrc/zoom/Stream.cpp",
+    "torch/csrc/zoom/Graph.cpp",
+    "torch/csrc/zoom/utils.cpp",
+    "torch/csrc/zoom/ZoomPluggableAllocator.cpp",
+    "torch/csrc/zoom/comm.cpp",
+    "torch/csrc/zoom/memory_snapshot.cpp",
 ]
 
 libtorch_python_xpu_sources = [

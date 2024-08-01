@@ -69,6 +69,7 @@ import torch.backends.mkl
 import torch.backends.mps
 import torch.backends.xnnpack
 import torch.cuda
+import torch.zoom
 from torch import Tensor
 from torch._C import ScriptDict, ScriptList  # type: ignore[attr-defined]
 from torch._utils_internal import get_writable_path
@@ -1697,6 +1698,17 @@ class CudaSyncGuard:
 
     def __exit__(self, exception_type, exception_value, traceback):
         torch.cuda.set_sync_debug_mode(self.debug_mode_restore)
+
+class ZoomSyncGuard:
+    def __init__(self, sync_debug_mode):
+        self.mode = sync_debug_mode
+
+    def __enter__(self):
+        self.debug_mode_restore = torch.zoom.get_sync_debug_mode()
+        torch.zoom.set_sync_debug_mode(self.mode)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        torch.zoom.set_sync_debug_mode(self.debug_mode_restore)
 
 # Context manager for setting torch.__future__.set_swap_module_params_on_conversion
 # and automatically resetting it to its original value

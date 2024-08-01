@@ -39,7 +39,7 @@ from torch.testing._internal.common_utils import (  # type: ignore[attr-defined]
     TEST_WITH_CROSSREF, skipIfTorchDynamo, skipRocmIfTorchInductor, set_default_dtype,
     skipCUDAMemoryLeakCheckIf, BytesIOContext,
     skipIfRocm, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
-    wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard,
+    wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard, ZoomSyncGuard,
     skipIfNotRegistered, bytes_to_scalar, parametrize, skipIfMps, noncontiguous_like,
     AlwaysWarnTypedStorageRemoval, TEST_WITH_TORCHDYNAMO)
 from multiprocessing.reduction import ForkingPickler
@@ -47,7 +47,7 @@ from torch.testing._internal.common_device_type import (
     expectedFailureMeta,
     expectedFailureXLA,
     instantiate_device_type_tests,
-    onlyCUDA, onlyCPU,
+    onlyCUDA, onlyZOOM, onlyCUDAAndZOOM, onlyCPU,
     dtypes, dtypesIfCUDA, dtypesIfZoom, dtypesIfCPU, deviceCountAtLeast,
     skipMeta, PYTORCH_CUDA_MEMCHECK, largeTensorTest, onlyNativeDeviceTypes,
     get_all_device_types, skipXLA)
@@ -993,7 +993,7 @@ class TestTorchDeviceType(TestCase):
         out.backward(torch.ones_like(out).transpose(-2, -1))
 
     # TODO: this test should be in test_nn.py
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @largeTensorTest('12GB')
     def test_conv_transposed_large(self, device):
         # ConvTranspose3d works for large input tensors (gh-32866)
@@ -1196,9 +1196,10 @@ class TestTorchDeviceType(TestCase):
             _test_in_place_broadcastable(small2, small, large)
 
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "cublas runtime error")
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @wrapDeterministicFlagAPITest
     def test_cublas_config_nondeterministic_alert(self, device):
+        is_zoom = torch.device(device).type == 'zoom'
         test_cases = [
             # (function, (tensor sizes))
             ('mm', ((2, 2), (2, 2),)),
@@ -1212,7 +1213,7 @@ class TestTorchDeviceType(TestCase):
             (':4096:8', True),
             (':16:8', True)]
 
-        cublas_var_name = 'CUBLAS_WORKSPACE_CONFIG'
+        cublas_var_name = 'CUBLAS_WORKSPACE_CONFIG' if not is_zoom else 'HIPBLAS_WORKSPACE_CONFIG'
         is_cuda10_2_or_higher = (
             (torch.version.cuda is not None)
             and ([int(x) for x in torch.version.cuda.split(".")] >= [10, 2]))
@@ -1230,9 +1231,11 @@ class TestTorchDeviceType(TestCase):
                         del env[cublas_var_name]
                 else:
                     env[cublas_var_name] = config
-                should_throw_error = is_cuda10_2_or_higher and not is_config_deterministic
+                should_throw_error = (is_cuda10_2_or_higher or is_zoom) and not is_config_deterministic
+                # TODO(Arham): remove rename stmt once zoom has a dispatch key
                 script = f"""
 import torch
+torch.utils.rename_privateuse1_backend('zoom')
 torch.use_deterministic_algorithms(True)
 fn = torch.{fn_name}
 arg_sizes = {arg_sizes}
@@ -2089,12 +2092,13 @@ else:
         result = original.scatter(0, null_index, null_arr)
         self.assertEqual(result, original, atol=0, rtol=0)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @skipIfTorchInductor("FIXME")
     def test_sync_warning(self, device):
+        SyncGuard = CudaSyncGuard if torch.device(device).type == 'cuda' else ZoomSyncGuard
 
         def _sync_raises_helper(f, level):
-            with CudaSyncGuard(level):
+            with SyncGuard(level):
                 if level == 1:
                     with self.assertWarnsRegex(UserWarning, "called a synchronizing "):
                         f()
@@ -2103,7 +2107,7 @@ else:
                         f()
 
         def _no_sync_helper(f, level):
-            with CudaSyncGuard(level):
+            with SyncGuard(level):
                 f()
 
         def _ind_put_fn(x, ind, val):
@@ -2271,7 +2275,7 @@ else:
         with self.assertRaises(RuntimeError):
             torch.empty((1,), device=device, dtype=dtype).exponential_(-0.5)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half, torch.float)
     def test_exponential_no_zero(self, device, dtype):
         # naively, 0 in exponential can be generated with probability 2^-24
@@ -2388,7 +2392,7 @@ else:
                 self.assertTrue(res.statistic < 0.1)
 
     @slowTest
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.bfloat16, torch.float32)
     def test_cauchy_no_inf(self, device, dtype):
         # torch.float16 will have `inf` because of its smaller range.
@@ -2513,7 +2517,7 @@ else:
                             expected = self._brute_cdist(x, y, p=p)
                             self.assertEqual(expected, actual)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_cdist_cuda_backward(self, device):
         for l1 in [1, 511, 513]:
             for l2 in [1, 511, 513]:
@@ -3137,10 +3141,11 @@ else:
 
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "sandcastle OOM with current tpx gpu/re configuration")
     @unittest.skipIf(IS_JETSON, "psutil issue for largeTensorTest. Too large for Jetson.")
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half)  # only small dtype not to get oom
     @largeTensorTest('25GB', device='cpu')
-    @largeTensorTest('4GB', device='cuda')
+    # See Note: [large tensor tests on GPU]
+    @largeTensorTest('4GB')
     def test_large_cumsum(self, device, dtype):
         # initialization to avoid overflow and half caveats
         x = torch.empty(2**30 + 200, device=device, dtype=dtype)
@@ -3149,10 +3154,11 @@ else:
         x[2::3] = 1
         self._test_large_cum_fn_helper(x, lambda x: torch.cumsum(x, 0))
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half)  # only small dtype not to get oom
     @largeTensorTest('25GB', device='cpu')
-    @largeTensorTest('4GB', device='cuda')
+    # See Note: [large tensor tests on GPU]
+    @largeTensorTest('4GB')
     @unittest.skipIf(IS_JETSON, "psutil issue for largeTensorTest. Too large for Jetson.")
     def test_large_cumprod(self, device, dtype):
         # initialization to avoid overflow and half caveats
@@ -3914,7 +3920,7 @@ else:
             input.scatter_(0, index, src, reduce=operation)
             self.assertEqual(input, result, msg=f"result: {result} input: {input} method: {str(operation)}")
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(*complex_types())
     def test_scatter_reduce_multiply_unsupported_dtypes(self, device, dtype):
         height = 2
@@ -4029,7 +4035,7 @@ else:
 
     # FIXME: find a test suite for the masked scatter operator
     #   test_scatter_gather_ops or test_masked_ops?
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @largeTensorTest('30GB')
     def test_masked_scatter_large_tensor(self, device):
         t_cpu = torch.empty(2**31 + 1, dtype=torch.bool).random_()
@@ -4371,9 +4377,12 @@ else:
     # FIXME: find a test suite for the pdist operator
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "sandcastle OOM with current tpx gpu/re configuration")
     @skipIfRocm
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @largeTensorTest('32GB', device='cpu')
-    @largeTensorTest('5GB', device='cuda')
+    # Note(Arham) [large tensor tests on GPU]: since this only runs on cuda and zoom, setting device=None is a way to do 
+    # the check for the appropriate device without prematurely skipping if one of them doesn't 
+    # have enough memory (or isn't built at all)
+    @largeTensorTest('5GB')
     def test_pdist_norm_large(self, device):
         # use dim0>=46342 for forward, see:
         # https://github.com/pytorch/pytorch/issues/30583
@@ -4654,7 +4663,7 @@ else:
             ind.scatter_(0, ind, ind.clone())
 
     # FIXME: move to test distributions
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_multinomial_device_constrain(self, device):
         x = torch.empty(3, device="cpu")
         y = torch.empty(3, device=device)
@@ -4664,7 +4673,7 @@ else:
 
     # FIXME: move to test distributions
     @deviceCountAtLeast(2)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_multinomial_gpu_device_constrain(self, devices):
         x = torch.empty(3, device=devices[0])
         y = torch.empty(3, device=devices[1])
@@ -4674,8 +4683,9 @@ else:
 
     # FIXME: convert this to an automated OpInfo test
     @deviceCountAtLeast(2)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_device_guard(self, devices):
+        is_zoom = torch.device(devices[0]).type == 'zoom'
         # verify that all operators with `device_guard: False` behave properly with multiple devices.
         # TODO: if we had operator introspection we could figure out this set of operators automatically...
         x = torch.randn((1, 2, 3), device=devices[1])
@@ -4683,7 +4693,8 @@ else:
         scalar = torch.tensor(5, device=devices[1])
 
         # property ops
-        torch.cudnn_is_acceptable(x)
+        if not is_zoom:
+            torch.cudnn_is_acceptable(x)
         x.is_distributed()
         x.is_floating_point()
         x.is_complex()
@@ -4782,7 +4793,7 @@ else:
     # Note - reports a leak of 512 bytes on CUDA device 1
     @deviceCountAtLeast(2)
     @skipCUDAMemoryLeakCheckIf(True)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_tensor_set_errors_multigpu(self, devices):
         f_cuda0 = torch.randn((2, 3), dtype=torch.float32, device=devices[0])
         f_cuda1 = torch.randn((2, 3), dtype=torch.float32, device=devices[1])
@@ -5120,7 +5131,7 @@ else:
             for x in xs:
                 _test_helper(x, op, unary=True)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @unittest.skipIf(PYTORCH_CUDA_MEMCHECK, "is_pinned uses failure to detect pointer property")
     @skipIfTorchDynamo("NotImplementedError: PrimTorch does not support pinned memory")
     def test_pin_memory_from_constructor(self, device):
@@ -5156,7 +5167,7 @@ else:
             self.assertFalse(x.is_pinned())
 
     @deviceCountAtLeast(1)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_storage_all_devices(self, devices):
         for device in devices:
             t = torch.tensor((), device=device)
@@ -5433,7 +5444,7 @@ else:
         self.assertEqual(sample_indices.size(1), n_sample, msg="wrong number of samples")
 
     # FIXME: move to test distributions
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.float, torch.double, torch.half)
     def test_multinomial_deterministic(self, device, dtype):
         gen = torch.Generator(device=device)
@@ -5635,8 +5646,9 @@ else:
             self._test_memory_format_transformations(
                 device, get_generator(mf, shape, torch.float64), get_fn('float'), mf, default_is_preserve=True)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_memory_format_cpu_and_cuda_ops(self, device):
+        is_zoom = torch.device(device).type == 'zoom'
         def get_generator(memory_format, shape):
             def input_generator_fn(device):
                 return torch.randn(shape, device=device, dtype=torch.float32).contiguous(memory_format=memory_format)
@@ -5647,14 +5659,22 @@ else:
 
         def transformation_cuda_fn(tensor, **kwargs):
             return tensor.cuda(**kwargs)
+        
+        # TODO(Arham), exchange for tensor.zoom()
+        def transformation_zoom_fn(tensor, **kwargs):
+            return tensor.to(device='zoom', **kwargs)
 
         formats_shapes = (
             (torch.channels_last, (4, 3, 8, 8)),
             (torch.channels_last_3d, (4, 3, 8, 8, 8)))
 
         for mf, shape in formats_shapes:
-            self._test_memory_format_transformations(
-                'cuda', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
+            if not is_zoom:
+                self._test_memory_format_transformations(
+                    'cuda', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
+            else:
+                self._test_memory_format_transformations(
+                    'zoom', get_generator(mf, shape), transformation_zoom_fn, mf, default_is_preserve=True)
             self._test_memory_format_transformations(
                 'cpu', get_generator(mf, shape), transformation_cuda_fn, mf, default_is_preserve=True)
 
@@ -5908,6 +5928,7 @@ else:
             if lazy_init_scale:
                 # Dummy scale() call to ensure the scale tensor is lazily initialized.
                 s1.scale(torch.full((1,), 4.0, dtype=torch.float32, device=device))
+                print(type(s1._scale))
                 if "cuda" == device.type:
                     self.assertTrue(isinstance(s1._scale, torch.cuda.FloatTensor))
                 else:
@@ -6493,7 +6514,7 @@ class TestDevicePrecision(TestCase):
     exact_dtype = True
 
     # FIXME: move to indexing test suite
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_index_add_bfloat16(self, device):
         inp_tensor = torch.randn(5, 3, device='cpu').bfloat16()
         t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=torch.bfloat16, device='cpu')
