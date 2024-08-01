@@ -7,7 +7,7 @@ You'll need to set `ROCM_PATH` and `HIP_ROOT_DIR` appropriately, by default on l
 For now, I've added a Macro in `Allocator.h` that registers a functor that retrieves the `ZoomCachingAllocator` for us since we're currently implemented as an external backend (e.g. using PU1 dispatch key). Once, we're in the main repo we can replace it with the proper logic when retrieving the allocator for the Zoom backend.
 
 # Setup.py for torch.zoom
-First use `env.sh` to set up the environment, you may need to change the `PYTORCH_ROCM_ARCH` variable based on what you get when running `rocminfo`, under "Name" there should be an architecture name like `gfx90a`.
+First use `zoom_extension/env.sh` to set up the environment, you may need to change the `PYTORCH_ROCM_ARCH` variable based on what you get when running `rocminfo`, under "Name" there should be an architecture name like `gfx90a`.
 
 Running `python setup.py install` inside root will build torch with zoom (currently still using the `PrivateUse` dispatch key).
 
@@ -15,7 +15,6 @@ Programs using the zoom backend must be prefaced with this stub until we registe
 
 ```python
 import torch
-import torch.zoom
 
 torch.utils.rename_privateuse1_backend('zoom')
 # TODO: figure this out

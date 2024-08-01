@@ -5,7 +5,6 @@
 #include <c10/util/Exception.h>
 #include <ATen/native/zoom/ForeachFunctors.cuh>
 #include <ATen/native/zoom/MultiTensorApply.cuh>
-#include <iostream>
 
 namespace at::native {
 
@@ -86,12 +85,11 @@ struct FusedSgdMathFunctor {
     const auto all_aligned{
         init_args<depth>(args, tl, chunk_idx, chunk_size, tensor_loc)};
     const auto n = tl.numel_for_tensor[tensor_loc] - chunk_idx * chunk_size;
-
-    #if defined(ROCM_VERSION) && ROCM_VERSION >= 60000 
+    #if defined(ROCM_VERSION) && ROCM_VERSION >= 60100 
       const auto use_faster_load_store =
           (n % kILP == 0) && (chunk_size % kILP == 0) && all_aligned;
     #else
-      #pragma message("Detected ROCm < 6.0, disabling faster load store for fused SGD")
+      #pragma message("Detected ROCm < 6.1, disabling faster load store for fused SGD")
       const auto use_faster_load_store{false};
     #endif
     if (use_faster_load_store) {
