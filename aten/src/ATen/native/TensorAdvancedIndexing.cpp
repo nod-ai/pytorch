@@ -799,7 +799,8 @@ TORCH_IMPL_FUNC(index_copy_out)
     if (!result.is_same(self)) result.copy_(self);
 
     // See Note [Enabling Deterministic Operations]
-    if (result.is_cuda() && globalContext().deterministicAlgorithms()){
+    // TODO(Arham): exchange keys
+    if ((result.is_cuda() || result.is_privateuseone()) && globalContext().deterministicAlgorithms()){
         torch::List<std::optional<Tensor>> indices;
         indices.reserve(dim + 1);
         for (const auto i: c10::irange(dim)) {

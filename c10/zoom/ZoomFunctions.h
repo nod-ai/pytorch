@@ -4,6 +4,7 @@
 #include <c10/core/impl/GPUTrace.h>
 #include <hip/hip_runtime.h>
 #include <c10/zoom/ZoomException.h>
+#include <c10/zoom/ZoomMacros.h>
 
 namespace c10::zoom {
 
@@ -13,33 +14,33 @@ namespace c10::zoom {
 // function to fail; it should just return zero if things are not working.
 // Oblige them.
 // It still might log a warning for user first time it's invoked
-DeviceIndex device_count() noexcept;
+C10_ZOOM_API DeviceIndex device_count() noexcept;
 
 // Version of device_count that throws is no devices are detected
-DeviceIndex device_count_ensure_non_zero();
+C10_ZOOM_API DeviceIndex device_count_ensure_non_zero();
 
-DeviceIndex current_device();
+C10_ZOOM_API DeviceIndex current_device();
 
-void set_device(DeviceIndex device);
+C10_ZOOM_API void set_device(DeviceIndex device);
 
-void device_synchronize();
+C10_ZOOM_API void device_synchronize();
 
-void warn_or_error_on_sync();
+C10_ZOOM_API void warn_or_error_on_sync();
 
 // Raw CUDA device management functions
-hipError_t GetDeviceCount(int* dev_count);
+C10_ZOOM_API hipError_t GetDeviceCount(int* dev_count);
 
-hipError_t GetDevice(DeviceIndex* device);
+C10_ZOOM_API hipError_t GetDevice(DeviceIndex* device);
 
-hipError_t SetDevice(DeviceIndex device);
+C10_ZOOM_API hipError_t SetDevice(DeviceIndex device);
 
-hipError_t MaybeSetDevice(DeviceIndex device);
+C10_ZOOM_API hipError_t MaybeSetDevice(DeviceIndex device);
 
-DeviceIndex ExchangeDevice(DeviceIndex device);
+C10_ZOOM_API DeviceIndex ExchangeDevice(DeviceIndex device);
 
-DeviceIndex MaybeExchangeDevice(DeviceIndex device);
+C10_ZOOM_API DeviceIndex MaybeExchangeDevice(DeviceIndex device);
 
-void SetTargetDevice();
+C10_ZOOM_API void SetTargetDevice();
 
 enum class SyncDebugMode { L_DISABLED = 0, L_WARN, L_ERROR };
 
@@ -61,13 +62,13 @@ class WarningState {
   SyncDebugMode sync_debug_mode = SyncDebugMode::L_DISABLED;
 };
 
-__inline__ WarningState& warning_state() {
+C10_ZOOM_API __inline__ WarningState& warning_state() {
   static WarningState warning_state_;
   return warning_state_;
 }
 // the subsequent functions are defined in the header because for performance
 // reasons we want them to be inline
-void __inline__ memcpy_and_sync(
+C10_ZOOM_API void __inline__ memcpy_and_sync(
     void* dst,
     const void* src,
     int64_t nbytes,
@@ -92,7 +93,7 @@ void __inline__ memcpy_and_sync(
 
 }
 
-void __inline__ stream_synchronize(hipStream_t stream) {
+C10_ZOOM_API void __inline__ stream_synchronize(hipStream_t stream) {
   if (C10_UNLIKELY(
           warning_state().get_sync_debug_mode() != SyncDebugMode::L_DISABLED)) {
     warn_or_error_on_sync();
@@ -105,7 +106,7 @@ void __inline__ stream_synchronize(hipStream_t stream) {
   C10_ZOOM_CHECK(hipStreamSynchronize(stream));
 }
 
-bool hasPrimaryContext(DeviceIndex device_index);
-std::optional<DeviceIndex> getDeviceIndexWithPrimaryContext();
+C10_ZOOM_API bool hasPrimaryContext(DeviceIndex device_index);
+C10_ZOOM_API std::optional<DeviceIndex> getDeviceIndexWithPrimaryContext();
 
 } // namespace c10::zoom

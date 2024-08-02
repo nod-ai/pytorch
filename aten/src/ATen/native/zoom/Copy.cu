@@ -1,4 +1,4 @@
-// #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
 #include <ATen/core/Tensor.h>
 #include <ATen/Context.h>
 #include <ATen/Dispatch.h>
@@ -11,7 +11,6 @@
 #include <ATen/native/quantized/Copy.h>
 #include <ATen/native/TensorIterator.h>
 #include <ATen/zoom/jit/Loops.cuh>
-#include <ATen/quantized/Quantizer.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -21,90 +20,8 @@
 
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/zoom/ZoomStream.h>
-#include <ATen/native/zoom/Copy.h>
-#include <ATen/ops/empty.h>
-
-// TODO(NS): Investigate why FP8 conversion intrinsics end up being slower
-// #ifdef AT_USE_NV_CVT_INTRINSICS
-// #include <cuda_fp8.h>
-// #endif
 
 namespace at::native {
-
-  // copied these copy functions from native/Copy.cpp for simplicity, can remove once we use DispatchStub
-  // rather than overriding at::_copy_from
-  #define _AT_DISPATCH_CP_TYPES(TYPE, NAME, ...)                              \
-        AT_DISPATCH_V2(                             \
-            TYPE, NAME, AT_WRAP(__VA_ARGS__), kComplexHalf, kHalf, kBool, kBFloat16, kFloat8_e5m2,            \
-            kFloat8_e4m3fn, kFloat8_e5m2fnuz, kFloat8_e4m3fnuz, AT_EXPAND(AT_ALL_TYPES_AND_COMPLEX), AT_EXPAND(AT_BAREBONES_UNSIGNED_TYPES))
-  
-  bool copy_transpose_valid(const Tensor& self, const Tensor& src) {
-  const int MIN_SZ = 60 * 60;
-  return self.is_contiguous() && src.numel() != 0 && src.dim() == 2 &&
-      src.stride(0) == 1 && src.stride(1) == src.size(0) &&
-      self.scalar_type() == src.scalar_type() &&
-      !isBitsType(self.scalar_type()) &&
-      self.sizes().equals(src.sizes()) &&
-      self.is_neg() == src.is_neg() &&
-      self.is_conj() == src.is_conj() &&
-      self.numel() >= MIN_SZ;
-  }
-
-  void copy_same_type_transpose_(Tensor& self, const Tensor& src) {
-  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-  int64_t BLOCK_SZ;
-  if (self.scalar_type() == kByte) {
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
-    BLOCK_SZ = 120;
-  } else {
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
-    BLOCK_SZ = 60;
-  }
-  Tensor buf = at::empty({BLOCK_SZ, BLOCK_SZ}, self.options());
-
-  // The code below is implemented with the assumption that sizes are equal
-  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(self.sizes().equals(src.sizes()));
-
-  _AT_DISPATCH_CP_TYPES(self.scalar_type(), "copy_", [&] {
-    const scalar_t* sp = src.const_data_ptr<scalar_t>();
-    scalar_t* rp = self.data_ptr<scalar_t>();
-    scalar_t* bp = buf.data_ptr<scalar_t>();
-
-    int64_t NR = src.size(0);
-    int64_t NC = src.size(1);
-    for (int64_t R = 0; R < NR; R += BLOCK_SZ) {
-      for (int64_t C = 0; C < NC; C += BLOCK_SZ) {
-        const scalar_t* spo = sp + R + C * NR;
-        scalar_t* rpo = rp + C + R * NC;
-
-        int nr = std::min(NR - R, BLOCK_SZ);
-        int nc = std::min(NC - C, BLOCK_SZ);
-
-        // 1. copy columns from src to buf
-        for (const auto c : c10::irange(nc)) {
-          memcpy(bp + c * BLOCK_SZ, spo + c * NR, nr * sizeof(scalar_t));
-        }
-
-        // 2. transpose buf in place
-        int rc_max = std::max(nr, nc);
-        int rc_min = std::min(nr, nc);
-        for (const auto r : c10::irange(rc_max)) {
-          int end = std::min(r, rc_min);
-          for (const auto c : c10::irange(end)) {
-            scalar_t tmp = bp[r + BLOCK_SZ * c];
-            bp[r + BLOCK_SZ * c] = bp[r * BLOCK_SZ + c];
-            bp[r * BLOCK_SZ + c] = tmp;
-          }
-        }
-
-        // 3. copy rows from buf to dst
-        for (const auto r : c10::irange(nr)) {
-          memcpy(rpo + r * NC, bp + r * BLOCK_SZ, nc * sizeof(scalar_t));
-        }
-      }
-    }
-  });
-}
 
 void neg_kernel_zoom(TensorIteratorBase &iter);
 void conj_kernel_zoom(TensorIteratorBase &iter);
@@ -471,79 +388,6 @@ static void copy_kernel_zoom(TensorIterator& iter, bool non_blocking) {
   }
 }
 
-    // Copy kernels only support overriding the registered DispatchStub for a hardcoded set of in-tree devices,
-    // in principle we can do that rather than using TORCH_LIBRARY_IMPL if we add zoom as a 'supported device'
-    // this is a TODO for once we're in-tree
     REGISTER_PRIVATEUSE1_DISPATCH(copy_stub, &copy_kernel_zoom);
-
-    Tensor& zoom_copy_(Tensor & self, const Tensor & src, bool non_blocking) {
-        // copied sanity checks/routing from Copy.cpp 
-        TORCH_CHECK(!(self.is_quantized() || src.is_quantized()), "Quantized Copy unimplemented in Zoom Backend");
-        // if (self.is_quantized() && !src.is_quantized()) {
-        //     return quantized_copy_from_float_(self, src);
-        // }
-
-        // if (self.is_quantized() && src.is_quantized()) {
-        //     TORCH_CHECK(self.qscheme() == src.qscheme(),
-        //                 "Quantized Copy only works with same qscheme");
-        //     TORCH_CHECK(self.scalar_type() == src.scalar_type());
-        //     set_quantizer_(self, src.quantizer());
-        // }
-
-        // if (!self.is_quantized() && src.is_quantized()) {
-        //     TORCH_CHECK(false, "Copying from quantized Tensor to non-quantized Tensor is not allowed, please use dequantize to get a float Tensor from a quantized Tensor");
-        // }
-
-        const bool is_same_data = (
-          self.is_alias_of(src) &&
-          self.storage_offset() == src.storage_offset() &&
-          self.strides().equals(src.strides()) &&
-          self.sizes().equals(src.sizes()) &&
-          self.scalar_type() == src.scalar_type() &&
-          self.is_conj() == src.is_conj() &&
-          self.is_neg() == src.is_neg()
-        );
-        
-        if (is_same_data) {
-            return self;
-        }
-
-        // copy from self to dst
-        auto iter = TensorIteratorConfig()
-            .add_output(self)
-            .add_const_input(src)
-            .resize_outputs(false)
-            .check_all_same_dtype(false)
-            .check_all_same_device(false)
-            .build();
-
-        if (iter.numel() == 0) {
-            return self;
-        }
-
-        DeviceType device_type = iter.device_type(0);
-
-        if (device_type == kCPU && copy_transpose_valid(self, src) && !self.is_quantized()) {
-            copy_same_type_transpose_(self, src);
-            return self;
-        }
-        
-        if(!(self.is_complex() || self.dtype() == at::kBool) && src.is_complex()) {
-            TORCH_WARN_ONCE("Casting complex values to real discards the imaginary part");
-        }
-        
-        copy_kernel_zoom(iter, non_blocking);
-        return self;
-
-    }
-
-    Tensor zoom_copy_from(const Tensor& self, const Tensor& dst, bool non_blocking) {
-      return zoom_copy_(const_cast<Tensor&>(dst), self, non_blocking);
-    }
-
-    TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-        m.impl("copy_", &zoom_copy_);
-        m.impl("_copy_from", &zoom_copy_from);
-    }
 
 } // namespace at::native

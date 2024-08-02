@@ -518,8 +518,9 @@ inline static void svd_hipsolver_gesvdjBatched(const Tensor& A, const Tensor& U,
 template<typename scalar_t>
 inline static void apply_svd_hipsolver_gesvdaStridedBatched(const Tensor& A, const Tensor& U, const Tensor& S, const Tensor& V,
     const Tensor& infos, bool full_matrices, bool compute_uv) {
-#ifndef hipblasVersionMajor
-  TORCH_CHECK(false, "gesvda: Batched version is supported only with hipBLAS backend.")
+#ifndef CUDART_VERSION
+  // gesvda not implemented for ROCm yet
+  TORCH_CHECK(false, "gesvda: Batched version is unsupported with hipBLAS backend.")
 #else
   using value_t = typename c10::scalar_value_type<scalar_t>::type;
   int m = zoom_int_cast(A.size(-2), "m");
