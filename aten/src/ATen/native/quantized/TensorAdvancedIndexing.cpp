@@ -190,7 +190,9 @@ Tensor& _index_put_impl_quantized_cuda_(Tensor & self, const torch::List<std::op
   }
 
   // See Note [Enabling Deterministic Operations]
-  if (self.device().type() == DeviceType::CUDA && globalContext().deterministicAlgorithms()) {
+  // TODO(Arham): replace PU1 with Zoom key
+  bool non_deterministic_device = self.device().type() == DeviceType::CUDA || self.device().type() == DeviceType::PrivateUse1;
+  if (non_deterministic_device && globalContext().deterministicAlgorithms()) {
       index_put_with_sort_quantized_stub(self.device().type(), self, indices, value_, self.q_scale(), self.q_zero_point(), unsafe);
       return self;
   }

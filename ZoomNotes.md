@@ -35,5 +35,4 @@ This is temporarily disabled via the macro `DISABLE_HIPBLASLT` in `ZoomContextLi
 
 TODO List:
 
-- Impl kernels and functionality
-- Properly support multiple devices, there are currently some memory errors when using devices other than `zoom:0`, first step is to add device side assertion handling logic
+- Determine rocBLAS determinism requirements as far as config and versions (necessary to throw determinism errors when appropriate)

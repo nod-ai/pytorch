@@ -1823,12 +1823,14 @@ else:
         a = torch.randn(10, device=device)
         indices = torch.tensor([0, 0], device=device)
         values = torch.tensor([0., 1.], device=device)
+        is_cuda = torch.device(device).type == 'cuda'
+        is_zoom = torch.device(device).type == 'zoom'
 
         for op_call in [torch.Tensor.put, torch.Tensor.put_]:
             self.check_nondeterministic_alert(
                 lambda: op_call(a, indices, values, accumulate=True),
                 'put_',
-                torch.device(device).type == 'cuda')
+                is_cuda or is_zoom)
 
     @skipIfMps
     def test_nondeterministic_alert_histc(self, device):
@@ -3826,7 +3828,7 @@ else:
     # FIXME: port to test_scatter_gather_ops.py
     def scatter_allow_reduce(self, device, dtype, reduceop):
         device_type = torch.device(device).type
-        return device_type != 'cuda' or (reduceop == 'multiply' and dtype.is_floating_point)
+        return (device_type not in ['cuda', 'zoom']) or (reduceop == 'multiply' and dtype.is_floating_point)
 
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
