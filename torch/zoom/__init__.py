@@ -11,6 +11,7 @@ import torch._C
 from torch.types import Device
 from .. import device as _device
 from .._utils import _dummy_type, _LazySeedTracker, classproperty
+from ._utils import _get_device_index
 
 _initialized = False
 _tls = threading.local()
@@ -368,3 +369,5 @@ torch._storage_classes.add(BoolStorage)
 torch._storage_classes.add(BFloat16Storage)
 torch._storage_classes.add(ComplexDoubleStorage)
 torch._storage_classes.add(ComplexFloatStorage)
+
+from .memory import *  # noqa: F403

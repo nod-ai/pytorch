@@ -4603,6 +4603,7 @@
   variants: method
   dispatch:
     NestedTensorCUDA, CUDA: is_pinned_cuda
+    PrivateUse1: is_pinned_zoom
     MPS: is_pinned_mps
     CompositeExplicitAutograd: is_pinned_default
 

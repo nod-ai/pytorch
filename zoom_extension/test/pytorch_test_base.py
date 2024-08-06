@@ -27,6 +27,8 @@ class ZoomTestBase(DeviceTypeTestBase):
     
     @classmethod
     def setUpClass(cls):
+        # Force Zoom Init
+        t = torch.ones(1, device='zoom')
         # Acquires the current device as the primary (test) device
         cls.primary_device = f'zoom:{torch.zoom.current_device()}'
 

@@ -29,10 +29,25 @@ Then you can run `test.sh` to run the pytorch device test suite. This script wil
 
 The unimplemented operator log should not be considered exhaustive as additional operator failures may occur once the offending operator is implemented. This is just meant to be a tool to drive development.
 
+# HIP Library Dependencies
+For these running on ROCm, this also means that we take a dependency on the 'roc*' equivalent (e.g. hipBLAS requires rocBLAS)
+
+* HIP - runtime, dtypes
+* hipBLAS
+* hipBLASLt
+* hipRand
+* hipSparse
+* hipFFT
+* rccl - TODO: add this in lieue of NCCL functionality
+* hipThrust
+* hipCub
+* hipSolver
+
 # HIPBlasLt
 
 This is temporarily disabled via the macro `DISABLE_HIPBLASLT` in `ZoomContextLight.h`, we can reenable it by undef'ing that macro. This means that right now `scaledgemm` and `intmm` dont work, but we can implement hipblas versions of them and/or just enable hipblaslt.
 
 TODO List:
 
+- Add RCCL
 - Determine rocBLAS determinism requirements as far as config and versions (necessary to throw determinism errors when appropriate)

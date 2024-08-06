@@ -15,7 +15,8 @@ from torch import _C
 
 from torch.types import Device
 from .._utils import _dummy_type
-from . import _get_device_index, _get_nvml_device_index, _lazy_init, is_initialized
+# from . import _get_device_index, _get_nvml_device_index, _lazy_init, is_initialized
+from . import _get_device_index, _lazy_init, is_initialized
 
 from ._memory_viz import memory as _memory, segments as _segments
 
@@ -38,8 +39,8 @@ __all__ = [
     "max_memory_cached",
     "memory_snapshot",
     "memory_summary",
-    "list_gpu_processes",
-    "mem_get_info",
+    # "list_gpu_processes",
+    # "mem_get_info",
     "get_allocator_backend",
     "ZoomPluggableAllocator",
     "change_current_allocator",
