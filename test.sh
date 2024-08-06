@@ -12,7 +12,6 @@ bak_err="zoom_test_errors.log.bak"
 [ -f $output_file ] && cp $output_file $bak_out
 [ -f $error_file ] && cp $error_file $bak_err
 
-# python test/test_torch.py -k TestTorchDeviceTypeZOOM --verbose &> test.log
 python test/test_torch.py --run-parallel 0 -k TestTorchDeviceTypePRIVATEUSEONE --verbose &> $log_file
 
 ## Find Unimplemented Operator Errors from failing tests
@@ -34,17 +33,13 @@ total_matches=$(grep -cP "$pattern" "$log_file")
 echo -e "\nTotal unimplemented operator failures: $total_matches" >> "$output_file"
 echo "A list of unimplemented operators has been saved to $output_file"
 
-## Find assertion errors from failing tests
-# Pattern to search for
-pattern="Assertion Error: (*\n)"
-
+## Find errors from failing tests
 # Extract error messages, count frequencies, sort by frequency (descending), and save to output file
 # Pattern to search for
-pattern="(AssertionError|RuntimeError): (.+?)(?=\n|$)"
+pattern="^.*Error: (?!test)(.+?)(?=\n|$)"
 
-# Extract error messages, count frequencies, sort by frequency (descending), and save to output file
 grep -oP "$pattern" "$log_file" | 
-sed 's/^(AssertionError|RuntimeError): //g' |
+sed 's/^(.*Error): //g' |
 awk '{print substr($0, 1, 100)}' |  # Limit to first 100 characters
 sort | 
 uniq -c | 
