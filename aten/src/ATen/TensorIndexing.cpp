@@ -50,9 +50,10 @@ static inline void set_item(const Tensor& self, ArrayRef<TensorIndex> indices, c
     at::Device self_device = self.device();
 
     // TODO: This qint special case looks very suspicious...
+    // TODO(Arham): exchange keys
     if (isQIntType(self.scalar_type())) {
       value = at::indexing::scalarToTensor(v, device(kCPU).dtype(kFloat), at::Device(kCPU));
-    } else if (self_device.is_cuda()) {
+    } else if (self_device.is_cuda() || self_device.is_privateuseone()) {
       value = at::indexing::scalarToTensor(v, self.options(), at::Device(kCPU));
     } else {
       value = at::indexing::scalarToTensor(v, self.options(), self_device);

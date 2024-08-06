@@ -51,3 +51,8 @@ TODO List:
 
 - Add RCCL
 - Determine rocBLAS determinism requirements as far as config and versions (necessary to throw determinism errors when appropriate)
+
+Note on error in test suite: `RuntimeError: t.use_count() <= 1`
+This error is thrown in the `test_parallel_cow_materialize_error` test in the torch device type tests because
+of many parallel references being held on the same tensor. This will only throw in debug mode. I think we can ignore this since 
+this same error is thrown on the CPU backend in debug mode, and passes in release.
