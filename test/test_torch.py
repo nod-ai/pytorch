@@ -1231,7 +1231,9 @@ class TestTorchDeviceType(TestCase):
                         del env[cublas_var_name]
                 else:
                     env[cublas_var_name] = config
-                should_throw_error = (is_cuda10_2_or_higher or is_zoom) and not is_config_deterministic
+                # Zoom automatically changes the hipBLAS atomics mode when grabbing the hipBLAS handle if
+                # deterministic algorithms are turned on, so we shouldn't get an error (but this IS checked in Context.cpp)
+                should_throw_error = (is_cuda10_2_or_higher) and not is_config_deterministic
                 # TODO(Arham): remove rename stmt once zoom has a dispatch key
                 script = f"""
 import torch
@@ -1250,7 +1252,7 @@ except RuntimeError as e:
     if not should_throw_error:
         raise RuntimeError('Did not expect any error to be raised')
     elif 'Deterministic behavior was enabled with either' not in str(e):
-        raise RuntimeError('Expected a CuBLAS nondeterministic error, but got a different error')
+        raise RuntimeError('Expected a CuBLAS nondeterministic error, but got a different error: ' + str(e))
 else:
     if should_throw_error:
         raise RuntimeError('Expected a CuBLAS nondeterministic error, but it was not raised')

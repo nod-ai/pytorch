@@ -91,6 +91,10 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
     return false;
   }
 
+  virtual bool checkHIPBlasDeterministic() const {
+    TORCH_CHECK(false, "Cannot call checkHIPBlasDeterministic without torch_zoom library", ZOOM_HELP);
+  }
+
   virtual const at::zoom::HIPRTC& hiprtc() const {
     TORCH_CHECK(false, "HIPRTC requires Zoom. ", ZOOM_HELP);
   }

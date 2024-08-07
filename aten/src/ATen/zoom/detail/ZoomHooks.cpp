@@ -39,6 +39,11 @@ namespace c10::zoom::_internal {
 void setHasPrimaryContext(bool (*func)(DeviceIndex));
 }
 
+// defined in Aten/zoom/HIPblasHandlePool.cpp
+namespace at::zoom {
+  bool getHIPBlasAtomicsEnabled();
+}
+
 namespace at::zoom::detail {
 
 const at::zoom::HIPRTC& hiprtc();
@@ -144,6 +149,13 @@ bool ZoomHooks::isPinnedPtr(const void* data) const {
 
 bool ZoomHooks::hasROCM() const {
   return at::zoom::is_available();
+}
+
+// rocBLAS is deterministic if atomic operations are disabled
+// for details on when rocBLAS is guaranteed to be bitwise deterministic see below:
+// https://github.com/ROCm/rocBLAS/issues/1459#issuecomment-2272082035
+bool ZoomHooks::checkHIPBlasDeterministic() const {
+  return !at::zoom::getHIPBlasAtomicsEnabled();
 }
 
 // #if defined(USE_DIRECT_NVRTC) || defined(USE_DIRECT_HIPRTC)
