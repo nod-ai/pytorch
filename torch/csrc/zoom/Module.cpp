@@ -1509,7 +1509,7 @@ namespace torch::zoom {
 
 namespace shared {
 
-// void initCudartBindings(PyObject* module);
+void initHiprtBindings(PyObject* module);
 // void initNvtxBindings(PyObject* module);
 // #if defined(USE_CUDNN) || defined(USE_ROCM)
 // void initCudnnBindings(PyObject* module);
@@ -1521,7 +1521,7 @@ void initModule(PyObject* module) {
 //   python::initCommMethods(module);
 //   // As weird as it seems, this file is also compiled for ROCm,
 //   // so this condition might not always be true...
-//   shared::initCudartBindings(module);
+  shared::initHiprtBindings(module);
 //   shared::initNvtxBindings(module);
 // #if defined(USE_CUDNN) || defined(USE_ROCM)
 //   shared::initCudnnBindings(module);

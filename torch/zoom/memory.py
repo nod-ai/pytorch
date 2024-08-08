@@ -1,4 +1,4 @@
-r"""This package adds support for device memory management implemented in Zpom."""
+r"""This package adds support for device memory management implemented in Zoom."""
 
 import collections
 import contextlib
@@ -40,7 +40,7 @@ __all__ = [
     "memory_snapshot",
     "memory_summary",
     # "list_gpu_processes",
-    # "mem_get_info",
+    "mem_get_info",
     "get_allocator_backend",
     "ZoomPluggableAllocator",
     "change_current_allocator",
@@ -633,22 +633,22 @@ def memory_summary(device: Union[Device, int] = None, abbreviated: bool = False)
 #     return "\n".join(lines)
 
 
-# def mem_get_info(device: Union[Device, int] = None) -> Tuple[int, int]:
-#     r"""Return the global free and total GPU memory for a given device using hipMemGetInfo.
+def mem_get_info(device: Union[Device, int] = None) -> Tuple[int, int]:
+    r"""Return the global free and total GPU memory for a given device using hipMemGetInfo.
 
-#     Args:
-#         device (torch.device or int, optional): selected device. Returns
-#             statistic for the current device, given by :func:`~torch.zoom.current_device`,
-#             if :attr:`device` is ``None`` (default).
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            statistic for the current device, given by :func:`~torch.zoom.current_device`,
+            if :attr:`device` is ``None`` (default).
 
-#     .. note::
-#         See :ref:`cuda-memory-management` for more
-#         details about GPU memory management.
-#     """
-#     if device is None:
-#         device = torch.zoom.current_device()
-#     device = _get_device_index(device)
-#     return torch.zoom.cudart().hipMemGetInfo(device)
+    .. note::
+        See :ref:`cuda-memory-management` for more
+        details about GPU memory management.
+    """
+    if device is None:
+        device = torch.zoom.current_device()
+    device = _get_device_index(device)
+    return torch.zoom.hiprt().hipMemGetInfo(device)
 
 
 def _record_memory_history_legacy(

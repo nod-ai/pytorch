@@ -38,7 +38,7 @@ from torch.testing._internal.common_utils import (  # type: ignore[attr-defined]
     IS_SANDCASTLE, IS_FBCODE, IS_REMOTE_GPU, skipIfTorchInductor, load_tests, slowTest, slowTestIf,
     TEST_WITH_CROSSREF, skipIfTorchDynamo, skipRocmIfTorchInductor, set_default_dtype,
     skipCUDAMemoryLeakCheckIf, BytesIOContext,
-    skipIfRocm, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
+    skipIfRocm, skipIfZoom, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
     wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard, ZoomSyncGuard,
     skipIfNotRegistered, bytes_to_scalar, parametrize, skipIfMps, noncontiguous_like,
     AlwaysWarnTypedStorageRemoval, TEST_WITH_TORCHDYNAMO)
@@ -4395,6 +4395,9 @@ else:
     # FIXME: find a test suite for the pdist operator
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "sandcastle OOM with current tpx gpu/re configuration")
     @skipIfRocm
+    # this fails on zoom due to an invalid configuration error, because pdist sets the grid size
+    # to be larger than 2^30
+    @skipIfZoom(msg="Grid Configuration too large for HIP")
     @onlyCUDAAndZOOM
     @largeTensorTest('32GB', device='cpu')
     # Note(Arham) [large tensor tests on GPU]: since this only runs on cuda and zoom, setting device=None is a way to do 
@@ -5683,23 +5686,24 @@ else:
         def transformation_cuda_fn(tensor, **kwargs):
             return tensor.cuda(**kwargs)
         
-        # TODO(Arham), exchange for tensor.zoom()
         def transformation_zoom_fn(tensor, **kwargs):
-            return tensor.to(device='zoom', **kwargs)
+            return tensor.zoom(**kwargs)
 
         formats_shapes = (
             (torch.channels_last, (4, 3, 8, 8)),
             (torch.channels_last_3d, (4, 3, 8, 8, 8)))
 
+        cpu_transformation_fn = transformation_cuda_fn if not is_zoom else transformation_zoom_fn
         for mf, shape in formats_shapes:
             if not is_zoom:
                 self._test_memory_format_transformations(
                     'cuda', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
             else:
                 self._test_memory_format_transformations(
-                    'zoom', get_generator(mf, shape), transformation_zoom_fn, mf, default_is_preserve=True)
+                    'zoom', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
+            
             self._test_memory_format_transformations(
-                'cpu', get_generator(mf, shape), transformation_cuda_fn, mf, default_is_preserve=True)
+                'cpu', get_generator(mf, shape), cpu_transformation_fn, mf, default_is_preserve=True)
 
     # FIXME: move to test_serialization
     @onlyNativeDeviceTypes
@@ -5951,7 +5955,7 @@ else:
             if lazy_init_scale:
                 # Dummy scale() call to ensure the scale tensor is lazily initialized.
                 s1.scale(torch.full((1,), 4.0, dtype=torch.float32, device=device))
-                print(type(s1._scale))
+                print(type(s1._scale), s1._scale.dtype)
                 if "cuda" == device.type:
                     self.assertTrue(isinstance(s1._scale, torch.cuda.FloatTensor))
                 else:

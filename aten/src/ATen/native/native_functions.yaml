@@ -3298,6 +3298,7 @@
   dispatch:
     CPU: layer_norm_cpu
     CUDA: layer_norm_cuda
+    PrivateUse1: layer_norm_zoom
     MPS: layer_norm_mps
     CompositeExplicitAutograd: math_native_layer_norm
     NestedTensorCPU, NestedTensorCUDA: nested_layer_norm
@@ -3308,6 +3309,7 @@
   dispatch:
     CPU: layer_norm_backward_cpu
     CUDA: layer_norm_backward_cuda
+    PrivateUse1: layer_norm_backward_zoom
     MPS: layer_norm_backward_mps
     NestedTensorCPU, NestedTensorCUDA: layer_norm_backward_nested
   autogen: native_layer_norm_backward.out
@@ -4616,6 +4618,7 @@
 - func: _pin_memory(Tensor self, Device? device=None) -> Tensor
   dispatch:
     CUDA: _pin_memory_cuda
+    PrivateUse1: _pin_memory_zoom
     MPS: _pin_memory_mps
     NestedTensorCUDA, NestedTensorCPU: _pin_memory_nested
   autogen: _pin_memory.out

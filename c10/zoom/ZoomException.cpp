@@ -12,11 +12,9 @@ void c10_zoom_check_implementation(
     const int line_number,
     const bool include_device_assertions) {
   const auto hip_error = static_cast<hipError_t>(err);
-  // TODO(Arham): for now zoom ignores this, kernel registry to be implemented
-  const auto hip_kernel_failure = false;
-//   const auto cuda_kernel_failure = include_device_assertions
-//       ? c10::cuda::CUDAKernelLaunchRegistry::get_singleton_ref().has_failed()
-//       : false;
+  const auto hip_kernel_failure = include_device_assertions
+      ? c10::zoom::ZoomKernelLaunchRegistry::get_singleton_ref().has_failed()
+      : false;
 
   if (C10_LIKELY(hip_error == hipSuccess && !hip_kernel_failure)) {
     return;
@@ -27,18 +25,17 @@ void c10_zoom_check_implementation(
 
   std::string check_message;
 #ifndef STRIP_ERROR_MESSAGES
-  check_message.append("ZOOM error: ");
+  check_message.append("Zoom error: ");
   check_message.append(hipGetErrorString(hip_error));
-  // checks if CUDA_LAUNCH_BLOCKING in CUDA, unimplemented here for now
-//   check_message.append(c10::cuda::get_cuda_check_suffix());
+  // checks if HIP_LAUNCH_BLOCKING in HIP, unimplemented here for now
+  check_message.append(c10::zoom::get_hip_check_suffix());
   check_message.append("\n");
-  // TODO: similarly here, no device side checks because no kernel registry
-//   if (include_device_assertions) {
-//     check_message.append(c10_retrieve_device_side_assertion_info());
-//   } else {
-//     check_message.append(
-//         "Device-side assertions were explicitly omitted for this error check; the error probably arose while initializing the DSA handlers.");
-//   }
+  if (include_device_assertions) {
+    check_message.append(c10_retrieve_device_side_assertion_info());
+  } else {
+    check_message.append(
+        "Device-side assertions were explicitly omitted for this error check; the error probably arose while initializing the DSA handlers.");
+  }
   check_message.append(
         "Device-side assertions were explicitly omitted for this error check; the error probably arose while initializing the DSA handlers.");
 #endif

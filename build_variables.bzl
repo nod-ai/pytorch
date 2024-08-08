@@ -783,6 +783,7 @@ libtorch_python_zoom_sources = [
     "torch/csrc/zoom/ZoomPluggableAllocator.cpp",
     "torch/csrc/zoom/comm.cpp",
     "torch/csrc/zoom/memory_snapshot.cpp",
+    "torch/csrc/zoom/shared/hiprt.cpp",
 ]
 
 libtorch_python_xpu_sources = [
