@@ -7,6 +7,7 @@
 #include <c10/zoom/ZoomDeviceAssertionHost.h>
 #include <hip/hip_runtime.h>
 #include <hipblas/hipblas.h>
+#include <hipsparse/hipsparse.h>
 
 // Note [CHECK macro]
 // ~~~~~~~~~~~~~~~~~~
@@ -130,6 +131,17 @@ do {                                                          \
 
 #define TORCH_WARN_DISABLE_HIPBLASLT TORCH_WARN_ONCE("hipblasLt temporarily disabled in Zoom backend, using hipblas instead")
 #define TORCH_CHECK_DISABLE_HIPBLAS_LT TORCH_CHECK(false, "Error: hipblasLt routine called, but hipblasLt is disabled in the Zoom backend")
+
+const char *hipsparseGetErrorString(hipsparseStatus_t status);
+
+#define TORCH_HIPSPARSE_CHECK(EXPR)                            \
+  do {                                                          \
+    hipsparseStatus_t __err = EXPR;                              \
+    TORCH_CHECK(__err == HIPSPARSE_STATUS_SUCCESS,               \
+                "HIP error: ",                                 \
+                hipsparseGetErrorString(__err),                  \
+                " when calling `" #EXPR "`");                   \
+  } while (0)
 
 #ifdef hipsolverVersionMajor
 

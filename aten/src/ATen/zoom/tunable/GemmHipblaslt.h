@@ -220,7 +220,7 @@ hipDataType GetBiasTypeFromParams(const GemmStridedBatchedParams<T>* params) {
 
 template <typename T>
 hipDataType GetBiasTypeFromParams(const ScaledGemmParams<T>* params) {
-  return at::zoom::ScalarTypeToCudaDataType(params->bias_dtype);
+  return at::zoom::ScalarTypeToHIPDataType(params->bias_dtype);
 }
 
 static hipblasOperation_t _hipblasOpFromChar(char op) {

@@ -30,6 +30,7 @@ from torchgen.model import (
     DispatchKey,
     gets_generated_out_inplace_wrapper,
     is_cuda_dispatch_key,
+    is_zoom_dispatch_key,
     NativeFunction,
     NativeFunctionsGroup,
     SchemaKind,
@@ -511,7 +512,8 @@ return {sig.name()}({', '.join(e.expr for e in translate(cpp_sig.arguments(), si
                             device_guard = (
                                 f"globalContext().lazyInitCUDA();\n{device_guard}"
                             )
-                        if self.backend_index.dispatch_key == DispatchKey.PrivateUse1:
+                        if is_zoom_dispatch_key(self.backend_index.dispatch_key):
+                            # TODO(Arham): replace with zoom init
                             device_guard = (
                                 f"globalContext().lazyInitPrivateUse1();\n{device_guard}"
                             )

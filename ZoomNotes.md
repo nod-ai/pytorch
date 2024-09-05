@@ -56,3 +56,8 @@ Note on error in test suite: `RuntimeError: t.use_count() <= 1`
 This error is thrown in the `test_parallel_cow_materialize_error` test in the torch device type tests because
 of many parallel references being held on the same tensor. This will only throw in debug mode. I think we can ignore this since 
 this same error is thrown on the CPU backend in debug mode, and passes in release.
+
+Note on error in `test_grad_scaling_state_dict`, this error occurs in the instance check `isinstance(s1._scale, torch.FloatTensor)`
+because, despite their datatypes being equal, the PU1 dispatch key is a mismatch with the CPU dispatch key of the `FloatTensor` class.
+These tensor types are deprecated anyways, and the rest of the test works so we can just ignore - if we want to we can add a
+`torch.zoom.FloatTensor` (though this is a deprecated design pattern and likely frowned upon). The real correct thing to do is to refactor the instance check. See `python_tensor.cpp:Tensor_instancecheck`

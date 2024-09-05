@@ -175,6 +175,8 @@ file(GLOB native_utils_cpp "native/utils/*.cpp")
 file(GLOB native_zoom_hip "native/zoom/*.cu")
 file(GLOB native_zoom_cpp "native/zoom/*.cpp")
 file(GLOB native_zoom_linalg_cpp "native/zoom/linalg/*.cpp")
+file(GLOB native_sparse_zoom_hip "native/sparse/zoom/*.cu")
+file(GLOB native_sparse_zoom_cpp "native/sparse/zoom/*.cpp")
 
 # flash_attention sources
 file(GLOB flash_attention_cuda_cu "native/transformers/cuda/flash_attn/*.cu")
@@ -358,8 +360,10 @@ if(USE_ZOOM)
     ${ATen_ZOOM_SRCS}
     ${zoom_hip}
     ${native_zoom_hip}
+    ${native_sparse_zoom_hip}
   )
   list(APPEND all_zoom_cpp
+    ${native_sparse_zoom_cpp}
     ${zoom_cpp}
     ${native_zoom_cpp}
     ${native_zoom_linalg_cpp}

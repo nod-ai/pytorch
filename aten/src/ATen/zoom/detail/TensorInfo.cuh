@@ -48,7 +48,7 @@ TensorInfo<T, IndexType>::TensorInfo(T* p,
                                      IndexType st[MAX_TENSORINFO_DIMS]) {
   data = p;
   dims = dim;
-  TORCH_CHECK(dims < MAX_TENSORINFO_DIMS, "CUDA Tensors cannot have more than 25 dimensions");
+  TORCH_CHECK(dims < MAX_TENSORINFO_DIMS, "Zoom tensors cannot have more than 25 dimensions");
 
   for (int i = 0; i < dim; ++i) {
     sizes[i] = sz[i];

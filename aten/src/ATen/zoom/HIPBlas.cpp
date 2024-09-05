@@ -242,7 +242,7 @@ namespace at::zoom::blas {
 
 #ifndef DISABLE_HIPBLASLT
 namespace {
-// Following the pattern of CuSparseDescriptor
+// Following the pattern of HipSparseDescriptor
 // Defined here for now because this is the only place hipblas_lt interface is
 // used but can be moved to a header once hipblas_lt interface is used in
 // multiple places.
@@ -1347,17 +1347,17 @@ void scaled_gemm(
   }
 #endif
 
-  CuBlasLtMatrixLayout Adesc(ScalarTypeToCudaDataType(mat1_dtype), m, k, mat1_ld, transa == 't');
-  CuBlasLtMatrixLayout Bdesc(ScalarTypeToCudaDataType(mat2_dtype), k, n, mat2_ld, transb == 't');
+  CuBlasLtMatrixLayout Adesc(ScalarTypeToHIPDataType(mat1_dtype), m, k, mat1_ld, transa == 't');
+  CuBlasLtMatrixLayout Bdesc(ScalarTypeToHIPDataType(mat2_dtype), k, n, mat2_ld, transb == 't');
 
   // Cdesc is unused, beta is 0. But hipblaslt needs this set to something reasonable.
-  CuBlasLtMatrixLayout Cdesc(ScalarTypeToCudaDataType(result_dtype), m, n, result_ld);
+  CuBlasLtMatrixLayout Cdesc(ScalarTypeToHIPDataType(result_dtype), m, n, result_ld);
 
-  CuBlasLtMatrixLayout Ddesc(ScalarTypeToCudaDataType(result_dtype), m, n, result_ld);
+  CuBlasLtMatrixLayout Ddesc(ScalarTypeToHIPDataType(result_dtype), m, n, result_ld);
   if (bias_ptr) {
     computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_BIAS_POINTER, bias_ptr);
     computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_EPILOGUE, HIPBLASLT_EPILOGUE_BIAS);
-    computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_BIAS_DATA_TYPE, ScalarTypeToCudaDataType(bias_dtype));
+    computeDesc.setAttribute(HIPBLASLT_MATMUL_DESC_BIAS_DATA_TYPE, ScalarTypeToHIPDataType(bias_dtype));
   }
   size_t workspaceSize = _getWorkspaceSize();
   auto& allocator = *::c10::zoom::ZoomCachingAllocator::get();
@@ -1389,12 +1389,12 @@ void scaled_gemm(
         hipblaslt_ext::GemmType::HIPBLASLT_GEMM,
         _hipblasOpFromChar(transa),
         _hipblasOpFromChar(transb),
-        ScalarTypeToCudaDataType(mat1_dtype),
-        ScalarTypeToCudaDataType(mat2_dtype),
+        ScalarTypeToHIPDataType(mat1_dtype),
+        ScalarTypeToHIPDataType(mat2_dtype),
         // C is nullptr and beta=0, so set to something reasonable. See above.
-        //ScalarTypeToCudaDataType(bias_dtype),
-        ScalarTypeToCudaDataType(result_dtype),
-        ScalarTypeToCudaDataType(result_dtype),
+        //ScalarTypeToHIPDataType(bias_dtype),
+        ScalarTypeToHIPDataType(result_dtype),
+        ScalarTypeToHIPDataType(result_dtype),
         HIPBLAS_COMPUTE_32F,
         all_algos));
     if (all_algos.size() == 0) {

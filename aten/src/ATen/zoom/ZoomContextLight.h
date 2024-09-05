@@ -8,6 +8,7 @@
 #include <c10/core/Allocator.h>
 #include <c10/zoom/ZoomFunctions.h>
 
+#include <hipsparse/hipsparse.h>
 #include <hipsolver/hipsolver.h>
 #include <hipblas/hipblas.h>
 #ifndef DISABLE_HIPBLASLT
@@ -70,6 +71,7 @@ TORCH_ZOOM_API bool canDeviceAccessPeer(
 
 TORCH_ZOOM_API c10::Allocator* getZoomDeviceAllocator();
 
+TORCH_ZOOM_API hipsparseHandle_t getCurrentHIPSparseHandle();
 TORCH_ZOOM_API hipblasHandle_t getCurrentHIPBlasHandle();
 #ifndef DISABLE_HIPBLASLT
 TORCH_ZOOM_API hipblasLtHandle_t getCurrentHIPBlasLtHandle();

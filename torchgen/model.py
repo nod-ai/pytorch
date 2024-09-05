@@ -284,6 +284,8 @@ dispatch_keys = [
     DispatchKey.PrivateUse1, # TODO (Arham): added this to use the dispatch stub system, replace with Zoom key when in-tree 
     # Meta is a magic key: it is automatically generated for structured
     # kernels
+    DispatchKey.SparsePrivateUse1,
+    DispatchKey.SparseCsrPrivateUse1,
     DispatchKey.Meta,
     DispatchKey.SparseMeta,
     DispatchKey.SparseCsrMeta,
@@ -313,6 +315,14 @@ def is_cuda_dispatch_key(dk: DispatchKey) -> bool:
         DispatchKey.SparseCsrCUDA,
         DispatchKey.NestedTensorCUDA,
         DispatchKey.AutogradCUDA,
+    }
+    
+# TODO(Arham): replace PU1 dispatch key
+def is_zoom_dispatch_key(dk: DispatchKey) -> bool:
+    return dk in {
+        DispatchKey.PrivateUse1,
+        DispatchKey.SparsePrivateUse1,
+        DispatchKey.SparseCsrPrivateUse1,
     }
 
 

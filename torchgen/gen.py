@@ -70,6 +70,7 @@ from torchgen.model import (
     FRAGMENT_NAMESPACES,
     FunctionSchema,
     is_cuda_dispatch_key,
+    is_zoom_dispatch_key,
     is_generic_dispatch_key,
     is_ufunc_dispatch_key,
     Location,
@@ -194,8 +195,7 @@ def parse_native_yaml_struct(
             use_out_as_primary=True,
             external=False,
             # Only cuda-like devices in tree require device guards
-            # TODO(Arham): replace PU1 with zoom key
-            device_guard=(is_cuda_dispatch_key(k) or k == DispatchKey.PrivateUse1),
+            device_guard=(is_cuda_dispatch_key(k) or is_zoom_dispatch_key(k)),
             index=v,
         )
     return ParsedYaml(rs, indices)
@@ -1812,7 +1812,7 @@ def gen_aggregated_headers(
 
     for dispatch_key in dispatch_keys:
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
-        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
+        fm = zoom_fm if is_zoom_dispatch_key(dispatch_key) else fm
         if dispatch_key in functions_keys:
             inl_headers = f"#include <ATen/{dispatch_key}Functions_inl.h>"
 
@@ -2002,7 +2002,7 @@ def gen_per_operator_headers(
             )
 
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
-        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
+        fm = zoom_fm if is_zoom_dispatch_key(dispatch_key) else fm
         inl_headers = f"#include <ATen/{dispatch_key}Functions_inl.h>"
 
         fm.write_with_template(
@@ -2224,7 +2224,7 @@ def gen_source_files(
 
     for dispatch_key in dispatch_keys:
         fm = cuda_fm if is_cuda_dispatch_key(dispatch_key) else cpu_fm
-        fm = zoom_fm if dispatch_key == DispatchKey.PrivateUse1 else fm
+        fm = zoom_fm if is_zoom_dispatch_key(dispatch_key) else fm
 
         if per_operator_headers:
 
@@ -2297,7 +2297,7 @@ def gen_source_files(
         )
 
         extra_headers = extra_cuda_headers if is_cuda_dispatch_key(dispatch_key) else ""
-        if dispatch_key == DispatchKey.PrivateUse1: # TODO(Arham): change once we get a zoom key
+        if is_zoom_dispatch_key(dispatch_key):
             extra_headers = extra_zoom_headers
 
         dispatch_definitions = get_native_function_definitions(
