@@ -47,6 +47,19 @@ For these running on ROCm, this also means that we take a dependency on the 'roc
 
 This is temporarily disabled via the macro `DISABLE_HIPBLASLT` in `ZoomContextLight.h`, we can reenable it by undef'ing that macro. This means that right now `scaledgemm` and `intmm` dont work, but we can implement hipblas versions of them and/or just enable hipblaslt.
 
+# JITerator Notes:
+https://dev-discuss.pytorch.org/t/keeping-pytorchs-ops-maintainable-the-jiterator/468
+
+
+
+Dot kernel notes:
+empty{} -> SIGBUS
+zeros ({} or {1}) -> SIGBUS
+zeros ({10}) -> SIGSEV??
+Somehow not moving the pointer appropriately??
+Blas_test.cu demonstrates that raw kernel code works and the pointer is not messed up in any way
+-the exact same kernel when jitted with hiprtc throws sigbus though??
+
 TODO List:
 
 - Add RCCL

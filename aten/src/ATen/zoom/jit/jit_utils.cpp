@@ -1322,6 +1322,7 @@ hiprtcFunction jit_pwise_function(
 
   std::string file_path;
   if (cache_dir.has_value()) {
+    printf("Attempting to read from kernel cache...\n");
     // Attemps to read from the cache.
     // Cubin name is <kernel name>_arch<major>.<minor>_nvrtc<major>.<minor>_<ptx or sass>_<program length>_<string hash>
     // Note that the SHA1 hash used in the file name is NOT the SHA1 hash of the file's contents,
@@ -1349,12 +1350,15 @@ hiprtcFunction jit_pwise_function(
       //   an informative warning
       readin.close();
     } else {
+      printf("loading module from cache\n");
       // TODO: try passing the "mapped" file directly to cuModuleLoadCall instead of using an intermediate buffer
       std::vector<char> buffer(std::istreambuf_iterator<char>(readin), {});
       HIP_DRIVER_CHECK(hiprtc.hipModuleLoadData(&(compiled_kernel_.module), buffer.data()));
+      printf("funcload\n");
       HIP_DRIVER_CHECK(
         hiprtc.hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
       readin.close();
+      printf("finmodload\n");
       return compiled_kernel_;
     }
   }
@@ -1366,8 +1370,9 @@ hiprtcFunction jit_pwise_function(
   ZOOM_HIPRTC_CHECK(hiprtc.hiprtcCreateProgram(
       &program, code.c_str(), nullptr, 0, nullptr, nullptr));
 
-  std::vector<const char*> args = {"--std=c++17"};
+  std::vector<const char*> args = {"--std=c++17", "-g", "-O0"};
 
+  #undef NDEBUG
   #ifndef NDEBUG
     // Add line info to generated kernels
     args.push_back("-lineinfo");
@@ -1399,11 +1404,13 @@ hiprtcFunction jit_pwise_function(
   ptx.resize(ptx_size);
   ZOOM_HIPRTC_CHECK(getFunc(program, ptx.data()));
 
+  printf("modload2\n");
   HIP_DRIVER_CHECK(hiprtc.hipModuleLoadData(&(compiled_kernel_.module), ptx.data()));
-
+  printf("funcload2\n");
   HIP_DRIVER_CHECK(
      hiprtc.hipModuleGetFunction(&(compiled_kernel_.function), compiled_kernel_.module, name.c_str()));
   // TODO: use guards to avoid leaking
+  printf("flend\n");
   ZOOM_HIPRTC_CHECK(hiprtc.hiprtcDestroyProgram(&program));
 
   if (cache_dir.has_value()) {
@@ -1449,6 +1456,7 @@ void launch_jitted_pwise_function(
   const auto& hiprtc = at::globalContext().getHIPRTC();
   // Launches kernel on current stream
   auto stream = c10::zoom::getCurrentZoomStream();
+  stream.synchronize();
   HIP_DRIVER_CHECK(hiprtc.hipModuleLaunchKernel(
     function.function,
     nBlocks.x,

@@ -11,6 +11,13 @@
 #include <ATen/native/Resize.h>
 #include <c10/util/MaybeOwned.h>
 #include <ATen/ops/empty_like.h>
+#include <ATen/ops/zeros.h>
+
+#include <ATen/zoom/jit/jit_utils.h>
+#include <c10/util/SmallBuffer.h>
+#include <c10/zoom/ZoomFunctions.h>
+#include <ATen/native/zoom/Blas_test.cuh>
+#include <iostream>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -543,6 +550,60 @@ inline void dot_check(const Tensor& self, const Tensor& other) {
 
 } // anonymous namespace
 
+// std::string dot_kernel = R"(
+// __device__ int hip_log2ui(int x)
+// {
+//     unsigned int ax = (unsigned int)x;
+//     int          v  = 0;
+//     while(ax >>= 1)
+//     {
+//         v++;
+//     }
+//     return v;
+// }
+
+// template <typename T>
+// __inline__ __device__ T rocblas_wavefront_reduce(T val)
+// {
+//     int WFBITS = hip_log2ui(warpSize);
+//     int           offset = 1 << (WFBITS - 1);
+//     for(int i = 0; i < WFBITS; i++)
+//     {
+//         val += __shfl_down(val, offset);
+//         offset >>= 1;
+//     }
+//     return val;
+// }
+std::string dot_kernel=R"(
+#define HIP_ENABLE_PRINTF
+
+extern "C" __global__ void dotProductKernel_kernel(float* a)
+{
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if(tid == 0){
+      printf("KERNELPRINT\n");
+      printf("%p\n", a);
+      printf("%i\n", a != nullptr);
+      if(a){
+        printf("inbranch\n");
+        a[0] = 3.0f;
+      }
+      
+    }
+
+}
+)";
+
+inline c10::SmallBuffer<void*, 64> pack_kernel_args(
+    std::initializer_list<void*> args,
+    c10::ArrayRef<void*> extra_args) {
+  c10::SmallBuffer<void*, 64> ret(args.size() + extra_args.size());
+  std::copy(args.begin(), args.end(), ret.data());
+  std::copy(extra_args.begin(), extra_args.end(), ret.data() + args.size());
+  return ret;
+}
+
 Tensor dot_hip(const Tensor& self, const Tensor& other) {
   if (self.is_complex()) {
     if (self.is_conj()) {
@@ -560,6 +621,7 @@ Tensor dot_hip(const Tensor& self, const Tensor& other) {
   dot_check(self, other);
 
   const int n = static_cast<int>(self.numel());
+  int N = static_cast<int>(self.numel());
   int incx = static_cast<int>(self.stride(0));
   int incy = static_cast<int>(other.stride(0));
   if (n == 1) {
@@ -576,6 +638,60 @@ Tensor dot_hip(const Tensor& self, const Tensor& other) {
       self.scalar_type(), "dot",
       [&] {
         Tensor result = at::empty({}, self.options());
+        // c10::zoom::device_synchronize();
+        // Tensor result = at::zeros({1}, self.options()).contiguous();
+
+        std::cout << "IN DOT KERNEL" << std::endl;
+        std::cout << self.options() << std::endl;
+        std::cout << other.options() << std::endl;
+        // std::cout << result.options() << std::endl;
+        std::cout << result.numel() << std::endl;
+
+        // hipPointerAttribute_t attributes;
+        // hipError_t err = hipPointerGetAttributes(&attributes, result.mutable_data_ptr<scalar_t>());
+        // if (!result.mutable_data_ptr<scalar_t>()) {
+        //   printf("NULL RESULT\n");
+        // }
+        // else {
+        //   printf("%p\n", result.mutable_data_ptr<scalar_t>());
+        // }
+
+        // if (err == hipSuccess) {
+        //     if (attributes.type == hipMemoryTypeDevice) {
+        //         printf("Pointer 'result' is a valid device pointer.\n");
+        //         printf("Device: %d\n", attributes.device);
+        //         printf("Device Pointer: %p\n", attributes.devicePointer);
+        //         printf("Host Pointer: %p\n", attributes.hostPointer);
+        //         printf("Is Managed Memory: %s\n", attributes.isManaged ? "Yes" : "No");
+        //     } else {
+        //         printf("Pointer 'result' is not a device pointer. Memory type: %d\n", attributes.type);
+        //     }
+        // } else {
+        //     printf("Error getting pointer attributes: %s\n", hipGetErrorString(err));
+        // }
+
+        if(std::is_same<scalar_t, float>::value) {
+          std::cout << "IN FLOAT BRANCH" << std::endl;
+          std::cout << N << std::endl;
+          std::cout << incx << " " << incy << std::endl;
+          // launch_test(result);
+          
+          at::zoom::jit::hiprtcFunction f = at::zoom::jit::jit_pwise_function(dot_kernel, "dotProductKernel");
+          std:: cout << "COMP" << std::endl;
+          // std::vector<void*> args = {result.data_ptr<scalar_t>()};//{self.mutable_data_ptr<scalar_t>(), other.mutable_data_ptr<scalar_t>(), result.mutable_data_ptr<scalar_t>(), &N};
+          auto args = pack_kernel_args({result.data_ptr<scalar_t>()}, nullptr);
+          const int THREADS_PER_BLOCK = 128;
+          const int work_size = THREADS_PER_BLOCK * 4;
+          const int BLOCKS = (N + work_size - 1) / work_size;
+          const int smem = sizeof(scalar_t);
+          std::cout << THREADS_PER_BLOCK << " " << BLOCKS << " " << smem << std::endl;
+          // auto handle = at::zoom::getCurrentHIPBlasHandle();
+          // at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);
+          at::zoom::jit::launch_jitted_pwise_function(f, args.data(), {1u, 1u, 1u}, {1u, 1u, 1u}, smem);
+          // c10::zoom::device_synchronize();
+          std:: cout << "RUN" << std::endl;
+          return result;
+        }
 
         auto handle = at::zoom::getCurrentHIPBlasHandle();
         at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);

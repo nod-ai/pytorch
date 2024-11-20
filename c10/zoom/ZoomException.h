@@ -91,7 +91,7 @@ class ZoomError : public c10::Error {
   do {                                                                            \
     hipError_t __err = EXPR;                                                        \
     if (__err != hipSuccess) {                                                  \
-      AT_ERROR("HIP driver error: ", static_cast<int>(__err));                   \
+      AT_ERROR("HIP driver error: ", static_cast<int>(__err), "\nErrorName: ", hipGetErrorName(__err), "\nCause: ", hipGetErrorString(__err));                   \
     }                                                                             \
   } while (0)
 
