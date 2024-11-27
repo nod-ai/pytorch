@@ -175,6 +175,12 @@ struct alignas(2) Half {
     asm("{  cvt.rn.f16.f32 %0, %1;}\n" : "=h"(x) : "f"(value));
 #endif
   }
+  inline __host__ __device__ Half(const __half& value) {
+  x = *reinterpret_cast<const unsigned short*>(&value);
+  }
+  inline __host__ __device__ operator __half() const {
+    return *reinterpret_cast<const __half*>(&x);
+  }
   inline __host__ __device__ operator float() const{
 #ifdef __HIPCC__
       return __half2float(*reinterpret_cast<const __half*>(&x));
@@ -186,7 +192,60 @@ struct alignas(2) Half {
 #endif
   }
 };
+
+  /// Arithmetic
+
+  inline __host__ __device__ Half operator+(const Half& a, const Half& b) {
+  return static_cast<float>(a) + static_cast<float>(b);
+  }
+
+  inline __host__ __device__ Half operator-(const Half& a, const Half& b) {
+  return static_cast<float>(a) - static_cast<float>(b);
+  }
+
+  inline __host__ __device__ Half operator*(const Half& a, const Half& b) {
+  return static_cast<float>(a) * static_cast<float>(b);
+  }
+
+  inline __host__ __device__ Half operator/(const Half& a, const Half& b)
+   {
+  return static_cast<float>(a) / static_cast<float>(b);
+  }
+
+  inline __host__ __device__ Half operator-(const Half& a) {
+  #if (defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 530) || \
+      defined(__HIP_DEVICE_COMPILE__)
+  return __hneg(a);
+  #elif defined(__SYCL_DEVICE_ONLY__)
+  return -c10::bit_cast<sycl::half>(a);
+  #else
+  return -static_cast<float>(a);
+  #endif
+  }
+
+  inline __host__ __device__ Half& operator+=(Half& a, const Half& b) {
+  a = a + b;
+  return a;
+  }
+
+  inline __host__ __device__ Half& operator-=(Half& a, const Half& b) {
+  a = a - b;
+  return a;
+  }
+
+  inline __host__ __device__ Half& operator*=(Half& a, const Half& b) {
+  a = a * b;
+  return a;
+  }
+
+  inline __host__ __device__ Half& operator/=(Half& a, const Half& b) {
+  a = a / b;
+  return a;
+  }
+
 }
+
+
 )ESCAPE";
 
 const std::string jiterator_bfloat16_support_literal = R"ESCAPE(
@@ -246,6 +305,67 @@ struct alignas(2) BFloat16 {
   }
 
 };
+
+  /// Arithmetic
+
+  inline __host__ __device__ BFloat16
+  operator+(const BFloat16& a, const BFloat16& b) {
+    return static_cast<float>(a) + static_cast<float>(b);
+  }
+
+  inline __host__ __device__ BFloat16
+  operator-(const BFloat16& a, const BFloat16& b) {
+    return static_cast<float>(a) - static_cast<float>(b);
+  }
+
+  inline __host__ __device__ BFloat16
+  operator*(const BFloat16& a, const BFloat16& b) {
+    return static_cast<float>(a) * static_cast<float>(b);
+  }
+
+  inline __host__ __device__ BFloat16 operator/(const BFloat16& a, const BFloat16& b) {
+    return static_cast<float>(a) / static_cast<float>(b);
+  }
+
+  inline __host__ __device__ BFloat16 operator-(const BFloat16& a) {
+    return -static_cast<float>(a);
+  }
+
+  inline __host__ __device__ BFloat16& operator+=(BFloat16& a, const BFloat16& b) {
+    a = a + b;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator-=(BFloat16& a, const BFloat16& b) {
+    a = a - b;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator*=(BFloat16& a, const BFloat16& b) {
+    a = a * b;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator/=(BFloat16& a, const BFloat16& b) {
+    a = a / b;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator|(BFloat16& a, const BFloat16& b) {
+    a.x = a.x | b.x;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator^(BFloat16& a, const BFloat16& b) {
+    a.x = a.x ^ b.x;
+    return a;
+  }
+
+  inline __host__ __device__ BFloat16& operator&(BFloat16& a, const BFloat16& b) {
+    a.x = a.x & b.x;
+    return a;
+  }
+
 }
 )ESCAPE";
 
@@ -690,6 +810,32 @@ const std::string jit_vectorized_code_template = R"ESCAPE(
   }
 )ESCAPE";
 
+const std::string zoom_jit_code_template = R"ESCAPE(
+  ${load_support}
+  ${dynamic_casting_string}
+
+  // zero init
+  template <typename T>
+  __device__ T zero_init() {
+      return T(0);
+  }
+
+  template <>
+  __device__ hipFloatComplex zero_init<hipFloatComplex>() {
+      return make_hipFloatComplex(0.0f, 0.0f);
+  }
+
+  template <>
+  __device__ hipDoubleComplex zero_init<hipDoubleComplex>() {
+      return make_hipDoubleComplex(0.0, 0.0);
+  }
+
+  // kernels can use scalar_t as a template type in their implementation
+  using scalar_t = ${scalar_t};
+  ${kernel}
+
+)ESCAPE";
+
 static void replace_all(std::string& s, const std::string& to_replace, const std::string& replace_with) {
   std::ostringstream oss;
   std::size_t pos = 0;
@@ -1070,6 +1216,138 @@ std::string generate_code(
   return code;
 }
 
+std::string zoom_generate_code(
+    const KernelDescriptor &desc,
+    bool dynamic_casting
+    ) {
+  c10::SmallVector<std::string> extra_args_typenames(desc.extra_args_types.size());
+  for (auto i : c10::irange(extra_args_typenames.size())) {
+    extra_args_typenames[i] = typeName(desc.extra_args_types[i]);
+  }
+
+  return zoom_generate_code(
+      desc.nInputs,
+      desc.nOutputs,
+      desc.f,
+      desc.name,
+      typeName(desc.f_inputs_type),
+      typeName(toOpMathType(desc.f_inputs_type)),
+      typeName(desc.result_type),
+      dynamic_casting,
+      extra_args_typenames
+    );
+}
+
+std::string zoom_generate_code(
+    int nInputs,
+    int nOutputs,
+    const std::string& func_,
+    const std::string& name,
+    const std::string& f_inputs_type,
+    const std::string& compute_type,
+    const std::string& result_type,
+    bool dynamic_casting,
+    c10::SmallVector<std::string>& extra_args_typenames
+) {
+  std::string func = func_;
+  at::jit::TemplateEnv env;
+
+  env.s("index_type", "unsigned int");
+  env.s("nInputs", std::to_string(nInputs));
+  env.s("nOutputs", std::to_string(nOutputs));
+  env.s("scalar_t", f_inputs_type);
+  // std::complex and hipComplex have the same memory layout so we can readily
+  // replace these with one another, and this makes writing kernels much easier.
+  if(f_inputs_type == "std::complex<float>") {
+    env.s("scalar_t", "hipFloatComplex");
+  }
+  else if(f_inputs_type == "std::complex<double>") {
+    env.s("scalar_t", "hipDoubleComplex");
+  }
+  env.s("compute_type", compute_type);
+  env.s("kernel", func);
+  env.s("name", name);
+  env.s("cmath_string", get_cmath_string());
+
+  // Generate `extra_params` for function signature
+  // and `extra_args` for computation call if
+  // extra arguments to capture runtime state are passed.
+  // (look at polygamma for example).
+  std::string extra_params = "";
+  std::string extra_args = "";
+  for (size_t i = 0; i < extra_args_typenames.size(); i++) {
+    auto type = std::string(extra_args_typenames[i]);
+    auto name = "extra_arg_" + std::string(to_string(i));
+    extra_params += "," + type + " " + name;
+    extra_args += ", " + name;
+  }
+  env.s("extra_params", extra_params);
+  env.s("extra_args", extra_args);
+
+  if (f_inputs_type == "at::Half" || result_type == "at::Half" ||
+      f_inputs_type == "std::complex<at::Half>" ||
+      result_type == "std::complex<at::Half>" || dynamic_casting) {
+    // complex<Half> depends on complex<T> and Half dtypes.
+    env.s("half_string", jiterator_half_support_literal);
+  } else {
+    env.s("half_string", "");
+  }
+  if (f_inputs_type == "at::BFloat16" || result_type == "at::BFloat16" || dynamic_casting) {
+    env.s("bfloat16_string", jiterator_bfloat16_support_literal);
+  } else {
+    env.s("bfloat16_string", "");
+  }
+  // the definition of complex math functions is only needed when the compute type is complex
+  // but the definition of std::complex is needed for dynamic casting even if the compute type is not complex
+  if (f_inputs_type == "std::complex<float>" || result_type == "std::complex<float>" ||
+      f_inputs_type == "std::complex<double>" || result_type == "std::complex<double>" ||
+      f_inputs_type == "std::complex<at::Half>" || result_type == "std::complex<at::Half>") {
+    // complex<Half> depends on complex<T> and Half dtypes.
+    env.s("traits_string", get_traits_string());
+    env.s("complex_body_string", get_complex_body_string());
+    env.s("complex_math_string", get_complex_math_string());
+
+    // unhipify math functions, but only if std::complex is used.
+    func = unhipify_math_functions(func);
+    env.s("functor", func);
+
+  } else if (dynamic_casting) {
+    env.s("traits_string", get_traits_string());
+    env.s("complex_body_string", get_complex_body_string());
+    env.s("complex_math_string", "");
+  } else {
+    env.s("traits_string", "");
+    env.s("complex_body_string", "");
+    env.s("complex_math_string", "");
+  }
+  if (f_inputs_type == "std::complex<at::Half>" ||
+      result_type == "std::complex<at::Half>" || dynamic_casting) {
+    // dynamic_casting requires the definition of all types
+    // include complex<at::Half>
+    // Look at the definition of `StoreWithCast` and `LoadWithCast`.
+    env.s("complex_half_body_string", get_complex_half_body_string());
+  } else {
+    env.s("complex_half_body_string", "");
+  }
+
+  env.s("load_support", load_support_literal);
+  if (!dynamic_casting) {
+      env.s("loader", "LoadWithoutCast");
+      env.s("storer", "StoreWithoutCast");
+      env.s("dynamic_casting_string", no_dynamic_cast_support_literal);
+    } else {
+      env.s("loader", std::string("LoadWithCast<" + std::to_string(nInputs) + ">"));
+      env.s("storer", std::string("StoreWithCast<" + std::to_string(nOutputs) + ">"));
+      env.s("dynamic_casting_string", dynamic_cast_support_literal);
+    }
+
+  static auto hip_template = at::jit::CodeTemplate(
+    jit_preamble + jit_common_types + offset_calc_template + zoom_jit_code_template + jit_epilogue);
+  const auto code = hip_template.format(env);
+  return code;
+
+}
+
 // Creates directories recursively
 bool _r_mkdir(const std::string& dir) {
   // Check if current dir exists
@@ -1370,7 +1648,7 @@ hiprtcFunction jit_pwise_function(
   ZOOM_HIPRTC_CHECK(hiprtc.hiprtcCreateProgram(
       &program, code.c_str(), nullptr, 0, nullptr, nullptr));
 
-  std::vector<const char*> args = {"--std=c++17", "-g", "-O0"};
+  std::vector<const char*> args = {"--std=c++17", "-ggdb", "-O0"};
 
   #undef NDEBUG
   #ifndef NDEBUG

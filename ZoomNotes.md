@@ -51,14 +51,11 @@ This is temporarily disabled via the macro `DISABLE_HIPBLASLT` in `ZoomContextLi
 https://dev-discuss.pytorch.org/t/keeping-pytorchs-ops-maintainable-the-jiterator/468
 
 
+# Zoom JIT
+Kernels are run via hiprtc and use a template specifier `scalar_t` which is filled in by `zoom_generate_code`. JIT functions are in `ATen/zoom/jit/jit_utils.*`. Kernels need to be defined with `extern "C"` to prevent name mangling, otherwise we can't retrieve our kernel properly at launch time with `hipModuleGetFunction`. See `ATen/native/zoom/Blas.cpp:dot_hip` for an example implementation.
 
-Dot kernel notes:
-empty{} -> SIGBUS
-zeros ({} or {1}) -> SIGBUS
-zeros ({10}) -> SIGSEV??
-Somehow not moving the pointer appropriately??
-Blas_test.cu demonstrates that raw kernel code works and the pointer is not messed up in any way
--the exact same kernel when jitted with hiprtc throws sigbus though??
+ ## Testing Operators on Zoom
+ See `test/test_ops.py`, `test_numpy_ref` and `test_compare_cpu`.
 
 TODO List:
 

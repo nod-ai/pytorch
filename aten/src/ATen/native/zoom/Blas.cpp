@@ -8,6 +8,8 @@
 #include <ATen/zoom/HIPBlas.h>
 #include <ATen/zoom/tunable/Tunable.h>
 #include <ATen/zoom/tunable/TunableGemm.h>
+#include <ATen/native/zoom/thread_constants.h>
+#include <ATen/code_template.h>
 #include <ATen/native/Resize.h>
 #include <c10/util/MaybeOwned.h>
 #include <ATen/ops/empty_like.h>
@@ -16,6 +18,7 @@
 #include <ATen/zoom/jit/jit_utils.h>
 #include <c10/util/SmallBuffer.h>
 #include <c10/zoom/ZoomFunctions.h>
+#include <ATen/detail/ZoomHooksInterface.h>
 #include <ATen/native/zoom/Blas_test.cuh>
 #include <iostream>
 
@@ -550,59 +553,86 @@ inline void dot_check(const Tensor& self, const Tensor& other) {
 
 } // anonymous namespace
 
-// std::string dot_kernel = R"(
-// __device__ int hip_log2ui(int x)
-// {
-//     unsigned int ax = (unsigned int)x;
-//     int          v  = 0;
-//     while(ax >>= 1)
-//     {
-//         v++;
-//     }
-//     return v;
-// }
-
-// template <typename T>
-// __inline__ __device__ T rocblas_wavefront_reduce(T val)
-// {
-//     int WFBITS = hip_log2ui(warpSize);
-//     int           offset = 1 << (WFBITS - 1);
-//     for(int i = 0; i < WFBITS; i++)
-//     {
-//         val += __shfl_down(val, offset);
-//         offset >>= 1;
-//     }
-//     return val;
-// }
-std::string dot_kernel=R"(
-#define HIP_ENABLE_PRINTF
-
-extern "C" __global__ void dotProductKernel_kernel(float* a)
+// global sum reduce partial dot kernel results
+std::string sum_reduce_blocks_code = R"(
+#define HIP_ENABLE_PRINTF_DEBUG
+extern "C" __global__ void reduce_blocks_kernel(scalar_t* block_results, scalar_t* out, int num_blocks)
 {
-
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if(tid == 0){
-      printf("KERNELPRINT\n");
-      printf("%p\n", a);
-      printf("%i\n", a != nullptr);
-      if(a){
-        printf("inbranch\n");
-        a[0] = 3.0f;
-      }
-      
+    __shared__ scalar_t sdata[256];
+    int tid = threadIdx.x;
+    
+    scalar_t sum = zero_init<scalar_t>();
+    for (int i = tid; i < num_blocks; i += blockDim.x) {
+        sum += block_results[i];
     }
-
+    
+    sdata[tid] = sum;
+    __syncthreads();
+    
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    
+    if (tid == 0) {
+        out[0] = sdata[0];
+    }
 }
 )";
 
-inline c10::SmallBuffer<void*, 64> pack_kernel_args(
-    std::initializer_list<void*> args,
-    c10::ArrayRef<void*> extra_args) {
-  c10::SmallBuffer<void*, 64> ret(args.size() + extra_args.size());
-  std::copy(args.begin(), args.end(), ret.data());
-  std::copy(extra_args.begin(), extra_args.end(), ret.data() + args.size());
-  return ret;
+// compute partial results for dot kernel in each warp
+std::string dot_partial_code = R"(
+#define HIP_ENABLE_PRINTF_DEBUG
+template<typename T>
+__device__ T dot_mul(T x, T y) {
+  return x * y;
 }
+
+// complex mul
+template<>
+__device__ hipFloatComplex dot_mul<hipFloatComplex>(hipFloatComplex x, hipFloatComplex y) {
+  return hipCmulf(x, y);
+}
+
+template<>
+__device__ hipDoubleComplex dot_mul<hipDoubleComplex>(hipDoubleComplex x, hipDoubleComplex y) {
+  return hipCmul(x, y);
+}
+
+extern "C" __global__ void dot_partial_kernel(scalar_t* a, scalar_t* b, scalar_t* block_results, int incx, int incy, int N)
+{
+    __shared__ scalar_t sdata[256];
+    int tid = threadIdx.x;
+    int gid = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    
+    scalar_t sum = zero_init<scalar_t>();
+    
+    // Grid stride loop
+    for (int i = gid; i < N; i += stride) {
+        sum += dot_mul(a[i * incx], b[i * incy]);
+    }
+    
+    // Store in shared memory
+    sdata[tid] = sum;
+    __syncthreads();
+    
+    // Perform reduction in shared memory
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    
+    // Write result for this block to global memory
+    if (tid == 0) {
+        block_results[blockIdx.x] = sdata[0];
+    }
+}
+)";
 
 Tensor dot_hip(const Tensor& self, const Tensor& other) {
   if (self.is_complex()) {
@@ -620,17 +650,16 @@ Tensor dot_hip(const Tensor& self, const Tensor& other) {
   at::NoNamesGuard guard;
   dot_check(self, other);
 
-  const int n = static_cast<int>(self.numel());
   int N = static_cast<int>(self.numel());
   int incx = static_cast<int>(self.stride(0));
   int incy = static_cast<int>(other.stride(0));
-  if (n == 1) {
+  if (N == 1) {
     incx = 1;
     incy = 1;
   }
 
-  if (self._is_zerotensor() || other._is_zerotensor()) {
-    at::_efficientzerotensor({}, self.options());
+  if (self._is_zerotensor() || other._is_zerotensor() || N == 0) {
+    return at::_efficientzerotensor({}, self.options());
   }
 
   return AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
@@ -638,75 +667,86 @@ Tensor dot_hip(const Tensor& self, const Tensor& other) {
       self.scalar_type(), "dot",
       [&] {
         Tensor result = at::empty({}, self.options());
-        // c10::zoom::device_synchronize();
-        // Tensor result = at::zeros({1}, self.options()).contiguous();
+        int THREADS_PER_BLOCK = num_threads();
+        int BLOCKS = (N + block_work_size() - 1) / block_work_size();
+        const int smem = sizeof(scalar_t)*256;
 
-        std::cout << "IN DOT KERNEL" << std::endl;
-        std::cout << self.options() << std::endl;
-        std::cout << other.options() << std::endl;
-        // std::cout << result.options() << std::endl;
-        std::cout << result.numel() << std::endl;
+        auto self_ptr = self.data_ptr<scalar_t>();
+        auto other_ptr = other.data_ptr<scalar_t>();
+        auto res_ptr = result.data_ptr<scalar_t>();
+        auto* allocator = at::zoom::getZoomDeviceAllocator();
+        scalar_t* partial_res_ptr = (scalar_t*) allocator->raw_allocate(sizeof(scalar_t)*BLOCKS);
+        void* dot_partial_args[] = {&self_ptr, &other_ptr, &partial_res_ptr, &incx, &incy, &N};
 
-        // hipPointerAttribute_t attributes;
-        // hipError_t err = hipPointerGetAttributes(&attributes, result.mutable_data_ptr<scalar_t>());
-        // if (!result.mutable_data_ptr<scalar_t>()) {
-        //   printf("NULL RESULT\n");
-        // }
-        // else {
-        //   printf("%p\n", result.mutable_data_ptr<scalar_t>());
-        // }
+        auto desc = at::zoom::jit::make_kernel_descriptor<scalar_t, scalar_t>("dot_partial", dot_partial_code, /*nInputs=*/5, /*nOutputs=*/1);
+        auto dot_partial_kernel = at::zoom::jit::zoom_generate_code(desc);
+        at::zoom::jit::hiprtcFunction dot_partial_f = at::zoom::jit::jit_pwise_function(dot_partial_kernel, desc.name);
+        at::zoom::jit::launch_jitted_pwise_function(dot_partial_f, dot_partial_args, {BLOCKS, 1u, 1u}, {THREADS_PER_BLOCK, 1u, 1u}, smem);
+        
+        void* sum_reduce_blocks_args[] = {&partial_res_ptr, &res_ptr, &BLOCKS};
+        auto reduce_desc = at::zoom::jit::make_kernel_descriptor<scalar_t, scalar_t>("reduce_blocks", sum_reduce_blocks_code, /*nInputs=*/2, /*nOutputs=*/1);
+        auto sum_reduce_blocks_kernel = at::zoom::jit::zoom_generate_code(reduce_desc);
+        at::zoom::jit::hiprtcFunction sum_reduce_blocks_f = at::zoom::jit::jit_pwise_function(sum_reduce_blocks_kernel, reduce_desc.name);
+        at::zoom::jit::launch_jitted_pwise_function(sum_reduce_blocks_f, sum_reduce_blocks_args, {1u, 1u, 1u}, {THREADS_PER_BLOCK, 1u, 1u}, smem);
 
-        // if (err == hipSuccess) {
-        //     if (attributes.type == hipMemoryTypeDevice) {
-        //         printf("Pointer 'result' is a valid device pointer.\n");
-        //         printf("Device: %d\n", attributes.device);
-        //         printf("Device Pointer: %p\n", attributes.devicePointer);
-        //         printf("Host Pointer: %p\n", attributes.hostPointer);
-        //         printf("Is Managed Memory: %s\n", attributes.isManaged ? "Yes" : "No");
-        //     } else {
-        //         printf("Pointer 'result' is not a device pointer. Memory type: %d\n", attributes.type);
-        //     }
-        // } else {
-        //     printf("Error getting pointer attributes: %s\n", hipGetErrorString(err));
-        // }
-
-        if(std::is_same<scalar_t, float>::value) {
-          std::cout << "IN FLOAT BRANCH" << std::endl;
-          std::cout << N << std::endl;
-          std::cout << incx << " " << incy << std::endl;
-          // launch_test(result);
-          
-          at::zoom::jit::hiprtcFunction f = at::zoom::jit::jit_pwise_function(dot_kernel, "dotProductKernel");
-          std:: cout << "COMP" << std::endl;
-          // std::vector<void*> args = {result.data_ptr<scalar_t>()};//{self.mutable_data_ptr<scalar_t>(), other.mutable_data_ptr<scalar_t>(), result.mutable_data_ptr<scalar_t>(), &N};
-          auto args = pack_kernel_args({result.data_ptr<scalar_t>()}, nullptr);
-          const int THREADS_PER_BLOCK = 128;
-          const int work_size = THREADS_PER_BLOCK * 4;
-          const int BLOCKS = (N + work_size - 1) / work_size;
-          const int smem = sizeof(scalar_t);
-          std::cout << THREADS_PER_BLOCK << " " << BLOCKS << " " << smem << std::endl;
-          // auto handle = at::zoom::getCurrentHIPBlasHandle();
-          // at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);
-          at::zoom::jit::launch_jitted_pwise_function(f, args.data(), {1u, 1u, 1u}, {1u, 1u, 1u}, smem);
-          // c10::zoom::device_synchronize();
-          std:: cout << "RUN" << std::endl;
-          return result;
-        }
-
-        auto handle = at::zoom::getCurrentHIPBlasHandle();
-        at::zoom::blas::PointerModeGuard pointerModeGuard(handle, HIPBLAS_POINTER_MODE_DEVICE);
-        at::zoom::blas::dot<scalar_t>(
-            handle,
-            n,
-            self.const_data_ptr<scalar_t>(),
-            incx,
-            other.const_data_ptr<scalar_t>(),
-            incy,
-            result.mutable_data_ptr<scalar_t>());
+        allocator->raw_deallocate(partial_res_ptr);
 
         return result;
       });
 }
+
+// compute partial results for dot kernel in each warp
+std::string vdot_partial_code = R"(
+#define HIP_ENABLE_PRINTF_DEBUG
+template<typename T>
+__device__ T dot_mul(T x, T y) {
+  return x * y;
+}
+
+// conjugate for complex dot product
+template<>
+__device__ hipFloatComplex dot_mul<hipFloatComplex>(hipFloatComplex x, hipFloatComplex y) {
+  return hipCmulf(hipConjf(x), y);
+}
+
+template<>
+__device__ hipDoubleComplex dot_mul<hipDoubleComplex>(hipDoubleComplex x, hipDoubleComplex y) {
+  return hipCmul(hipConj(x), y);
+}
+
+extern "C" __global__ void vdot_partial_kernel(scalar_t* a, scalar_t* b, scalar_t* block_results, int incx, int incy, int N)
+{
+    __shared__ scalar_t sdata[256];
+    int tid = threadIdx.x;
+    int gid = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    
+    scalar_t sum = zero_init<scalar_t>();
+    
+    // Grid stride loop
+    for (int i = gid; i < N; i += stride) {
+        sum += dot_mul(a[i * incx], b[i * incy]);
+    }
+    
+    // Store in shared memory
+    sdata[tid] = sum;
+    __syncthreads();
+    
+    // Perform reduction in shared memory
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+    
+    // Write result for this block to global memory
+    if (tid == 0) {
+        block_results[blockIdx.x] = sdata[0];
+    }
+}
+)";
+
 
 Tensor vdot_hip(const Tensor& self, const Tensor& other) {
   if (!self.is_complex()) {
@@ -726,32 +766,44 @@ Tensor vdot_hip(const Tensor& self, const Tensor& other) {
   at::NoNamesGuard guard;
   dot_check(self, other);
 
-  if (self._is_zerotensor() || other._is_zerotensor()) {
-    at::_efficientzerotensor({}, self.options());
-  }
-
-  const int n = static_cast<int>(self.numel());
+  int N = static_cast<int>(self.numel());
   int incx = static_cast<int>(self.stride(0));
   int incy = static_cast<int>(other.stride(0));
-  if (n == 1) {
+  if (N == 1) {
     incx = 1;
     incy = 1;
   }
 
+
+  if (self._is_zerotensor() || other._is_zerotensor() || N == 0) {
+    return at::_efficientzerotensor({}, self.options());
+  }
+
   return AT_DISPATCH_COMPLEX_TYPES(self.scalar_type(), "vdot", [&] {
     Tensor result = at::empty({}, self.options());
+    int THREADS_PER_BLOCK = num_threads();
+    int BLOCKS = (N + block_work_size() - 1) / block_work_size();
+    const int smem = sizeof(scalar_t)*256;
 
-    auto handle = at::zoom::getCurrentHIPBlasHandle();
-    at::zoom::blas::PointerModeGuard pointerModeGuard(
-        handle, HIPBLAS_POINTER_MODE_DEVICE);
-    at::zoom::blas::vdot<scalar_t>(
-        handle,
-        n,
-        self.const_data_ptr<scalar_t>(),
-        incx,
-        other.const_data_ptr<scalar_t>(),
-        incy,
-        result.mutable_data_ptr<scalar_t>());
+    auto self_ptr = self.data_ptr<scalar_t>();
+    auto other_ptr = other.data_ptr<scalar_t>();
+    auto res_ptr = result.data_ptr<scalar_t>();
+    auto* allocator = at::zoom::getZoomDeviceAllocator();
+    scalar_t* partial_res_ptr = (scalar_t*) allocator->raw_allocate(sizeof(scalar_t)*BLOCKS);
+    void* vdot_partial_args[] = {&self_ptr, &other_ptr, &partial_res_ptr, &incx, &incy, &N};
+
+    auto desc = at::zoom::jit::make_kernel_descriptor<scalar_t, scalar_t>("vdot_partial", vdot_partial_code, /*nInputs=*/5, /*nOutputs=*/1);
+    auto vdot_partial_kernel = at::zoom::jit::zoom_generate_code(desc);
+    at::zoom::jit::hiprtcFunction vdot_partial_f = at::zoom::jit::jit_pwise_function(vdot_partial_kernel, desc.name);
+    at::zoom::jit::launch_jitted_pwise_function(vdot_partial_f, vdot_partial_args, {BLOCKS, 1u, 1u}, {THREADS_PER_BLOCK, 1u, 1u}, smem);
+    
+    void* sum_reduce_blocks_args[] = {&partial_res_ptr, &res_ptr, &BLOCKS};
+    auto reduce_desc = at::zoom::jit::make_kernel_descriptor<scalar_t, scalar_t>("reduce_blocks", sum_reduce_blocks_code, /*nInputs=*/2, /*nOutputs=*/1);
+    auto sum_reduce_blocks_kernel = at::zoom::jit::zoom_generate_code(reduce_desc);
+    at::zoom::jit::hiprtcFunction sum_reduce_blocks_f = at::zoom::jit::jit_pwise_function(sum_reduce_blocks_kernel, reduce_desc.name);
+    at::zoom::jit::launch_jitted_pwise_function(sum_reduce_blocks_f, sum_reduce_blocks_args, {1u, 1u, 1u}, {THREADS_PER_BLOCK, 1u, 1u}, smem);
+
+    allocator->raw_deallocate(partial_res_ptr);
 
     return result;
   });

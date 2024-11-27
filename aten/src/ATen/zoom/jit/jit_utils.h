@@ -107,6 +107,21 @@ std::string generate_code(
     int vec_size=0,
     bool return_by_ref=false);
 
+std::string zoom_generate_code(
+    const KernelDescriptor &desc,
+    bool dynamic_casting = false);
+
+std::string zoom_generate_code(
+    int nInputs,
+    int nOutputs,
+    const std::string& func_,
+    const std::string& name,
+    const std::string& f_inputs_type,
+    const std::string& compute_type,
+    const std::string& result_type,
+    bool dynamic_casting,
+    c10::SmallVector<std::string>& extra_args_typenames);
+
 std::string generate_reduction_code(
     int nOutputs,
     const std::string& func,
