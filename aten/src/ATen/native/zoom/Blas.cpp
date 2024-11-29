@@ -19,7 +19,6 @@
 #include <c10/util/SmallBuffer.h>
 #include <c10/zoom/ZoomFunctions.h>
 #include <ATen/detail/ZoomHooksInterface.h>
-#include <ATen/native/zoom/Blas_test.cuh>
 #include <iostream>
 
 #ifndef AT_PER_OPERATOR_HEADERS
@@ -47,6 +46,11 @@
 #include <ATen/ops/scalar_tensor_native.h>
 #include <ATen/ops/vdot_native.h>
 #endif
+
+
+constexpr int64_t c_i64_grid_X_chunk = 1ULL << 28;
+constexpr int64_t c_i64_grid_YZ_chunk
+    = int64_t((std::numeric_limits<uint16_t>::max() & ~0xf)); // % 16 == 0
 
 namespace at::native {
 
@@ -255,39 +259,39 @@ Tensor& addmm_out_hip_impl(Tensor& result, const Tensor& self, const Tensor& mat
     // the last two conditions is to skip 16b transA and non-trans-B having
     // leading dim >> rows when they are sliced from a large tensor
     // see fbcode/caffe2/test/test_linalg.py:test_corner_cases_of_cublasltmatmul
-    if (!disable_addmm_hip_lt) {
-      useLtInterface = beta.toComplexDouble() == 1.0 && self.dim() == 1 &&
-          result.dim() == 2 && self.sizes()[0] == mat2_sizes[1] &&
-          self.is_contiguous() && result.is_contiguous() &&
-          isSupportedHipLtROCmArch(self.device().index()) &&
-          (scalar_type == at::ScalarType::Float ||
-           scalar_type == at::ScalarType::Half ||
-           scalar_type == at::ScalarType::BFloat16) &&
+    // if (!disable_addmm_hip_lt) {
+    //   useLtInterface = beta.toComplexDouble() == 1.0 && self.dim() == 1 &&
+    //       result.dim() == 2 && self.sizes()[0] == mat2_sizes[1] &&
+    //       self.is_contiguous() && result.is_contiguous() &&
+    //       isSupportedHipLtROCmArch(self.device().index()) &&
+    //       (scalar_type == at::ScalarType::Float ||
+    //        scalar_type == at::ScalarType::Half ||
+    //        scalar_type == at::ScalarType::BFloat16) &&
 
-          mat2_sizes[0] > 1 && mat2_sizes[1] > 1 &&
-          mat2_sizes[0] < 65535 * 32 && mat2_sizes[1] < 65535 * 32 &&
-          mat1_sizes[0] < 65535 * 32 && mat1_sizes[1] < 65535 * 32 &&
-          // avoid leading dim >> rows bugs
-          ((mat1.strides()[0] == 1 && mat1.strides()[1] == mat1_sizes[0]) ||
-           (mat1.strides()[1] == 1 && mat1.strides()[0] == mat1_sizes[1]) ||
-           (scalar_type != at::ScalarType::Half &&
-            scalar_type != at::ScalarType::BFloat16)) &&
-          ((mat2.strides()[0] == 1 && mat2.strides()[1] == mat2_sizes[0]) ||
-           (mat2.strides()[1] == 1 && mat2.strides()[0] == mat2_sizes[1]) ||
-           (scalar_type != at::ScalarType::Half &&
-            scalar_type != at::ScalarType::BFloat16));
-    }
-    if (!useLtInterface) {
-      self_ = expand_size(self, {mat1_sizes[0], mat2_sizes[1]}, "addmm");
-    }
+    //       mat2_sizes[0] > 1 && mat2_sizes[1] > 1 &&
+    //       mat2_sizes[0] < 65535 * 32 && mat2_sizes[1] < 65535 * 32 &&
+    //       mat1_sizes[0] < 65535 * 32 && mat1_sizes[1] < 65535 * 32 &&
+    //       // avoid leading dim >> rows bugs
+    //       ((mat1.strides()[0] == 1 && mat1.strides()[1] == mat1_sizes[0]) ||
+    //        (mat1.strides()[1] == 1 && mat1.strides()[0] == mat1_sizes[1]) ||
+    //        (scalar_type != at::ScalarType::Half &&
+    //         scalar_type != at::ScalarType::BFloat16)) &&
+    //       ((mat2.strides()[0] == 1 && mat2.strides()[1] == mat2_sizes[0]) ||
+    //        (mat2.strides()[1] == 1 && mat2.strides()[0] == mat2_sizes[1]) ||
+    //        (scalar_type != at::ScalarType::Half &&
+    //         scalar_type != at::ScalarType::BFloat16));
+    // }
+    // if (!useLtInterface) {
+    self_ = expand_size(self, {mat1_sizes[0], mat2_sizes[1]}, "addmm");
+    // }
     self__sizes = self_->sizes();
   } else {
-    useLtInterface = !disable_addmm_hip_lt &&
-        result.dim() == 2 && result.is_contiguous() &&
-        isSupportedHipLtROCmArch(self.device().index()) &&
-        (scalar_type == at::ScalarType::Float ||
-          scalar_type == at::ScalarType::Half ||
-          scalar_type == at::ScalarType::BFloat16);
+    // useLtInterface = !disable_addmm_hip_lt &&
+    //     result.dim() == 2 && result.is_contiguous() &&
+    //     isSupportedHipLtROCmArch(self.device().index()) &&
+    //     (scalar_type == at::ScalarType::Float ||
+    //       scalar_type == at::ScalarType::Half ||
+    //       scalar_type == at::ScalarType::BFloat16);
 
     self_ = c10::MaybeOwned<Tensor>::borrowed(self);
     self__sizes = self_->sizes();
@@ -332,40 +336,43 @@ Tensor& addmm_out_hip_impl(Tensor& result, const Tensor& self, const Tensor& mat
 
   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(!args.result->is_conj());
 
-  if (useLtInterface) {
-    AT_DISPATCH_FLOATING_TYPES_AND2(
-        at::ScalarType::Half,
-        at::ScalarType::BFloat16,
-        scalar_type,
-        "addmm_hip_lt",
-        [&] {
-          at::zoom::blas::gemm_and_bias<scalar_t>(
-              args.transa == 't',
-              args.transb == 't',
-              args.m,
-              args.n,
-              args.k,
-              alpha.to<at::opmath_type<scalar_t>>(),
-              args.mata->const_data_ptr<scalar_t>(),
-              args.lda,
-              args.matb->const_data_ptr<scalar_t>(),
-              args.ldb,
-              // This condition is needed for mm case on ROCm for hipblasLt path.
-              // Passing the bias ptr as null to avoid accuracy issues for mm case.
-              (&result != &self) ? self.const_data_ptr<scalar_t>() : nullptr,
-              args.result->data_ptr<scalar_t>(),
-              args.result_ld,
-              activation_to_gemm_and_blas_arg(activation)
-          );
-        });
-  } else
-  {
-    AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
+  // if (useLtInterface) {
+  //   AT_DISPATCH_FLOATING_TYPES_AND2(
+  //       at::ScalarType::Half,
+  //       at::ScalarType::BFloat16,
+  //       scalar_type,
+  //       "addmm_hip_lt",
+  //       [&] {
+  //         at::zoom::blas::gemm_and_bias<scalar_t>(
+  //             args.transa == 't',
+  //             args.transb == 't',
+  //             args.m,
+  //             args.n,
+  //             args.k,
+  //             alpha.to<at::opmath_type<scalar_t>>(),
+  //             args.mata->const_data_ptr<scalar_t>(),
+  //             args.lda,
+  //             args.matb->const_data_ptr<scalar_t>(),
+  //             args.ldb,
+  //             // This condition is needed for mm case on ROCm for hipblasLt path.
+  //             // Passing the bias ptr as null to avoid accuracy issues for mm case.
+  //             (&result != &self) ? self.const_data_ptr<scalar_t>() : nullptr,
+  //             args.result->data_ptr<scalar_t>(),
+  //             args.result_ld,
+  //             activation_to_gemm_and_blas_arg(activation)
+  //         );
+  //       });
+  // } else
+  // {
+  
+  
+  AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
         at::ScalarType::Half,
         at::ScalarType::BFloat16,
         scalar_type,
         "addmm_hip",
         [&] {
+          auto grid = dim3()
           using opmath_t = at::opmath_type<scalar_t>;
           opmath_t alpha_val = alpha.to<opmath_t>();
           opmath_t beta_val = beta.to<opmath_t>();
@@ -387,6 +394,54 @@ Tensor& addmm_out_hip_impl(Tensor& result, const Tensor& self, const Tensor& mat
               result_ptr,
               args.result_ld);
         });
+  
+    // AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES_AND2(
+    //     at::ScalarType::Half,
+    //     at::ScalarType::BFloat16,
+    //     scalar_type,
+    //     "addmm_hip",
+    //     [&] {
+    //       using opmath_t = at::opmath_type<scalar_t>;
+    //       opmath_t alpha_val = alpha.to<opmath_t>();
+    //       opmath_t beta_val = beta.to<opmath_t>();
+    //       const scalar_t* mat1_ptr = args.mata->const_data_ptr<scalar_t>();
+    //       const scalar_t* mat2_ptr = args.matb->const_data_ptr<scalar_t>();
+    //       scalar_t* result_ptr = args.result->mutable_data_ptr<scalar_t>();
+
+    //       static constexpr int GEMM_DIM_X = 32;
+    //       static constexpr int GEMM_DIM_Y = 32;
+
+    //       // JIT kernel
+    //       auto desc = at::zoom::jit::make_kernel_descriptor<scalar_t, scalar_t>("gemm", gemm_code, /*nInputs=*/5, /*nOutputs=*/1);
+    //       auto gemm_kernel = at::zoom::jit::zoom_generate_code(desc);
+    //       at::zoom::jit::hiprtcFunction gemm_f = at::zoom::jit::jit_pwise_function(gemm_kernel, desc.name);
+          
+    //       // chunked launch
+    //       for(int64_t n_base = 0; n_base < args.n; n_base += c_i64_grid_YZ_chunk)
+    //       {
+    //         // don't need to block through M as it's 32 bit and can use full 32-bits in X-dim of grid
+    //         int32_t nblock = int32_t(std::min(args.n - n_base, c_i64_grid_YZ_chunk));
+
+    //         void* gemm_args[] = {
+    //           args.transa,
+    //           args.transb,
+    //           args.m,
+    //           args.n,
+    //           args.k,
+    //           alpha_val,
+    //           mat1_ptr,
+    //           args.lda,
+    //           mat2_ptr,
+    //           args.ldb,
+    //           beta_val,
+    //           result_ptr,
+    //           args.result_ldN
+    //         };
+
+    //         at::zoom::jit::launch_jitted_pwise_function(gemm_f, gemm_args, gemm_grid, gemm_thread, smem);
+        
+    //       }
+    //     });
     switch (activation) {
       case Activation::RELU:
         at::relu_(const_cast<Tensor&>(*args.result));
@@ -396,7 +451,7 @@ Tensor& addmm_out_hip_impl(Tensor& result, const Tensor& self, const Tensor& mat
         break;
       default: break;
     }
-  }
+  // }
 
   if (!result.is_same(*args.result)) {
     result.copy_(*args.result);

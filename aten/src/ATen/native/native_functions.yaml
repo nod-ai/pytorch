@@ -4601,7 +4601,7 @@
 
 - func: channel_shuffle(Tensor self, SymInt groups) -> Tensor
   dispatch:
-    CPU, CUDA: channel_shuffle
+    CPU, CUDA, PrivateUse1: channel_shuffle
     QuantizedCPU: channel_shuffle_quantized_cpu
   autogen: channel_shuffle.out
 
@@ -5922,7 +5922,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: std
+    CPU, CUDA, PrivateUse1: std
     MPS: std_mps
     QuantizedCPU: std_quantized_cpu
 
@@ -5960,7 +5960,7 @@
 - func: std.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: std_out
+    CPU, CUDA, PrivateUse1: std_out
     QuantizedCPU: std_out_quantized_cpu
 
 - func: std.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
@@ -6476,7 +6476,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: var
+    CPU, CUDA, PrivateUse1: var
     MPS: var_mps
   tags: core
 
@@ -6487,7 +6487,7 @@
 - func: var.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: var_out
+    CPU, CUDA, PrivateUse1: var_out
 
 - func: var.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
   device_check: NoCheck   # TensorIterator
@@ -6996,7 +6996,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA: rsub
+    CPU, CUDA, PrivateUse1: rsub
   autogen: rsub.Tensor_out
 
 - func: heaviside.out(Tensor self, Tensor values, *, Tensor(a!) out) -> Tensor(a!)
@@ -10015,7 +10015,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA, MPS: remainder
+    CPU, CUDA, PrivateUse1, MPS: remainder
   autogen: remainder.Scalar_Tensor_out
   tags: pointwise
 
@@ -10194,7 +10194,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA, MPS: argsort_stable
+    CPU, CUDA, PrivateUse1, MPS: argsort_stable
   autogen: argsort.stable_out
 
 - func: argsort.dimname(Tensor self, Dimname dim, bool descending=False) -> Tensor
@@ -10302,7 +10302,7 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: pow_Scalar_out
+    CPU, CUDA, PrivateUse1: pow_Scalar_out
     MPS: pow_Scalar_out_mps
   tags: pointwise
 
@@ -12085,14 +12085,14 @@
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA, MPS: hardtanh_out
+    CPU, CUDA, PrivateUse1, MPS: hardtanh_out
     QuantizedCPU: hardtanh_out_quantized_cpu
 
 - func: hardtanh(Tensor self, Scalar min_val=-1, Scalar max_val=1) -> Tensor
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:
-    CPU, CUDA, MPS: hardtanh
+    CPU, CUDA, PrivateUse1, MPS: hardtanh
     QuantizedCPU: hardtanh_quantized_cpu
   tags: core
 
@@ -14171,7 +14171,7 @@
   python_module: linalg
   structured: True
   dispatch:
-    CPU, CUDA: linalg_cholesky_ex_out
+    CPU, CUDA, PrivateUse1: linalg_cholesky_ex_out
 
 - func: linalg_cholesky(Tensor self, *, bool upper=False) -> Tensor
   python_module: linalg
@@ -14246,7 +14246,7 @@
 - func: _linalg_det.result(Tensor A, *, Tensor(a!) result, Tensor(b!) LU, Tensor(c!) pivots) -> (Tensor(a!) result, Tensor(b!) LU, Tensor(c!) pivots)
   structured: True
   dispatch:
-    CPU, CUDA: _linalg_det_out
+    CPU, CUDA, PrivateUse1: _linalg_det_out
 
 - func: linalg_det(Tensor A) -> Tensor
   python_module: linalg
@@ -14324,7 +14324,7 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_matrix_exp
+    CPU, CUDA, PrivateUse1: linalg_matrix_exp
   autogen: linalg_matrix_exp.out
 
 - func: _linalg_slogdet(Tensor A) -> (Tensor sign, Tensor logabsdet, Tensor LU, Tensor pivots)
@@ -14333,7 +14333,7 @@
 - func: _linalg_slogdet.sign(Tensor A, *, Tensor(a!) sign, Tensor(b!) logabsdet, Tensor(c!) LU, Tensor(d!) pivots) -> (Tensor(a!) sign, Tensor(b!) logabsdet, Tensor(c!) LU, Tensor(d!) pivots)
   structured: True
   dispatch:
-    CPU, CUDA: _linalg_slogdet_out
+    CPU, CUDA, PrivateUse1: _linalg_slogdet_out
 
 - func: linalg_slogdet(Tensor A) -> (Tensor sign, Tensor logabsdet)
   python_module: linalg
@@ -14364,7 +14364,7 @@
 - func: _linalg_eigvals(Tensor self) -> Tensor
   python_module: linalg
   dispatch:
-    CPU, CUDA: _linalg_eigvals
+    CPU, CUDA, PrivateUse1: _linalg_eigvals
 
 - func: linalg_eigvals(Tensor self) -> Tensor
   python_module: linalg
@@ -14400,12 +14400,12 @@
   python_module: linalg
   variants: function
   dispatch:
-    CPU, CUDA: linalg_householder_product
+    CPU, CUDA, PrivateUse1: linalg_householder_product
 
 - func: linalg_householder_product.out(Tensor input, Tensor tau, *, Tensor(a!) out) -> Tensor(a!)
   python_module: linalg
   dispatch:
-    CPU, CUDA: linalg_householder_product_out
+    CPU, CUDA, PrivateUse1: linalg_householder_product_out
 
 - func: linalg_inv_ex(Tensor A, *, bool check_errors=False) -> (Tensor inverse, Tensor info)
   python_module: linalg
@@ -14613,7 +14613,7 @@
   python_module: linalg
   structured: True
   dispatch:
-    CPU, CUDA: linalg_qr_out
+    CPU, CUDA, PrivateUse1: linalg_qr_out
 
 - func: linalg_matrix_power(Tensor self, int n) -> Tensor
   python_module: linalg

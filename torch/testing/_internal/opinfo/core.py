@@ -1344,7 +1344,7 @@ class OpInfo:
         if device_type == "privateuse1":
             device_type = torch._C._get_privateuse1_backend_name()
         device_type = torch.device(device_type).type
-        if device_type == "cuda":
+        if device_type == "cuda" or device_type == "zoom":
             return self.dtypesIfROCM if TEST_WITH_ROCM else self.dtypesIfCUDA
         return self.dtypes
 
@@ -1356,7 +1356,7 @@ class OpInfo:
             device_type = torch._C._get_privateuse1_backend_name()
         device_type = torch.device(device_type).type
         backward_dtypes = None
-        if device_type == "cuda":
+        if device_type == "cuda" or device_type == "zoom":
             backward_dtypes = (
                 self.backward_dtypesIfROCM
                 if TEST_WITH_ROCM
