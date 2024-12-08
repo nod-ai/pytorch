@@ -12,6 +12,8 @@ from torch.types import Device
 from .. import device as _device
 from .._utils import _dummy_type, _LazySeedTracker, classproperty
 from ._utils import _get_device_index
+from .streams import Event, ExternalStream, Stream
+
 
 try:
     from torch._C import _hiprt  # type: ignore[attr-defined]
@@ -309,6 +311,23 @@ def device_count() -> int:
     if _initialized:
         _cached_device_count = r
     return r
+
+def current_stream(device: Optional[_device_t] = None) -> Stream:
+    r"""Return the currently selected :class:`Stream` for a given device.
+
+    Args:
+        device (torch.device or int, optional): selected device. Returns
+            the currently selected :class:`Stream` for the current device, given
+            by :func:`~torch.zoom.current_device`, if :attr:`device` is ``None``
+            (default).
+    """
+    _lazy_init()
+    streamdata = torch._C._zoom_getCurrentStream(
+        _get_device_index(device, optional=True)
+    )
+    return Stream(
+        stream_id=streamdata[0], device_index=streamdata[1], device_type=streamdata[2]
+    )
 
 
 def current_blas_handle():

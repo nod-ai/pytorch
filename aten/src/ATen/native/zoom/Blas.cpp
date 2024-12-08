@@ -372,7 +372,6 @@ Tensor& addmm_out_hip_impl(Tensor& result, const Tensor& self, const Tensor& mat
         scalar_type,
         "addmm_hip",
         [&] {
-          auto grid = dim3()
           using opmath_t = at::opmath_type<scalar_t>;
           opmath_t alpha_val = alpha.to<opmath_t>();
           opmath_t beta_val = beta.to<opmath_t>();
