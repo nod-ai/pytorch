@@ -1694,15 +1694,15 @@ PyObject* initModule() {
   THCPGraph_init(module);
 #endif
 
-// #ifdef USE_ZOOM
-//   // This will only initialise base classes and attach them to library namespace
-//   // They won't be ready for real usage until importing cuda module, that will
-//   // complete the process (but it defines Python classes before calling back
-//   // into C, so these lines have to execute first)..
-//   // THCPStream_init(module);
-//   // THCPEvent_init(module);
-//   // THCPGraph_init(module);
-// #endif
+#ifdef USE_ZOOM
+  // This will only initialise base classes and attach them to library namespace
+  // They won't be ready for real usage until importing cuda module, that will
+  // complete the process (but it defines Python classes before calling back
+  // into C, so these lines have to execute first)..
+  THCPStream_init(module);
+  THCPEvent_init(module);
+  THCPGraph_init(module);
+#endif
 
 #ifdef USE_XPU
   THXPStream_init(module);
