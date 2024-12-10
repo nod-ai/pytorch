@@ -97,7 +97,6 @@ void maybe_set_zoom_module_loading(const std::string &def_value) {
 // compilation unit (alt is to have another method in hooks, but
 // let's not if we don't need to!)
 void ZoomHooks::initZoom() const {
-  std::cout << "INITZOOM" << std::endl;
   C10_LOG_API_USAGE_ONCE("aten.init.zoom");
   // Force the update to enable unit testing. This code get executed before unit tests
   // have a chance to enable vitals.
@@ -105,7 +104,6 @@ void ZoomHooks::initZoom() const {
 
   maybe_set_zoom_module_loading("LAZY");
   const auto num_devices = c10::zoom::device_count_ensure_non_zero();
-  std::cout << "NUMDEVICES: " << std::to_string(num_devices) << std::endl;
   c10::zoom::ZoomCachingAllocator::init(num_devices);
   at::zoom::detail::init_p2p_access_cache(num_devices);
 }
