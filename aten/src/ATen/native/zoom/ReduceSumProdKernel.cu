@@ -5,7 +5,7 @@
 #include <ATen/native/SharedReduceOps.h>
 #include <ATen/Dispatch.h>
 #include <ATen/native/ReduceOps.h>
-#include <ATen/jit_macros.h>
+// #include <ATen/jit_macros.h>
 #include <ATen/OpMathType.h>
 
 namespace at::native {

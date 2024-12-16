@@ -12,10 +12,10 @@ bak_err="zoom_test_errors.log.bak"
 [ -f $output_file ] && cp $output_file $bak_out
 [ -f $error_file ] && cp $error_file $bak_err
 
-# python test/test_torch.py --run-parallel 0 -k TestTorchDeviceTypePRIVATEUSEONE --verbose &> $log_file
-# python test/test_ops.py -k TestCommonPRIVATEUSEONE
-python test/test_ops.py -k TestCommonPRIVATEUSEONE.test_compare_cpu --verbose &> $log_file
-# python test/test_ops.py -k TestCommonPRIVATEUSEONE.test_numpy_ref --verbose &> $log_file
+python test/test_torch.py --run-parallel 0 -k TestTorchDeviceTypePRIVATEUSEONE --verbose &> $log_file
+#python test/test_ops.py -k TestCommonPRIVATEUSEONE
+#python test/test_ops.py -k TestCommonPRIVATEUSEONE.test_compare_cpu --verbose &> $log_file
+#python test/test_ops.py -k TestCommonPRIVATEUSEONE.test_numpy_ref --verbose &> $log_file
 
 ## Find Unimplemented Operator Errors from failing tests
 # Pattern to search for
