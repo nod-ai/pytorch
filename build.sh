@@ -1,9 +1,6 @@
 #!/bin/bash
 
 rm -rf build
-git clean -fdx -e .idea
-git clean -fdX -e .idea
-
 
 export USE_ZOOM=1
 export USE_ROCM=0
@@ -118,6 +115,7 @@ export USE_VULKAN_FP16_INFERENCE=0
 export USE_VULKAN_RELAXED_PRECISI0=0
 export USE_XNNPACK=0
 export USE_XPU=0
+export ONNX_ML=0
 
 export PYTORCH_ROCM_ARCH="gfx90a;gfx940;gfx941;gfx942;gfx1100;"
 source venv/bin/activate
