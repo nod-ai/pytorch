@@ -19,10 +19,6 @@ on:
       - main
 
 concurrency:
-  # A PR number if a pull request and otherwise the commit hash. This cancels
-  # queued and in-progress runs for the same PR (presubmit) or commit
-  # (postsubmit). The workflow name is prepended to avoid conflicts between
-  # different workflows.
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
 
@@ -34,7 +30,7 @@ jobs:
       matrix:
         include:
           - name: "ubuntu-22.04"
-            runs-on: "nodai-amdgpu-mi250-x86-64"
+            runs-on: "mi300"
             # container: "rocm/pytorch:rocm6.2.3_ubuntu22.04_py3.10_pytorch_release_2.3.0"
             # runs-on: "nod-ai-shared-cpubuilder-manylinux-x86_64"
 
@@ -71,22 +67,6 @@ jobs:
           key:  ${{ env.CACHE_KEY }}
           restore-keys: linux-build-test-cpp-
 
-      # - name: "Setup ROCm"
-      #   id: rocm
-      #   run: |
-          
-      #     tee --append /etc/yum.repos.d/rocm.repo <<EOF
-      #     [ROCm-6.3]
-      #     name=ROCm6.3
-      #     baseurl=https://repo.radeon.com/rocm/el8/6.3/main
-      #     enabled=1
-      #     priority=50
-      #     gpgcheck=1
-      #     gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
-      #     EOF
-      #     dnf clean all
-      #     dnf install -y rocm hipblas-common-devel hip-devel
-
       - name: "Build PyTorch"
         id: build
         run: |
@@ -95,6 +75,9 @@ jobs:
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           export CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,time_macros
+
+          python -m venv venv
+          source venv/bin/activate
           pip install -r requirements.txt
           ./build.sh
 
@@ -111,6 +94,18 @@ jobs:
           name: ${{ matrix.name }}_artifact
           path: dist
           if-no-files-found: warn
+
+      - name: Release current commit
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          artifacts: "dist/*.whl"
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "latest"
+          name: "latest"
+          removeArtifacts: false
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
 
       - name: "Setup tmate session"
         if: ${{ (failure() && inputs.debug_with_tmate) || inputs.force_debug_with_tmate }}
