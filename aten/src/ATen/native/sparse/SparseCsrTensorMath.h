@@ -41,6 +41,16 @@ inline void _check_is_cuda(const Tensor& self, c10::string_view name) {
       " tensor");
 }
 
+inline void _check_is_zoom(const Tensor& self, c10::string_view name) {
+  TORCH_CHECK(
+      self.is_privateuseone(),
+      "Expected all tensors to be on the same device. addmm expected '",
+      name,
+      "' to be Zoom tensor, but got ",
+      self.device(),
+      " tensor");
+}
+
 inline void _check_dim(const Tensor& self, int64_t target_dim, c10::string_view name) {
   if (target_dim == 2) {
     TORCH_CHECK(

@@ -38,8 +38,8 @@ from torch.testing._internal.common_utils import (  # type: ignore[attr-defined]
     IS_SANDCASTLE, IS_FBCODE, IS_REMOTE_GPU, skipIfTorchInductor, load_tests, slowTest, slowTestIf,
     TEST_WITH_CROSSREF, skipIfTorchDynamo, skipRocmIfTorchInductor, set_default_dtype,
     skipCUDAMemoryLeakCheckIf, BytesIOContext,
-    skipIfRocm, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
-    wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard,
+    skipIfRocm, skipIfZoom, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
+    wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard, ZoomSyncGuard,
     skipIfNotRegistered, bytes_to_scalar, parametrize, skipIfMps, noncontiguous_like,
     AlwaysWarnTypedStorageRemoval, TEST_WITH_TORCHDYNAMO)
 from multiprocessing.reduction import ForkingPickler
@@ -47,8 +47,8 @@ from torch.testing._internal.common_device_type import (
     expectedFailureMeta,
     expectedFailureXLA,
     instantiate_device_type_tests,
-    onlyCUDA, onlyCPU,
-    dtypes, dtypesIfCUDA, dtypesIfCPU, deviceCountAtLeast,
+    onlyCUDA, onlyZOOM, onlyCUDAAndZOOM, onlyCPU,
+    dtypes, dtypesIfCUDA, dtypesIfZoom, dtypesIfCPU, deviceCountAtLeast,
     skipMeta, PYTORCH_CUDA_MEMCHECK, largeTensorTest, onlyNativeDeviceTypes,
     get_all_device_types, skipXLA)
 from typing import Tuple
@@ -242,6 +242,7 @@ class TestTorchDeviceType(TestCase):
         a = make_tensor((10,), dtype=dtype, device=device, low=-9, high=9)
 
         module = torch.cuda if (torch.device(device).type == 'cuda') else torch
+        module = torch.zoom if (torch.device(device).type == 'zoom') else module
         expected_storage_type = getattr(module, torch.storage._dtype_to_storage_type_map()[dtype])
 
         self.assertEqual(a.storage_type(), expected_storage_type)
@@ -992,7 +993,7 @@ class TestTorchDeviceType(TestCase):
         out.backward(torch.ones_like(out).transpose(-2, -1))
 
     # TODO: this test should be in test_nn.py
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @largeTensorTest('12GB')
     def test_conv_transposed_large(self, device):
         # ConvTranspose3d works for large input tensors (gh-32866)
@@ -1067,7 +1068,7 @@ class TestTorchDeviceType(TestCase):
             small2 = torch.randn(*dims_small2, device=device).float()
             small2_expanded = small2.expand(*dims_full)
 
-        if small.is_cuda and fn in ['map', 'map2']:
+        if (small.is_cuda or small.is_zoom) and fn in ['map', 'map2']:
             # map and map2 are not implementd on CUDA tensors
             return
 
@@ -1195,9 +1196,10 @@ class TestTorchDeviceType(TestCase):
             _test_in_place_broadcastable(small2, small, large)
 
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "cublas runtime error")
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @wrapDeterministicFlagAPITest
     def test_cublas_config_nondeterministic_alert(self, device):
+        is_zoom = torch.device(device).type == 'zoom'
         test_cases = [
             # (function, (tensor sizes))
             ('mm', ((2, 2), (2, 2),)),
@@ -1211,7 +1213,7 @@ class TestTorchDeviceType(TestCase):
             (':4096:8', True),
             (':16:8', True)]
 
-        cublas_var_name = 'CUBLAS_WORKSPACE_CONFIG'
+        cublas_var_name = 'CUBLAS_WORKSPACE_CONFIG' if not is_zoom else 'HIPBLAS_WORKSPACE_CONFIG'
         is_cuda10_2_or_higher = (
             (torch.version.cuda is not None)
             and ([int(x) for x in torch.version.cuda.split(".")] >= [10, 2]))
@@ -1229,9 +1231,13 @@ class TestTorchDeviceType(TestCase):
                         del env[cublas_var_name]
                 else:
                     env[cublas_var_name] = config
-                should_throw_error = is_cuda10_2_or_higher and not is_config_deterministic
+                # Zoom automatically changes the hipBLAS atomics mode when grabbing the hipBLAS handle if
+                # deterministic algorithms are turned on, so we shouldn't get an error (but this IS checked in Context.cpp)
+                should_throw_error = (is_cuda10_2_or_higher) and not is_config_deterministic
+                # TODO(Arham): remove rename stmt once zoom has a dispatch key
                 script = f"""
 import torch
+torch.utils.rename_privateuse1_backend('zoom')
 torch.use_deterministic_algorithms(True)
 fn = torch.{fn_name}
 arg_sizes = {arg_sizes}
@@ -1246,7 +1252,7 @@ except RuntimeError as e:
     if not should_throw_error:
         raise RuntimeError('Did not expect any error to be raised')
     elif 'Deterministic behavior was enabled with either' not in str(e):
-        raise RuntimeError('Expected a CuBLAS nondeterministic error, but got a different error')
+        raise RuntimeError('Expected a CuBLAS nondeterministic error, but got a different error: ' + str(e))
 else:
     if should_throw_error:
         raise RuntimeError('Expected a CuBLAS nondeterministic error, but it was not raised')
@@ -1368,11 +1374,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'avg_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'avg_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1381,11 +1390,14 @@ else:
         input = torch.randn(2, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_avg_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_avg_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1394,11 +1406,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_avg_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_avg_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1407,11 +1422,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'max_pool3d_with_indices_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'max_pool3d_with_indices_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1420,11 +1438,14 @@ else:
         input = torch.randn(2, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'adaptive_max_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'adaptive_max_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1433,11 +1454,14 @@ else:
         input = torch.randn(2, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'fractional_max_pool2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'fractional_max_pool2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1446,11 +1470,14 @@ else:
         input = torch.randn(2, 3, 3, 3, 3, requires_grad=True, device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'fractional_max_pool3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'fractional_max_pool3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @dtypes(*floating_types_and(torch.half))
     @onlyNativeDeviceTypes
@@ -1497,6 +1524,9 @@ else:
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_interpolate_linear(self, device):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         input = torch.randn(1, 2, 4, device=device, requires_grad=True)
         res = torch.nn.functional.interpolate(
             input,
@@ -1507,11 +1537,14 @@ else:
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad),
-            'upsample_linear1d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'upsample_linear1d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_interpolate_bilinear(self, device):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         input = torch.randn(1, 2, 4, 4, device=device, requires_grad=True)
         res = torch.nn.functional.interpolate(
             input,
@@ -1522,8 +1555,8 @@ else:
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad),
-            'upsample_bilinear2d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'upsample_bilinear2d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("aot-autograd issue")
     def test_deterministic_replication_pad2d(self, device):
@@ -1577,6 +1610,9 @@ else:
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_interpolate_bicubic(self, device):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         input = torch.randn(1, 2, 4, 4, device=device, requires_grad=True)
         res = torch.nn.functional.interpolate(
             input,
@@ -1587,12 +1623,15 @@ else:
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad),
-            'upsample_bicubic2d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'upsample_bicubic2d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_interpolate_trilinear(self, device):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         input = torch.randn(1, 2, 4, 4, 4, device=device, requires_grad=True)
         res = torch.nn.functional.interpolate(
             input,
@@ -1603,8 +1642,8 @@ else:
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad),
-            'upsample_trilinear3d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'upsample_trilinear3d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1613,11 +1652,14 @@ else:
         input = torch.randn(2, 3, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad1d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad1d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_ReflectionPad2d(self, device):
@@ -1625,11 +1667,14 @@ else:
         input = torch.randn(2, 3, 8, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1638,11 +1683,14 @@ else:
         input = torch.randn(2, 3, 8, 8, 8, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'reflection_pad3d_backward_out_cuda',
-            torch.device(device).type == 'cuda')
+            f'reflection_pad3d_backward_out_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1651,11 +1699,14 @@ else:
         input = torch.randn(2, 3, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad1d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad1d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_ReplicationPad2d(self, device):
@@ -1663,13 +1714,16 @@ else:
         input = torch.randn(2, 3, 4, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         # Nondeterministic alert should only be raised if the forward call was
         # nondeterministic
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
         with DeterministicGuard(True):
             res = module(input)
@@ -1690,23 +1744,28 @@ else:
         input = torch.randn(2, 3, 4, 4, 4, device=device, requires_grad=True)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'replication_pad3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'replication_pad3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfTorchDynamo("Warning is not raised.")
     def test_nondeterministic_alert_NLLLoss(self, device):
         module = torch.nn.NLLLoss()
         input = torch.randn(2, 3, 5, 5, device=device)
         target = torch.rand(2, 5, 5, device=device).mul(3).floor().long()
-
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: module(input, target),
-            'nll_loss2d_forward_out_cuda_template',
-            torch.device(device).type == 'cuda')
+            f'nll_loss2d_forward_out_{device_type}_template',
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_CTCLoss(self, device):
@@ -1717,11 +1776,14 @@ else:
         target_lengths = [30, 25, 20]
         res = module(input, target, input_lengths, target_lengths)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
             'ctc_loss_backward_gpu',
-            torch.device(device).type == 'cuda')
+            is_cuda or is_zoom)
 
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_EmbeddingBag_max(self, device):
@@ -1731,22 +1793,28 @@ else:
         input = torch.randint(0, 3, (4, 3), device=device)
         res = module(input)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'embedding_bag_backward_cuda_max',
-            torch.device(device).type == 'cuda')
+            f'embedding_bag_backward_{device_type}_max',
+            is_cuda or is_zoom)
 
     @dtypes(*all_types_and_complex_and(torch.bool))
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
     def test_nondeterministic_alert_cumsum(self, device, dtype):
         input = make_tensor((10,), dtype=dtype, device=device, low=-9, high=9)
-        should_alert = torch.device(device).type == 'cuda' and (dtype.is_floating_point or dtype.is_complex)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
+        should_alert = (is_cuda or is_zoom) and (dtype.is_floating_point or dtype.is_complex)
 
         for op_call in [torch.Tensor.cumsum, torch.cumsum]:
             self.check_nondeterministic_alert(
                 lambda: op_call(input, 0),
-                'cumsum_cuda_kernel',
+                f'cumsum_{device_type}_kernel',
                 should_alert)
 
     @expectedFailureMeta  # expected a non-determinitic error, but it was not raised
@@ -1769,34 +1837,42 @@ else:
         a = torch.randn(10, device=device)
         indices = torch.tensor([0, 0], device=device)
         values = torch.tensor([0., 1.], device=device)
+        is_cuda = torch.device(device).type == 'cuda'
+        is_zoom = torch.device(device).type == 'zoom'
 
         for op_call in [torch.Tensor.put, torch.Tensor.put_]:
             self.check_nondeterministic_alert(
                 lambda: op_call(a, indices, values, accumulate=True),
                 'put_',
-                torch.device(device).type == 'cuda')
+                is_cuda or is_zoom)
 
     @skipIfMps
     def test_nondeterministic_alert_histc(self, device):
         a = torch.tensor([], device=device)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
         for op_call in [torch.histc, torch.Tensor.histc]:
             self.check_nondeterministic_alert(
                 lambda: op_call(a, min=0, max=3),
-                '_histc_cuda',
-                torch.device(device).type == 'cuda')
+                f'_histc_{device_type}',
+                is_cuda or is_zoom)
 
     @skipIfMps
     def test_nondeterministic_alert_bincount(self, device):
         a = torch.tensor([], device=device, dtype=torch.long)
         weights = torch.tensor([], device=device)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         for op_call in [torch.bincount, torch.Tensor.bincount]:
             # Error should only be raised when device is CUDA and weights are
             # given
             self.check_nondeterministic_alert(
                 lambda: op_call(a, weights),
-                '_bincount_cuda',
-                torch.device(device).type == 'cuda')
+                f'_bincount_{device_type}',
+                is_cuda or is_zoom)
 
             self.check_nondeterministic_alert(
                 lambda: op_call(a),
@@ -1806,6 +1882,10 @@ else:
     # Ensures that kthvalue throws nondeterministic alerts in the correct cases
     @dtypes(torch.double)
     def test_nondeterministic_alert_kthvalue(self, device, dtype):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
+
         def test_func(call_type):
             S = 10
             k = 5
@@ -1824,8 +1904,8 @@ else:
         for call_type in ['function', 'method', 'out']:
             self.check_nondeterministic_alert(
                 lambda: test_func('function'),
-                'kthvalue CUDA',
-                torch.device(device).type == 'cuda')
+                'kthvalue CUDA' if is_cuda else 'kthvalue Zoom',
+                is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1834,11 +1914,14 @@ else:
         grid = torch.empty(1, 1, 1, 2, device=device)
         res = torch.nn.functional.grid_sample(input, grid, align_corners=False)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'grid_sampler_2d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'grid_sampler_2d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     @skipIfMps
     @skipIfTorchInductor("https://github.com/pytorch/pytorch/issues/113707")
@@ -1847,11 +1930,14 @@ else:
         grid = torch.empty(1, 1, 1, 2, 3, device=device)
         res = torch.nn.functional.grid_sample(input, grid, align_corners=False)
         grad = torch.ones_like(res)
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
 
         self.check_nondeterministic_alert(
             lambda: res.backward(grad, retain_graph=True),
-            'grid_sampler_3d_backward_cuda',
-            torch.device(device).type == 'cuda')
+            f'grid_sampler_3d_backward_{device_type}',
+            is_cuda or is_zoom)
 
     def test_invalid_shapes_grid_sampler(self, device):
         make_arg = partial(
@@ -1920,6 +2006,10 @@ else:
     # Ensures that median throws nondeterministic alerts in the correct cases
     @dtypes(torch.double)
     def test_nondeterministic_alert_median(self, device, dtype):
+        device_type = torch.device(device).type
+        is_cuda = device_type == 'cuda'
+        is_zoom = device_type == 'zoom'
+        should_alert = is_cuda or is_zoom
         def test_func(call_type):
             S = 10
             a = torch.randn(S, device=device)
@@ -1941,16 +2031,14 @@ else:
         def test_func_expect_error(call_type, should_error):
             self.check_nondeterministic_alert(
                 lambda: test_func(call_type),
-                'median CUDA with indices output',
+                'median CUDA with indices output' if is_cuda else 'median Zoom with indices output',
                 should_error)
 
-        is_cuda = torch.device(device).type == 'cuda'
-
         test_func_expect_error('function', False)
-        test_func_expect_error('function with indices', is_cuda)
+        test_func_expect_error('function with indices', should_alert)
         test_func_expect_error('method', False)
-        test_func_expect_error('method with indices', is_cuda)
-        test_func_expect_error('out with indices', is_cuda)
+        test_func_expect_error('method with indices', should_alert)
+        test_func_expect_error('out with indices', should_alert)
 
     # FIXME: move to test_scatter_gather_ops
     def _test_gather_backward_one_dim(self, device, deterministic: bool = False) -> None:
@@ -2022,12 +2110,13 @@ else:
         result = original.scatter(0, null_index, null_arr)
         self.assertEqual(result, original, atol=0, rtol=0)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @skipIfTorchInductor("FIXME")
     def test_sync_warning(self, device):
+        SyncGuard = CudaSyncGuard if torch.device(device).type == 'cuda' else ZoomSyncGuard
 
         def _sync_raises_helper(f, level):
-            with CudaSyncGuard(level):
+            with SyncGuard(level):
                 if level == 1:
                     with self.assertWarnsRegex(UserWarning, "called a synchronizing "):
                         f()
@@ -2036,7 +2125,7 @@ else:
                         f()
 
         def _no_sync_helper(f, level):
-            with CudaSyncGuard(level):
+            with SyncGuard(level):
                 f()
 
         def _ind_put_fn(x, ind, val):
@@ -2126,6 +2215,7 @@ else:
     @dtypes(*floating_types())
     @dtypesIfCPU(*floating_types_and(torch.bfloat16, torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half))
+    @dtypesIfZoom(*floating_types_and(torch.half))
     def test_bernoulli_p(self, device, dtype):
         for trivial_p in ([0, 1], [1, 0, 1, 1, 0, 1]):
             x = torch.tensor(trivial_p, dtype=dtype, device=device)
@@ -2148,6 +2238,7 @@ else:
     @dtypes(*floating_types())
     @dtypesIfCPU(*all_types_and(torch.bool, torch.half))
     @dtypesIfCUDA(*all_types_and(torch.bool, torch.half))
+    @dtypesIfZoom(*all_types_and(torch.bool, torch.half))
     def test_bernoulli_self(self, device, dtype):
 
         def isBinary(t):
@@ -2176,6 +2267,7 @@ else:
     @slowTest
     @dtypes(*floating_types_and(torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half))
+    @dtypesIfZoom(*floating_types_and(torch.half))
     def test_bernoulli_edge_cases(self, device, dtype):
         # Need to draw a lot of samples to cover every random floating point number.
         a = torch.zeros(10000, 10000, dtype=dtype, device=device)  # probability of drawing "1" is 0
@@ -2201,7 +2293,7 @@ else:
         with self.assertRaises(RuntimeError):
             torch.empty((1,), device=device, dtype=dtype).exponential_(-0.5)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half, torch.float)
     def test_exponential_no_zero(self, device, dtype):
         # naively, 0 in exponential can be generated with probability 2^-24
@@ -2267,6 +2359,7 @@ else:
     @skipIfNoSciPy
     @dtypes(*floating_types_and(torch.half))
     @dtypesIfCUDA(*floating_types_and(torch.half, torch.bfloat16))
+    @dtypesIfZoom(*floating_types_and(torch.half, torch.bfloat16))
     def test_normal_kstest(self, device, dtype):
         from scipy import stats
         size = 1000
@@ -2317,7 +2410,7 @@ else:
                 self.assertTrue(res.statistic < 0.1)
 
     @slowTest
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.bfloat16, torch.float32)
     def test_cauchy_no_inf(self, device, dtype):
         # torch.float16 will have `inf` because of its smaller range.
@@ -2442,7 +2535,7 @@ else:
                             expected = self._brute_cdist(x, y, p=p)
                             self.assertEqual(expected, actual)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_cdist_cuda_backward(self, device):
         for l1 in [1, 511, 513]:
             for l2 in [1, 511, 513]:
@@ -2858,6 +2951,7 @@ else:
     @dtypes(*all_types_and_complex_and(torch.bool))
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool))
     def test_diff(self, device, dtype):
         shapes = (
             (1,),
@@ -3065,10 +3159,11 @@ else:
 
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "sandcastle OOM with current tpx gpu/re configuration")
     @unittest.skipIf(IS_JETSON, "psutil issue for largeTensorTest. Too large for Jetson.")
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half)  # only small dtype not to get oom
     @largeTensorTest('25GB', device='cpu')
-    @largeTensorTest('4GB', device='cuda')
+    # See Note: [large tensor tests on GPU]
+    @largeTensorTest('4GB')
     def test_large_cumsum(self, device, dtype):
         # initialization to avoid overflow and half caveats
         x = torch.empty(2**30 + 200, device=device, dtype=dtype)
@@ -3077,10 +3172,11 @@ else:
         x[2::3] = 1
         self._test_large_cum_fn_helper(x, lambda x: torch.cumsum(x, 0))
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.half)  # only small dtype not to get oom
     @largeTensorTest('25GB', device='cpu')
-    @largeTensorTest('4GB', device='cuda')
+    # See Note: [large tensor tests on GPU]
+    @largeTensorTest('4GB')
     @unittest.skipIf(IS_JETSON, "psutil issue for largeTensorTest. Too large for Jetson.")
     def test_large_cumprod(self, device, dtype):
         # initialization to avoid overflow and half caveats
@@ -3280,6 +3376,7 @@ else:
 
     # FIXME: move to elementwise ternary test suite
     @dtypesIfCUDA(*set(get_all_math_dtypes('cuda')))
+    @dtypesIfZoom(*set(get_all_math_dtypes('cuda')))
     @dtypes(*set(get_all_math_dtypes('cpu')))
     def test_addcmul(self, device, dtype):
         # Returns floating or integral scalar corresponding to dtype
@@ -3747,11 +3844,12 @@ else:
     # FIXME: port to test_scatter_gather_ops.py
     def scatter_allow_reduce(self, device, dtype, reduceop):
         device_type = torch.device(device).type
-        return device_type != 'cuda' or (reduceop == 'multiply' and dtype.is_floating_point)
+        return (device_type not in ['cuda', 'zoom']) or (reduceop == 'multiply' and dtype.is_floating_point)
 
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_operations_to_large_input(self, device, dtype):
         index = torch.tensor([[1], [2]], device=device, dtype=torch.long)
         test_data = [
@@ -3779,6 +3877,7 @@ else:
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_scalar(self, device, dtype):
         index = torch.tensor([[1], [2]], device=device, dtype=torch.long)
         test_data = [
@@ -3818,6 +3917,7 @@ else:
     @dtypes(*floating_and_complex_types())
     @dtypesIfCPU(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     @dtypesIfCUDA(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
+    @dtypesIfZoom(*all_types_and_complex_and(torch.half, torch.bool, torch.bfloat16))
     def test_scatter_reduce_non_unique_index(self, device, dtype):
         height = 2
         width = 2
@@ -3838,7 +3938,7 @@ else:
             input.scatter_(0, index, src, reduce=operation)
             self.assertEqual(input, result, msg=f"result: {result} input: {input} method: {str(operation)}")
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(*complex_types())
     def test_scatter_reduce_multiply_unsupported_dtypes(self, device, dtype):
         height = 2
@@ -3919,7 +4019,8 @@ else:
         # in order to avoid synchronization, but this means
         # we can not clear the failures. So there is no way
         # to test it then recover.
-        if self.device_type != 'cuda':
+        # TODO(Arham): Zoom also checks for errors inside a kernel, replace this with zoom key later
+        if self.device_type != 'cuda' and self.device_type != 'privateuseone':
             # make src smaller. this should fail
             src = torch.zeros(num_copy - 1, dtype=dt, device=device)
             with self.assertRaises(RuntimeError):
@@ -3952,7 +4053,7 @@ else:
 
     # FIXME: find a test suite for the masked scatter operator
     #   test_scatter_gather_ops or test_masked_ops?
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @largeTensorTest('30GB')
     def test_masked_scatter_large_tensor(self, device):
         t_cpu = torch.empty(2**31 + 1, dtype=torch.bool).random_()
@@ -4294,9 +4395,15 @@ else:
     # FIXME: find a test suite for the pdist operator
     @unittest.skipIf(IS_FBCODE and IS_REMOTE_GPU, "sandcastle OOM with current tpx gpu/re configuration")
     @skipIfRocm
-    @onlyCUDA
+    # this fails on zoom due to an invalid configuration error, because pdist sets the grid size
+    # to be larger than 2^30
+    @skipIfZoom(msg="Grid Configuration too large for HIP")
+    @onlyCUDAAndZOOM
     @largeTensorTest('32GB', device='cpu')
-    @largeTensorTest('5GB', device='cuda')
+    # Note(Arham) [large tensor tests on GPU]: since this only runs on cuda and zoom, setting device=None is a way to do 
+    # the check for the appropriate device without prematurely skipping if one of them doesn't 
+    # have enough memory (or isn't built at all)
+    @largeTensorTest('5GB')
     def test_pdist_norm_large(self, device):
         # use dim0>=46342 for forward, see:
         # https://github.com/pytorch/pytorch/issues/30583
@@ -4311,6 +4418,7 @@ else:
     # FIXME: move to elementwise ternary test suite
     @onlyNativeDeviceTypes
     @dtypesIfCUDA(*set(get_all_math_dtypes('cuda')))
+    @dtypesIfZoom(*set(get_all_math_dtypes('cuda')))
     @dtypes(*set(get_all_math_dtypes('cpu')))
     def test_addcdiv(self, device, dtype):
         # Returns floating or integral scalar corresponding to dtype
@@ -4576,7 +4684,7 @@ else:
             ind.scatter_(0, ind, ind.clone())
 
     # FIXME: move to test distributions
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_multinomial_device_constrain(self, device):
         x = torch.empty(3, device="cpu")
         y = torch.empty(3, device=device)
@@ -4586,7 +4694,7 @@ else:
 
     # FIXME: move to test distributions
     @deviceCountAtLeast(2)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_multinomial_gpu_device_constrain(self, devices):
         x = torch.empty(3, device=devices[0])
         y = torch.empty(3, device=devices[1])
@@ -4596,8 +4704,9 @@ else:
 
     # FIXME: convert this to an automated OpInfo test
     @deviceCountAtLeast(2)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_device_guard(self, devices):
+        is_zoom = torch.device(devices[0]).type == 'zoom'
         # verify that all operators with `device_guard: False` behave properly with multiple devices.
         # TODO: if we had operator introspection we could figure out this set of operators automatically...
         x = torch.randn((1, 2, 3), device=devices[1])
@@ -4605,7 +4714,8 @@ else:
         scalar = torch.tensor(5, device=devices[1])
 
         # property ops
-        torch.cudnn_is_acceptable(x)
+        if not is_zoom:
+            torch.cudnn_is_acceptable(x)
         x.is_distributed()
         x.is_floating_point()
         x.is_complex()
@@ -4696,6 +4806,11 @@ else:
                 self.assertEqual(t.is_cuda, True)
             else:
                 self.assertEqual(t.is_cuda, False)
+            # TODO(Arham): exchange keys
+            if 'zoom' in t.__module__:
+                self.assertEqual(t.is_zoom, True)
+            else:
+                self.assertEqual(t.is_zoom, False)
             if 'xpu' in t.__module__:
                 self.assertEqual(t.is_xpu, True)
             else:
@@ -4704,7 +4819,7 @@ else:
     # Note - reports a leak of 512 bytes on CUDA device 1
     @deviceCountAtLeast(2)
     @skipCUDAMemoryLeakCheckIf(True)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_tensor_set_errors_multigpu(self, devices):
         f_cuda0 = torch.randn((2, 3), dtype=torch.float32, device=devices[0])
         f_cuda1 = torch.randn((2, 3), dtype=torch.float32, device=devices[1])
@@ -5042,7 +5157,7 @@ else:
             for x in xs:
                 _test_helper(x, op, unary=True)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @unittest.skipIf(PYTORCH_CUDA_MEMCHECK, "is_pinned uses failure to detect pointer property")
     @skipIfTorchDynamo("NotImplementedError: PrimTorch does not support pinned memory")
     def test_pin_memory_from_constructor(self, device):
@@ -5078,7 +5193,7 @@ else:
             self.assertFalse(x.is_pinned())
 
     @deviceCountAtLeast(1)
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_storage_all_devices(self, devices):
         for device in devices:
             t = torch.tensor((), device=device)
@@ -5262,6 +5377,7 @@ else:
     # FIXME: move to test distributions
     @skipIfMps
     @dtypesIfCUDA(torch.float, torch.double, torch.half)
+    @dtypesIfZoom(torch.float, torch.double, torch.half)
     @dtypes(torch.float, torch.double, torch.half)
     def test_multinomial(self, device, dtype):
         def make_prob_dist(shape, is_contiguous):
@@ -5354,7 +5470,7 @@ else:
         self.assertEqual(sample_indices.size(1), n_sample, msg="wrong number of samples")
 
     # FIXME: move to test distributions
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @dtypes(torch.float, torch.double, torch.half)
     def test_multinomial_deterministic(self, device, dtype):
         gen = torch.Generator(device=device)
@@ -5556,8 +5672,9 @@ else:
             self._test_memory_format_transformations(
                 device, get_generator(mf, shape, torch.float64), get_fn('float'), mf, default_is_preserve=True)
 
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_memory_format_cpu_and_cuda_ops(self, device):
+        is_zoom = torch.device(device).type == 'zoom'
         def get_generator(memory_format, shape):
             def input_generator_fn(device):
                 return torch.randn(shape, device=device, dtype=torch.float32).contiguous(memory_format=memory_format)
@@ -5568,16 +5685,25 @@ else:
 
         def transformation_cuda_fn(tensor, **kwargs):
             return tensor.cuda(**kwargs)
+        
+        def transformation_zoom_fn(tensor, **kwargs):
+            return tensor.zoom(**kwargs)
 
         formats_shapes = (
             (torch.channels_last, (4, 3, 8, 8)),
             (torch.channels_last_3d, (4, 3, 8, 8, 8)))
 
+        cpu_transformation_fn = transformation_cuda_fn if not is_zoom else transformation_zoom_fn
         for mf, shape in formats_shapes:
+            if not is_zoom:
+                self._test_memory_format_transformations(
+                    'cuda', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
+            else:
+                self._test_memory_format_transformations(
+                    'zoom', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
+            
             self._test_memory_format_transformations(
-                'cuda', get_generator(mf, shape), transformation_cpu_fn, mf, default_is_preserve=True)
-            self._test_memory_format_transformations(
-                'cpu', get_generator(mf, shape), transformation_cuda_fn, mf, default_is_preserve=True)
+                'cpu', get_generator(mf, shape), cpu_transformation_fn, mf, default_is_preserve=True)
 
     # FIXME: move to test_serialization
     @onlyNativeDeviceTypes
@@ -5641,6 +5767,7 @@ else:
     def test_grad_scaling_unscale(self, device, dtype):
         device = torch.device(device)
         device0 = "cuda:0" if device.type == "cuda" else "cpu"
+        device0 = "zoom:0" if device.type == "zoom" else device0
         inv_scale = torch.full((1,), 0.25, dtype=torch.float, device=device0)
         found_inf = torch.full((1,), 0.0, dtype=torch.float, device=device0)
 
@@ -5825,10 +5952,10 @@ else:
 
             # sets a random value for load_state_dict to overwrite
             s1._init_growth_tracker = 7
-
             if lazy_init_scale:
                 # Dummy scale() call to ensure the scale tensor is lazily initialized.
                 s1.scale(torch.full((1,), 4.0, dtype=torch.float32, device=device))
+                print(type(s1._scale), s1._scale.dtype)
                 if "cuda" == device.type:
                     self.assertTrue(isinstance(s1._scale, torch.cuda.FloatTensor))
                 else:
@@ -6190,6 +6317,7 @@ else:
         scaler.update()
 
     @dtypesIfCUDA(torch.float, torch.double, torch.half)
+    @dtypesIfZoom(torch.float, torch.double, torch.half)
     @dtypesIfCPU(torch.float, torch.double, torch.bfloat16, torch.half)
     @dtypes(torch.float, torch.double)
     def test_multinomial_cpu(self, device, dtype):
@@ -6254,7 +6382,7 @@ else:
 
                 check_equal(condition, x, y)
                 check_equal(condition, y, x)
-                if self.device_type == "cuda":
+                if self.device_type in ["cuda", "zoom"]:
                     check_equal(condition, torch.tensor(x), y)
                     check_equal(condition, y, torch.tensor(x))
                     if not isinstance(y, torch.Tensor):
@@ -6413,7 +6541,7 @@ class TestDevicePrecision(TestCase):
     exact_dtype = True
 
     # FIXME: move to indexing test suite
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     def test_index_add_bfloat16(self, device):
         inp_tensor = torch.randn(5, 3, device='cpu').bfloat16()
         t = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=torch.bfloat16, device='cpu')
@@ -6481,6 +6609,9 @@ class TestDevicePrecision(TestCase):
         self.assertEqual(x.to(torch.int).device, torch.device(devices[1]))
 
     @dtypesIfCUDA(torch.half, torch.float, torch.double,
+                  torch.int8, torch.short, torch.int, torch.long,
+                  torch.uint8)
+    @dtypesIfZoom(torch.half, torch.float, torch.double,
                   torch.int8, torch.short, torch.int, torch.long,
                   torch.uint8)
     @dtypes(torch.float, torch.double,
@@ -7097,9 +7228,11 @@ class TestTorch(TestCase):
     # NOTE: test_equal will be deprecated in favor of torch.testing.assert_close
     #   once torch.testing is out of beta
     def test_equal(self):
-        devices = [torch.cpu, torch.cuda]
-        for device in ["cpu", "cuda"]:
+        devices = [torch.cpu, torch.cuda, torch.zoom]
+        for device in ["cpu", "cuda", "zoom"]:
             if device == "cuda" and not torch.cuda.is_available():
+                continue
+            if device == "zoom" and not torch.zoom.is_available():
                 continue
 
             # Contiguous, 1D

@@ -50,6 +50,7 @@ load(
     "aten_ufunc_generated_cpu_kernel_sources",
     "aten_ufunc_generated_cpu_sources",
     "aten_ufunc_generated_cuda_sources",
+    "aten_ufunc_generated_zoom_sources",
 )
 
 def read_bool(section, field, default, required = True):
@@ -397,6 +398,9 @@ def get_aten_generated_files(enabled_backends):
         # build CUDA is not enabled and thus the ufunc codegen for CUDA gets
         # skipped
         src_files.extend(aten_ufunc_generated_cuda_sources())
+
+    # TODO(Arham): redo logic once we have a zoom key and backend name
+    src_files.extend(aten_ufunc_generated_zoom_sources())
 
     res = {}
     for file_name in src_files:

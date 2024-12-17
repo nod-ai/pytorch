@@ -1,0 +1,1 @@
+#define AT_ROCM_ENABLED() true

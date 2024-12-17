@@ -32,6 +32,7 @@ from torch.testing._internal.common_device_type import (
     instantiate_device_type_tests,
     onlyCPU,
     onlyCUDA,
+    onlyCUDAAndZOOM,
     onlyNativeDeviceTypes,
     OpDTypes,
     ops,
@@ -283,7 +284,7 @@ class TestCommon(TestCase):
                 )
 
     # Tests that the cpu and gpu results are consistent
-    @onlyCUDA
+    @onlyCUDAAndZOOM
     @suppress_warnings
     @slowTest
     @ops(_ops_and_refs_with_no_numpy_ref, dtypes=OpDTypes.any_common_cpu_cuda_one)

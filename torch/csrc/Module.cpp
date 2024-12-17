@@ -109,6 +109,10 @@
 #endif
 #endif
 
+#ifdef USE_ZOOM
+#include <ATen/zoom/HIPConfig.h>
+#endif
+
 #ifdef USE_DISTRIBUTED
 #ifdef USE_C10D
 #include <torch/csrc/distributed/autograd/python_autograd.h>
@@ -1528,6 +1532,13 @@ void initModule(PyObject* module);
 } // namespace torch::cuda
 #endif
 
+#ifdef USE_ZOOM
+PyMethodDef* THCPModule_methods();
+namespace torch::zoom {
+void initModule(PyObject* module);
+} // namespace torch::zoom
+#endif
+
 #ifdef USE_XPU
 PyMethodDef* THXPModule_methods();
 void THXPStream_init(PyObject* module);
@@ -1596,6 +1607,9 @@ PyObject* initModule() {
 #ifdef USE_CUDA
   THPUtils_addPyMethodDefs(methods, THCPModule_methods());
 #endif
+#ifdef USE_ZOOM
+  THPUtils_addPyMethodDefs(methods, THCPModule_methods());
+#endif
 #ifdef USE_XPU
   THPUtils_addPyMethodDefs(methods, THXPModule_methods());
 #endif
@@ -1659,6 +1673,9 @@ PyObject* initModule() {
 #ifdef USE_CUDA
   torch::cuda::initModule(module);
 #endif
+#ifdef USE_ZOOM
+  torch::zoom::initModule(module);
+#endif
 #ifdef USE_XPU
   torch::xpu::initModule(module);
 #endif
@@ -1668,6 +1685,16 @@ PyObject* initModule() {
   ASSERT_TRUE(THPStorage_init(module));
 
 #ifdef USE_CUDA
+  // This will only initialise base classes and attach them to library namespace
+  // They won't be ready for real usage until importing cuda module, that will
+  // complete the process (but it defines Python classes before calling back
+  // into C, so these lines have to execute first)..
+  THCPStream_init(module);
+  THCPEvent_init(module);
+  THCPGraph_init(module);
+#endif
+
+#ifdef USE_ZOOM
   // This will only initialise base classes and attach them to library namespace
   // They won't be ready for real usage until importing cuda module, that will
   // complete the process (but it defines Python classes before calling back
@@ -1697,7 +1724,7 @@ PyObject* initModule() {
         return ret == 0;
       };
 
-#if defined(USE_CUDNN) || defined(USE_ROCM)
+#if defined(USE_CUDNN) || (defined(USE_ROCM) && !defined(USE_ZOOM))
   PyObject* has_cudnn = Py_True;
 #else
   PyObject* has_cudnn = Py_False;
@@ -2067,6 +2094,12 @@ Call this whenever a new thread is created in order to propagate values from
   PyObject* has_cuda = Py_False;
 #endif
 
+#ifdef USE_ZOOM
+  PyObject* has_zoom = Py_True;
+#else
+  PyObject* has_zoom = Py_False;
+#endif
+
 #ifdef USE_MPS
   PyObject* has_mps = Py_True;
 #else
@@ -2080,6 +2113,7 @@ Call this whenever a new thread is created in order to propagate values from
 #endif
 
   ASSERT_TRUE(set_module_attr("_has_cuda", has_cuda));
+  ASSERT_TRUE(set_module_attr("_has_zoom", has_zoom));
   ASSERT_TRUE(
       set_module_attr("_has_magma", at::hasMAGMA() ? Py_True : Py_False));
   ASSERT_TRUE(set_module_attr("_has_mps", has_mps));

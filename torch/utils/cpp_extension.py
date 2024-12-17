@@ -1078,10 +1078,15 @@ def CUDAExtension(name, sources, *args, **kwargs):
     libraries.append('torch_cpu')
     libraries.append('torch_python')
     if IS_HIP_EXTENSION:
+        print("IS_HIP_EXTENSION")
         libraries.append('amdhip64')
-        libraries.append('c10_hip')
-        libraries.append('torch_hip')
+        libraries.append('rocblas')
+        libraries.append('hipblas')
+        # (Arham): commented out for zoom development
+        # libraries.append('c10_hip')
+        # libraries.append('torch_hip')
     else:
+        print("LOADING CUDA")
         libraries.append('cudart')
         libraries.append('c10_cuda')
         libraries.append('torch_cuda')
@@ -1089,7 +1094,8 @@ def CUDAExtension(name, sources, *args, **kwargs):
 
     include_dirs = kwargs.get('include_dirs', [])
 
-    if IS_HIP_EXTENSION:
+    # (Arham): disable hipify
+    if False and IS_HIP_EXTENSION:
         build_dir = os.getcwd()
         hipify_result = hipify_python.hipify(
             project_directory=build_dir,
@@ -1690,7 +1696,8 @@ def _jit_compile(name,
         try:
             if version != old_version:
                 with GeneratedFileCleaner(keep_intermediates=keep_intermediates) as clean_ctx:
-                    if IS_HIP_EXTENSION and (with_cuda or with_cudnn):
+                    # (Arham): to disable hipifying for testing the zoom extension
+                    if False and IS_HIP_EXTENSION and (with_cuda or with_cudnn):
                         hipify_result = hipify_python.hipify(
                             project_directory=build_directory,
                             output_directory=build_directory,
@@ -1866,11 +1873,12 @@ def _prepare_ldflags(extra_ldflags, with_cuda, verbose, is_standalone):
     else:
         extra_ldflags.append(f'-L{TORCH_LIB_PATH}')
         extra_ldflags.append('-lc10')
-        if with_cuda:
-            extra_ldflags.append('-lc10_hip' if IS_HIP_EXTENSION else '-lc10_cuda')
+        # (Arham): commented out to develop zoom
+        # if with_cuda:
+        #     extra_ldflags.append('-lc10_hip' if IS_HIP_EXTENSION else '-lc10_cuda')
         extra_ldflags.append('-ltorch_cpu')
-        if with_cuda:
-            extra_ldflags.append('-ltorch_hip' if IS_HIP_EXTENSION else '-ltorch_cuda')
+        # if with_cuda:
+        #     extra_ldflags.append('-ltorch_hip' if IS_HIP_EXTENSION else '-ltorch_cuda')
         extra_ldflags.append('-ltorch')
         if not is_standalone:
             extra_ldflags.append('-ltorch_python')

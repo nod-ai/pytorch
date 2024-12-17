@@ -3,6 +3,7 @@ load(
     "aten_ufunc_generated_cpu_kernel_sources",
     "aten_ufunc_generated_cpu_sources",
     "aten_ufunc_generated_cuda_sources",
+    "aten_ufunc_generated_zoom_sources",
 )
 
 def define_targets(rules):
@@ -80,13 +81,18 @@ def define_targets(rules):
         aten_ufunc_generated_cuda_sources()
     )
 
+    gen_aten_outs_zoom = (
+        GENERATED_H_ZOOM + GENERATED_CPP_ZOOM +
+        aten_ufunc_generated_zoom_sources()
+    )
+
     gen_aten_outs = (
         GENERATED_H + GENERATED_H_CORE +
         GENERATED_CPP + GENERATED_CPP_CORE +
         aten_ufunc_generated_cpu_sources() +
         aten_ufunc_generated_cpu_kernel_sources() + [
             "Declarations.yaml",
-        ] + gen_aten_outs_cuda
+        ] + gen_aten_outs_cuda + gen_aten_outs_zoom
     )
 
     rules.genrule(
@@ -206,6 +212,15 @@ GENERATED_CPP_CUDA = [
     "RegisterSparseCUDA.cpp",
     "RegisterSparseCsrCUDA.cpp",
     "RegisterQuantizedCUDA.cpp",
+]
+
+GENERATED_H_ZOOM = [
+    "ZoomFunctions.h",
+    "ZoomFunctions_inl.h",
+]
+
+GENERATED_CPP_ZOOM = [
+    "RegisterPrivateUse1.cpp",
 ]
 
 GENERATED_CPP = [

@@ -598,7 +598,7 @@ struct ConvParams {
   // nInputPlane and nInputPlane == nOutputPlane (the latter due to the lack of
   // a depthwise multiplier)
   bool is_depthwise(const at::Tensor& input, const at::Tensor& weight) const  {
-    return input.is_cuda() &&
+    return (input.is_cuda() || input.is_privateuseone()) &&
            !transposed &&
            (input.ndimension() == 4 || input.ndimension() == 5) &&
            at::symint::size<T>(input, 1) == groups &&
@@ -1254,7 +1254,7 @@ ConvBackend _select_conv_backend(
       !params.is_dilated()) {
     // fast path for grouped conv3d
     return ConvBackend::Slow3d;
-  } else if (input.device().is_cpu() || input.is_cuda()) {
+  } else if (input.device().is_cpu() || input.is_cuda() || input.is_privateuseone()) {
     // backends without support for groups
     if (params.transposed) {
       if (input.ndimension() == 4) {
@@ -1277,7 +1277,7 @@ ConvBackend _select_conv_backend(
             return ConvBackend::Slow2d;
           }
         }
-      } else if (input.ndimension() == 5 && (input.is_cuda() || params.is_dilated())) {
+      } else if (input.ndimension() == 5 && (input.is_cuda() || input.is_privateuseone() || params.is_dilated())) {
         return ConvBackend::SlowDilated3d;
       } else if (input.ndimension() == 5) { /* dim == 5, CPU, non-dilated */
         /* CPU implementation has specialized MM kernels
@@ -1767,14 +1767,14 @@ std::tuple<Tensor,Tensor,Tensor> _convolution_double_backward( const std::option
   Tensor ggO;
   if (input.numel() != 0) {
     if (ggI.defined()) {
-      if (weight.is_cuda()) {
+      if (weight.is_cuda() || weight.is_privateuseone()) {
         weight = weight.contiguous();
       }
       ggO = at::convolution(ggI, weight, Tensor(), params.stride, params.padding, params.dilation, params.transposed, params.output_padding, params.groups);
     }
 
     if (ggW.defined()) {
-      if (ggW.is_cuda()) {
+      if (ggW.is_cuda() || ggW.is_privateuseone()) {
         ggW = ggW.contiguous();
       }
       auto ggW_term = at::convolution(input, ggW, Tensor(), params.stride, params.padding, params.dilation, params.transposed, params.output_padding, params.groups);
@@ -1826,7 +1826,7 @@ std::tuple<Tensor,Tensor,Tensor> _convolution_double_backward( const std::option
     if (input.numel() != 0) {
       if (groups == 1) {
 
-        if (gOt.is_cuda()) {
+        if (gOt.is_cuda() || gOt.is_privateuseone()) {
           gOt = gOt.contiguous();
         }
         // Compute conv
@@ -1841,7 +1841,7 @@ std::tuple<Tensor,Tensor,Tensor> _convolution_double_backward( const std::option
         for (const auto g : c10::irange(groups)) {
           auto ggIt_g = subvariable(ggIt, 0, groups, g);
           auto gOt_g = subvariable(gOt, 0, groups, g);
-          if (gOt_g.is_cuda()) {
+          if (gOt_g.is_cuda() || gOt_g.is_privateuseone()) {
             gOt_g = gOt_g.contiguous();
           }
 
@@ -1883,7 +1883,7 @@ std::tuple<Tensor,Tensor,Tensor> _convolution_double_backward( const std::option
       gi_conv_params.transposed = !params.transposed;
 
       if (params.transposed) {
-        if (gO.is_cuda()) {
+        if (gO.is_cuda() || gO.is_privateuseone()) {
           gO = gO.contiguous();
         }
         gI = at::convolution(gO, ggW, Tensor(), gi_conv_params.stride, gi_conv_params.padding, gi_conv_params.dilation, gi_conv_params.transposed, gi_conv_params.output_padding, gi_conv_params.groups);
@@ -1917,7 +1917,7 @@ std::tuple<Tensor,Tensor,Tensor> _convolution_double_backward( const std::option
           }
         }
 
-        if (gO.is_cuda()) {
+        if (gO.is_cuda() || gO.is_privateuseone()) {
           gO = gO.contiguous();
         }
 
