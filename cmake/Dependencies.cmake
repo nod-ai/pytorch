@@ -1241,11 +1241,13 @@ if(USE_ROCM OR USE_ZOOM)
     hip_include_directories(${Caffe2_HIP_INCLUDE})
 
     set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
-      ${PYTORCH_HIP_LIBRARIES} ${PYTORCH_MIOPEN_LIBRARIES} ${hipcub_LIBRARIES} ${ROCM_HIPRTC_LIB} ${ROCM_ROCTX_LIB})
+      ${PYTORCH_HIP_LIBRARIES} ${PYTORCH_MIOPEN_LIBRARIES}
+#            ${hipcub_LIBRARIES}
+            ${ROCM_HIPRTC_LIB} ${ROCM_ROCTX_LIB})
     list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS ${hipblaslt_LIBRARIES})
 
-    list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
-      roc::hipblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver)
+#    list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+#      roc::hipblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver)
 
     # ---[ Kernel asserts
     # Kernel asserts is disabled for ROCm by default.

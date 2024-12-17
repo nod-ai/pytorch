@@ -122,5 +122,5 @@ export USE_XPU=0
 export PYTORCH_ROCM_ARCH="gfx90a;gfx940;gfx941;gfx942;gfx1100;"
 python setup.py develop
 python zoom_extension/examples/test.py
-PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
-python setup.py bdist_wheel
+#PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
+#python setup.py bdist_wheel

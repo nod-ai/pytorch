@@ -5,6 +5,7 @@
 #include <ATen/zoom/PeerToPeerAccess.h>
 #include <ATen/native/ResizeCommon.h>
 #include <c10/zoom/ZoomGuard.h>
+#include <torch/library.h>
 
 namespace at::native {
 
@@ -67,3 +68,17 @@ const Tensor& resize_zoom_(
 }
 
 } // namespace at::native
+
+namespace {
+    const at::Tensor &wrapper_PrivateUse1__resize_(const at::Tensor &self, c10::SymIntArrayRef size,
+                                                   ::std::optional<at::MemoryFormat> memory_format) {
+        // No device check
+        // DeviceGuard omitted
+        return at::native::resize_zoom_(self, C10_AS_INTARRAYREF_SLOW(size), memory_format);
+    }
+} // anonymous namespace
+
+TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+    m.impl("resize_",
+           TORCH_FN(wrapper_PrivateUse1__resize_));
+};

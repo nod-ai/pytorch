@@ -151,12 +151,12 @@ hipblasHandle_t getCurrentHIPBlasHandle() {
   return handle;
 }
 
-bool getHIPBlasAtomicsEnabled() {
-  auto handle = getCurrentHIPBlasHandle();
-  hipblasAtomicsMode_t hipblas_mode;
-  TORCH_HIPBLAS_CHECK(hipblasGetAtomicsMode(handle, &hipblas_mode));
-  return hipblas_mode == HIPBLAS_ATOMICS_ALLOWED;
-}
+//bool getHIPBlasAtomicsEnabled() {
+//  auto handle = getCurrentHIPBlasHandle();
+//  hipblasAtomicsMode_t hipblas_mode;
+//  TORCH_HIPBLAS_CHECK(hipblasGetAtomicsMode(handle, &hipblas_mode));
+//  return hipblas_mode == HIPBLAS_ATOMICS_ALLOWED;
+//}
 
 #ifndef DISABLE_HIPBLASLT
 hipblasLtHandle_t getCurrentHIPBlasLtHandle() {

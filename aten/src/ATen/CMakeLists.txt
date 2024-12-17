@@ -82,11 +82,27 @@ file(GLOB hip_nvrtc_stub_cpp "hip/nvrtc_stub/*.cpp")
 file(GLOB miopen_h "miopen/*.h")
 file(GLOB miopen_cpp "miopen/*.cpp")
 
-file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h" "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/tunable/*.cuh" "zoom/tunable/*.h" "zoom/jit/*.cuh" "zoom/jit/*.h")
-file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp" "zoom/tunable/*.cpp" "zoom/jit/*.cpp")
-file(GLOB zoom_hip "zoom/*.cu" "zoom/detail/*.cu" "zoom/impl/*.cu" "zoom/tunable/*.cu")
+file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h"
+#        "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/tunable/*.cuh" "zoom/tunable/*.h"
+        "zoom/jit/*.cuh" "zoom/jit/*.h"
+)
+file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp"
+#        "zoom/tunable/*.cpp"
+        "native/zoom/Resize.*"
+        "zoom/jit/*.cpp")
+#file(GLOB zoom_hip "zoom/*.cu" "zoom/detail/*.cu" "zoom/impl/*.cu" "zoom/tunable/*.cu")
 file(GLOB zoom_hiprtc_stub_h "zoom/hiprtc_stub/*.h")
 file(GLOB zoom_hiprtc_stub_cpp "zoom/hiprtc_stub/*.cpp")
+
+
+#file(GLOB native_zoom_hip "native/zoom/*.cu")
+#file(GLOB native_zoom_hip_h "native/zoom/*.cuh")
+#file(GLOB native_zoom_cpp "native/zoom/*.cpp")
+#file(GLOB native_zoom_linalg_cpp "native/zoom/linalg/*.cpp")
+#file(GLOB native_sparse_zoom_hip "native/sparse/zoom/*.cu")
+#file(GLOB native_sparse_zoom_cpp "native/sparse/zoom/*.cpp")
+
+
 
 file(GLOB mkl_cpp "mkl/*.cpp")
 file(GLOB mkldnn_cpp "mkldnn/*.cpp")
@@ -171,13 +187,6 @@ file(GLOB native_transformers_hip_hip "native/transformers/hip/*.hip")
 file(GLOB native_transformers_hip_cpp "native/transformers/hip/*.cpp")
 file(GLOB native_quantized_cudnn_hip_cpp "native/quantized/cudnn/hip/*.cpp")
 file(GLOB native_utils_cpp "native/utils/*.cpp")
-
-file(GLOB native_zoom_hip "native/zoom/*.cu")
-file(GLOB native_zoom_hip_h "native/zoom/*.cuh")
-file(GLOB native_zoom_cpp "native/zoom/*.cpp")
-file(GLOB native_zoom_linalg_cpp "native/zoom/linalg/*.cpp")
-file(GLOB native_sparse_zoom_hip "native/sparse/zoom/*.cu")
-file(GLOB native_sparse_zoom_cpp "native/sparse/zoom/*.cpp")
 
 # flash_attention sources
 file(GLOB flash_attention_cuda_cu "native/transformers/cuda/flash_attn/*.cu")
@@ -359,17 +368,17 @@ if(USE_ZOOM)
   list(APPEND ATen_ZOOM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/zoom)
   list(APPEND ATen_ZOOM_SRCS
     ${ATen_ZOOM_SRCS}
-    ${zoom_hip}
-    ${native_zoom_hip}
-    ${native_zoom_hip_h}
-    ${native_sparse_zoom_hip}
+#    ${zoom_hip}
+#    ${native_zoom_hip}
+#    ${native_zoom_hip_h}
+#    ${native_sparse_zoom_hip}
   )
   list(APPEND all_zoom_cpp
-    ${native_sparse_zoom_cpp}
+#    ${native_sparse_zoom_cpp}
     ${zoom_cpp}
-    ${native_zoom_cpp}
-    ${native_zoom_linalg_cpp}
-    ${zoom_generated_sources}
+#    ${native_zoom_cpp}
+#    ${native_zoom_linalg_cpp}
+#    ${zoom_generated_sources}
     ${ATen_ZOOM_SRCS}
     ${all_zoom_cpp}
   )

@@ -4,6 +4,12 @@
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <ATen/detail/ZoomHooksInterface.h>
 #include <iostream>
+#include <ATen/DeviceGuard.h>
+#include <ATen/ops/abs_native.h>
+#include <ATen/ops/empty_native.h>
+#include <ATen/ops/view_native.h>
+#include <torch/library.h>
+
 
 namespace at::detail {
 
@@ -59,13 +65,51 @@ namespace at::detail {
                 IntArrayRef size,
                 IntArrayRef stride,
                 const TensorOptions &options) {
-            return zoom_empty_strided(
-                size,
-                stride,
-                optTypeMetaToScalarType(options.dtype_opt()),
-                options.layout_opt(),
-                options.device_opt(),
-                options.pinned_memory_opt());
-}
+        return zoom_empty_strided(
+            size,
+            stride,
+            optTypeMetaToScalarType(options.dtype_opt()),
+            options.layout_opt(),
+            options.device_opt(),
+            options.pinned_memory_opt());
+    }
 
 }
+
+namespace {
+    at::Tensor wrapper_PrivateUse1_memory_format_empty(c10::SymIntArrayRef size, ::std::optional<at::ScalarType> dtype,
+                                                       ::std::optional<at::Layout> layout,
+                                                       ::std::optional<at::Device> device,
+                                                       ::std::optional<bool> pin_memory,
+                                                       ::std::optional<at::MemoryFormat> memory_format) {
+        std::optional<c10::Device> common_device = std::nullopt;
+        (void) common_device; // Suppress unused variable warning
+        at::globalContext().lazyInitPrivateUse1();
+        const c10::DeviceGuard device_guard(device_or_default(device));
+        c10::TensorOptions opts{};
+        return at::detail::empty_zoom(
+            C10_AS_INTARRAYREF_SLOW(size),
+            opts.dtype(dtype).layout(layout).device(device).pinned_memory(pin_memory).memory_format(memory_format));
+    }
+
+    at::Tensor wrapper_PrivateUse1__view(const at::Tensor &self, c10::SymIntArrayRef size) {
+        // No device check
+        // DeviceGuard omitted
+        return at::native::view(self, C10_AS_INTARRAYREF_SLOW(size));
+    }
+
+    at::Tensor &wrapper_PrivateUse1_out_abs_out(const at::Tensor &self, at::Tensor &out) {
+        // No device check
+        const c10::OptionalDeviceGuard device_guard(device_of(self));
+        return at::native::abs_out(self, out);
+    }
+} // anonymous namespace
+
+TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+    m.impl("empty.memory_format",
+           TORCH_FN(wrapper_PrivateUse1_memory_format_empty));
+    m.impl("view",
+           TORCH_FN(wrapper_PrivateUse1__view));
+    m.impl("abs.out",
+           TORCH_FN(wrapper_PrivateUse1_out_abs_out));
+};

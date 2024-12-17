@@ -71,15 +71,15 @@ TORCH_ZOOM_API bool canDeviceAccessPeer(
 
 TORCH_ZOOM_API c10::Allocator* getZoomDeviceAllocator();
 
-TORCH_ZOOM_API hipsparseHandle_t getCurrentHIPSparseHandle();
-TORCH_ZOOM_API hipblasHandle_t getCurrentHIPBlasHandle();
-#ifndef DISABLE_HIPBLASLT
-TORCH_ZOOM_API hipblasLtHandle_t getCurrentHIPBlasLtHandle();
-#endif
-
-
-#if defined(hipsolverVersionMajor)
-TORCH_ZOOM_API hipsolverDnHandle_t getCurrentHIPSolverDnHandle();
-#endif
+// TORCH_ZOOM_API hipsparseHandle_t getCurrentHIPSparseHandle();
+// TORCH_ZOOM_API hipblasHandle_t getCurrentHIPBlasHandle();
+// #ifndef DISABLE_HIPBLASLT
+// TORCH_ZOOM_API hipblasLtHandle_t getCurrentHIPBlasLtHandle();
+// #endif
+//
+//
+// #if defined(hipsolverVersionMajor)
+// TORCH_ZOOM_API hipsolverDnHandle_t getCurrentHIPSolverDnHandle();
+// #endif
 
 } // namespace at::zoom

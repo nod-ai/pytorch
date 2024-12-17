@@ -1354,8 +1354,8 @@ PyObject* THCPModule_getCurrentBlasHandle_wrap(
     PyObject* noargs) {
   HANDLE_TH_ERRORS
   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
-  return PyLong_FromVoidPtr(handle);
+  //hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
+  return PyLong_FromVoidPtr(nullptr);
   END_HANDLE_TH_ERRORS
 }
 
