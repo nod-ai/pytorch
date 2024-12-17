@@ -1,0 +1,98 @@
+name: "Build PyTorch"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_debug_with_tmate:
+        type: boolean
+        description: 'Run the build with tmate session'
+        required: false
+        default: false
+      debug_with_tmate:
+        type: boolean
+        description: 'Run the build with a tmate session ONLY in case of failure'
+        required: false
+        default: false
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  # A PR number if a pull request and otherwise the commit hash. This cancels
+  # queued and in-progress runs for the same PR (presubmit) or commit
+  # (postsubmit). The workflow name is prepended to avoid conflicts between
+  # different workflows.
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "ubuntu-22.04"
+#            runs-on: "nodai-amdgpu-mi250-x86-64"
+            runs-on: "nod-ai-shared-cpubuilder-manylinux-x86_64"
+#            container: "rocm/pytorch:rocm6.2.3_ubuntu22.04_py3.10_pytorch_release_2.3.0"
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: ${{ matrix.name }}
+
+    defaults:
+      run:
+        shell: bash
+
+    permissions:
+      id-token: write
+      contents: write
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4.2.2
+        with:
+          submodules: true
+
+      - name: "Setup ROCm"
+        id: rocm
+        run: |
+          
+          tee --append /etc/yum.repos.d/rocm.repo <<EOF
+          [ROCm-6.3]
+          name=ROCm6.3
+          baseurl=https://repo.radeon.com/rocm/el8/6.3/main
+          enabled=1
+          priority=50
+          gpgcheck=1
+          gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
+          EOF
+          dnf clean all
+          dnf install -y rocm hipblas-common-devel hip-devel
+
+      - name: "Build PyTorch"
+        id: build
+        run: |
+          
+          pip install -r requirements.txt
+          ./build.sh
+          
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}_artifact
+          path: dist
+          if-no-files-found: warn
+
+      - name: "Setup tmate session"
+        if: ${{ (failure() && inputs.debug_with_tmate) || inputs.force_debug_with_tmate }}
+        uses: mxschmitt/action-tmate@v3.18
+        with:
+          limit-access-to-actor: true
+          install-dependencies: ${{ startsWith(matrix.runs-on, 'macos') || startsWith(matrix.runs-on, 'windows') }}

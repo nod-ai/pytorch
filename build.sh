@@ -119,6 +119,7 @@ export USE_VULKAN_RELAXED_PRECISI0=0
 export USE_XNNPACK=0
 export USE_XPU=0
 
+export PYTORCH_ROCM_ARCH="gfx90a;gfx940;gfx941;gfx942;gfx1100;"
 python setup.py develop
 python zoom_extension/examples/test.py
 PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
