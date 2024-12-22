@@ -773,6 +773,19 @@ libtorch_python_cuda_sources = libtorch_python_cuda_core_sources + [
     "torch/csrc/cuda/Tensor.cpp",
 ]
 
+libtorch_python_zoom_sources = [
+    "torch/csrc/zoom/Module.cpp",
+    "torch/csrc/zoom/Event.cpp",
+    "torch/csrc/zoom/python_comm.cpp",
+    "torch/csrc/zoom/Stream.cpp",
+    "torch/csrc/zoom/Graph.cpp",
+    "torch/csrc/zoom/utils.cpp",
+    "torch/csrc/zoom/ZoomPluggableAllocator.cpp",
+    "torch/csrc/zoom/comm.cpp",
+    "torch/csrc/zoom/memory_snapshot.cpp",
+    "torch/csrc/zoom/shared/hiprt.cpp",
+]
+
 libtorch_python_xpu_sources = [
     "torch/csrc/xpu/Event.cpp",
     "torch/csrc/xpu/Module.cpp",
@@ -952,6 +965,7 @@ def glob_libtorch_python_sources(gencode_pattern = ":generate-code[{}]"):
 aten_cpu_non_globed_sources = [
     "aten/src/ATen/detail/CUDAHooksInterface.cpp",
     "aten/src/ATen/detail/HIPHooksInterface.cpp",
+    "aten/src/ATen/detail/ZoomHooksInterface.cpp",
     "aten/src/ATen/detail/MPSHooksInterface.cpp",
     "aten/src/ATen/detail/MAIAHooksInterface.cpp",
     "aten/src/ATen/detail/PrivateUse1HooksInterface.cpp",
@@ -970,6 +984,7 @@ aten_cpu_non_globed_headers = [
     "aten/src/ATen/detail/CUDAHooksInterface.h",
     "aten/src/ATen/detail/MPSHooksInterface.h",
     "aten/src/ATen/detail/HIPHooksInterface.h",
+    "aten/src/ATen/detail/ZoomHooksInterface.h",
     "aten/src/ATen/detail/MAIAHooksInterface.h",
     "aten/src/ATen/detail/PrivateUse1HooksInterface.h",
     "aten/src/ATen/detail/XPUHooksInterface.h",

@@ -146,6 +146,17 @@ if(USE_ROCM)
     list(APPEND TORCH_PYTHON_LINK_LIBRARIES ${ROCM_ROCTX_LIB})
 endif()
 
+if(USE_ZOOM)
+    append_filelist("libtorch_python_zoom_sources" TORCH_PYTHON_SRCS)
+    # list(APPEND TORCH_PYTHON_SRCS ${GENERATED_THNN_CXX_CUDA})
+
+    list(APPEND TORCH_PYTHON_COMPILE_DEFINITIONS
+      USE_ZOOM
+      __HIP_PLATFORM_AMD__
+      )
+    list(APPEND TORCH_PYTHON_LINK_LIBRARIES ${ROCM_ROCTX_LIB})
+endif()
+
 if(USE_XPU)
     include(${TORCH_ROOT}/cmake/public/xpu.cmake)
     append_filelist("libtorch_python_xpu_sources" TORCH_PYTHON_SRCS)
@@ -340,6 +351,11 @@ endif()
 if(USE_ROCM)
   string(REPLACE ";" " " PYTORCH_ROCM_ARCH_readable "${PYTORCH_ROCM_ARCH}")
   set_source_files_properties(${TORCH_SRC_DIR}/csrc/cuda/Module.cpp PROPERTIES COMPILE_FLAGS "-DCUDA_ARCH_FLAGS=\"${PYTORCH_ROCM_ARCH_readable}\"")
+endif()
+
+if(USE_ZOOM)
+  string(REPLACE ";" " " PYTORCH_ROCM_ARCH_readable "${PYTORCH_ROCM_ARCH}")
+  set_source_files_properties(${TORCH_SRC_DIR}/csrc/zoom/Module.cpp PROPERTIES COMPILE_FLAGS "-DROCM_ARCH_FLAGS=\"${PYTORCH_ROCM_ARCH_readable}\"")
 endif()
 
 target_compile_definitions(torch_python PRIVATE "-DTHP_BUILD_MAIN_LIB")

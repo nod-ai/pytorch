@@ -67,7 +67,12 @@ struct AccumulateType<T, false> {
 
 template <typename T>
 struct AccumulateType<T, true> {
-  using type = typename AccumulateTypeDevice<T, c10::DeviceType::CUDA>::type;
+  #ifndef USE_ZOOM
+    using type = typename AccumulateTypeDevice<T, c10::DeviceType::CUDA>::type;
+  #else
+    // TODO(Arham): exchange keys
+    using type = typename AccumulateTypeDevice<T, c10::DeviceType::PrivateUse1>::type;
+  #endif
 };
 
 template <typename T, c10::DeviceType device>
@@ -83,6 +88,8 @@ using acc_type = typename AccumulateType<T, is_cuda>::type;
   };
 #define MPS_ACC_TYPE(t, acc_t) ACC_TYPE(t, acc_t, c10::DeviceType::MPS)
 #define CUDA_ACC_TYPE(t, acc_t) ACC_TYPE(t, acc_t, c10::DeviceType::CUDA)
+// TODO(Arham): exchange keys
+#define ZOOM_ACC_TYPE(t, acc_t) ACC_TYPE(t, acc_t, c10::DeviceType::PrivateUse1)
 #define CPU_ACC_TYPE(t, acc_t) ACC_TYPE(t, acc_t, c10::DeviceType::CPU)
 
 MPS_ACC_TYPE(BFloat16, float);
@@ -125,6 +132,28 @@ CUDA_ACC_TYPE(bool, bool);
 CUDA_ACC_TYPE(c10::complex<Half>, c10::complex<float>);
 CUDA_ACC_TYPE(c10::complex<float>, c10::complex<float>);
 CUDA_ACC_TYPE(c10::complex<double>, c10::complex<double>);
+
+#if defined(__HIPCC__)
+ZOOM_ACC_TYPE(half, float);
+#endif
+ZOOM_ACC_TYPE(BFloat16, float);
+ZOOM_ACC_TYPE(Half, float);
+ZOOM_ACC_TYPE(Float8_e5m2, float);
+ZOOM_ACC_TYPE(Float8_e4m3fn, float);
+ZOOM_ACC_TYPE(Float8_e5m2fnuz, float);
+ZOOM_ACC_TYPE(Float8_e4m3fnuz, float);
+ZOOM_ACC_TYPE(float, float);
+ZOOM_ACC_TYPE(double, double);
+ZOOM_ACC_TYPE(int8_t, int64_t);
+ZOOM_ACC_TYPE(uint8_t, int64_t);
+ZOOM_ACC_TYPE(char, int64_t);
+ZOOM_ACC_TYPE(int16_t, int64_t);
+ZOOM_ACC_TYPE(int32_t, int64_t);
+ZOOM_ACC_TYPE(int64_t, int64_t);
+ZOOM_ACC_TYPE(bool, bool);
+ZOOM_ACC_TYPE(c10::complex<Half>, c10::complex<float>);
+ZOOM_ACC_TYPE(c10::complex<float>, c10::complex<float>);
+ZOOM_ACC_TYPE(c10::complex<double>, c10::complex<double>);
 
 CPU_ACC_TYPE(BFloat16, float);
 CPU_ACC_TYPE(Half, float);

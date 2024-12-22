@@ -239,6 +239,9 @@ if(INTERN_BUILD_ATEN_OPS)
   add_library(ATEN_CUDA_FILES_GEN_LIB INTERFACE)
   add_dependencies(ATEN_CPU_FILES_GEN_LIB ATEN_CPU_FILES_GEN_TARGET)
   add_dependencies(ATEN_CUDA_FILES_GEN_LIB ATEN_CUDA_FILES_GEN_TARGET)
+  
+  message(cuda_gen_headers="${cuda_generated_headers}")
+  message(cuda_gen_sources="${cuda_generated_sources}")
 
   if(USE_PER_OPERATOR_HEADERS)
     target_compile_definitions(ATEN_CPU_FILES_GEN_LIB INTERFACE AT_PER_OPERATOR_HEADERS)

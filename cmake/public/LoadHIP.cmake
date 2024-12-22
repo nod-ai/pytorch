@@ -1,17 +1,20 @@
 set(PYTORCH_FOUND_HIP FALSE)
 
 if(NOT DEFINED ENV{ROCM_PATH})
+  message (WARNING "ROCM_PATH undefined, using ROCM_PATH=/opt/rocm")
   set(ROCM_PATH /opt/rocm)
 else()
   set(ROCM_PATH $ENV{ROCM_PATH})
 endif()
 if(NOT DEFINED ENV{ROCM_INCLUDE_DIRS})
+  message (WARNING "ROCM_INCLUDE_DIRS undefined, using ROCM_INCLUDE_DIRS=$ROCM_PATH/include")
   set(ROCM_INCLUDE_DIRS ${ROCM_PATH}/include)
 else()
   set(ROCM_INCLUDE_DIRS $ENV{ROCM_INCLUDE_DIRS})
 endif()
 
 if(NOT EXISTS ${ROCM_PATH})
+  message(WARNING "$ROCM_PATH does not exist, failed to load HIP")
   return()
 endif()
 
@@ -39,6 +42,7 @@ endmacro()
 
 # Find the HIP Package
 find_package_and_print_version(HIP 1.0)
+message("HIP FOUND? -> " ${HIP_FOUND})
 
 if(HIP_FOUND)
   set(PYTORCH_FOUND_HIP TRUE)

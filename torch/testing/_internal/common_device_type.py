@@ -1083,6 +1083,16 @@ def _has_sufficient_memory(device, size):
             device = 'cuda:0'
         return torch.cuda.memory.mem_get_info(device)[0] >= size
 
+    if torch.device(device).type == 'zoom':
+        if not torch.zoom.is_available():
+            return False
+        gc.collect()
+        torch.zoom.empty_cache()
+        # torch.zoom.mem_get_info, aka hipMemGetInfo, returns a tuple of (free memory, total memory) of a GPU
+        if device == 'zoom':
+            device = 'zoom:0'
+        return torch.zoom.memory.mem_get_info(device)[0] >= size
+
     if device == 'xla':
         raise unittest.SkipTest('TODO: Memory availability checks for XLA?')
 
@@ -1318,6 +1328,12 @@ class dtypesIfCUDA(dtypes):
     def __init__(self, *args):
         super().__init__(*args, device_type='cuda')
 
+# Overrides specified dtypes on Zoom.
+class dtypesIfZoom(dtypes):
+
+    def __init__(self, *args):
+        super().__init__(*args, device_type='zoom')
+
 class dtypesIfMPS(dtypes):
 
     def __init__(self, *args):
@@ -1335,6 +1351,8 @@ def onlyCPU(fn):
 def onlyCUDA(fn):
     return onlyOn('cuda')(fn)
 
+def onlyZOOM(fn):
+    return onlyOn('zoom')(fn)
 
 def onlyMPS(fn):
     return onlyOn('mps')(fn)
@@ -1356,6 +1374,17 @@ def onlyCUDAAndPRIVATEUSE1(fn):
     def only_fn(self, *args, **kwargs):
         if self.device_type not in ('cuda', torch._C._get_privateuse1_backend_name()):
             reason = f"onlyCUDAAndPRIVATEUSE1: doesn't run on {self.device_type}"
+            raise unittest.SkipTest(reason)
+
+        return fn(self, *args, **kwargs)
+
+    return only_fn
+
+def onlyCUDAAndZOOM(fn):
+    @wraps(fn)
+    def only_fn(self, *args, **kwargs):
+        if self.device_type not in ('cuda', 'privateuseone'):
+            reason = f"onlyCUDAAndZOOM: doesn't run on {self.device_type}"
             raise unittest.SkipTest(reason)
 
         return fn(self, *args, **kwargs)
