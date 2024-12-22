@@ -678,8 +678,8 @@ std::tuple<Tensor&, Tensor&> mode_out(
     Tensor& values,
     Tensor& indices) {
   TORCH_CHECK(
-      self.device().is_cpu() || self.is_cuda() || self.is_xpu(),
-      "mode only supports CPU, CUDA and XPU device type, got: ",
+      self.device().is_cpu() || self.is_cuda() || self.is_xpu() || self.is_privateuseone(),,
+      "mode only supports CPU, CUDA, Zoom, and XPU device type, got: ",
       self.device().type());
   TORCH_CHECK(
       self.layout() == Layout::Strided,

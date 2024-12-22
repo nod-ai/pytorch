@@ -1536,6 +1536,8 @@ def test_foo(self, device, dtype, op):
         device_type = torch.device(device_type).type
         if device_type == "cuda" and TEST_WITH_ROCM:
             device_type = "rocm"
+        if device_type == "zoom":
+            device_type = "cuda"
         return self.dtypesIf.get(device_type, self.dtypes)
 
     def supported_backward_dtypes(self, device_type):
@@ -1546,7 +1548,7 @@ def test_foo(self, device, dtype, op):
             device_type = torch._C._get_privateuse1_backend_name()
         device_type = torch.device(device_type).type
         backward_dtypes = None
-        if device_type == "cuda":
+        if device_type == "cuda" or device_type == "zoom":
             backward_dtypes = (
                 self.backward_dtypesIfROCM
                 if TEST_WITH_ROCM

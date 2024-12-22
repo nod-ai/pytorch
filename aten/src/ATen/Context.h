@@ -14,6 +14,7 @@
 #include <ATen/detail/CUDAHooksInterface.h>
 #include <ATen/detail/HIPHooksInterface.h>
 #include <ATen/detail/HPUHooksInterface.h>
+#include <ATen/detail/ZoomHooksInterface.h>
 #include <ATen/detail/IPUHooksInterface.h>
 #include <ATen/detail/MAIAHooksInterface.h>
 #include <ATen/detail/MPSHooksInterface.h>
@@ -121,7 +122,13 @@ class TORCH_API Context {
   void lazyInitDevice(c10::DeviceType device_type) {
     if (device_type != at::kCPU) {
       c10::call_once(init_[static_cast<int8_t>(device_type)], [&] {
-        getAcceleratorHooksInterface(device_type).init();
+        // TODO(Arham): remove when zoom is a proper device
+        if(device_type == at::kPrivateUse1){
+          detail::getZoomHooks().init();
+        }
+        else{
+          getAcceleratorHooksInterface(device_type).init();
+        }
       });
     }
   }
@@ -161,6 +168,9 @@ class TORCH_API Context {
   static bool hasROCM() {
     return detail::getCUDAHooks().hasROCM();
   }
+  static bool checkHIPBlasDeterministic() {
+    return detail::getZoomHooks().checkHIPBlasDeterministic();
+  }
   static bool hasHIP() {
     return detail::getHIPHooks().hasHIP();
   }
@@ -188,6 +198,9 @@ class TORCH_API Context {
 
   static const at::cuda::NVRTC& getNVRTC() {
     return detail::getCUDAHooks().nvrtc();
+  }
+  static const at::zoom::HIPRTC& getHIPRTC() {
+    return detail::getZoomHooks().hiprtc();
   }
 
   static bool setFlushDenormal(bool on);

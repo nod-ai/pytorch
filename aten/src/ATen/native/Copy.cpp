@@ -129,7 +129,8 @@ void copy_same_type_transpose_(Tensor& self, const Tensor& src) {
 // (e.g. XLA) may be supported by overriding copy_ and _copy_from.
 bool is_supported_device(Device device) {
   DeviceType device_type = device.type();
-  return device_type == kCPU || device_type == kCUDA || device_type == kHIP || device_type == kVulkan || device_type == kMetal || device_type == kMPS || device_type == kXPU;
+  // TODO(Arham): exchange keys
+  return device_type == kPrivateUse1 || device_type == kCPU || device_type == kCUDA || device_type == kHIP || device_type == kVulkan || device_type == kMetal || device_type == kMPS || device_type == kXPU;
 }
 
 } // namespace
@@ -287,8 +288,11 @@ static Tensor & copy_impl(Tensor & self, const Tensor & src, bool non_blocking) 
     device_type = kHIP;
   } else if (iter.device_type(1) == kMPS) {
     device_type = kMPS;
-  } else if (iter.device_type(1) == kXPU){
+  } else if (iter.device_type(1) == kXPU) {
     device_type = kXPU;
+  }
+  else if (iter.device_type(1) == kPrivateUse1) {
+    device_type = kPrivateUse1;
   }
 
   // TODO: if we need to, we can also enable this path for quantized tensor

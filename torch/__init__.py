@@ -2175,6 +2175,7 @@ from torch import (
     backends as backends,
     cpu as cpu,
     cuda as cuda,
+    zoom as zoom,
     distributed as distributed,
     distributions as distributions,
     fft as fft,

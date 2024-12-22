@@ -1018,11 +1018,16 @@ if(USE_CUDNN)
 endif()
 
 # ---[ HIP
-if(USE_ROCM)
+if(USE_ROCM OR USE_ZOOM)
   include(${CMAKE_CURRENT_LIST_DIR}/public/LoadHIP.cmake)
   if(PYTORCH_FOUND_HIP)
     message(INFO "Compiling with HIP for AMD.")
-    caffe2_update_option(USE_ROCM ON)
+    if(USE_ROCM)
+      caffe2_update_option(USE_ROCM ON)
+    endif()
+    if(USE_ZOOM)
+      caffe2_update_option(USE_ZOOM ON)
+    endif()
 
     if(USE_NCCL AND NOT USE_SYSTEM_NCCL)
       message(INFO "Forcing USE_SYSTEM_NCCL to ON since it's required by using RCCL")

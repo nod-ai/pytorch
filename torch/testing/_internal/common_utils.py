@@ -66,6 +66,7 @@ import torch.backends.mkl
 import torch.backends.mps
 import torch.backends.xnnpack
 import torch.cuda
+import torch.zoom
 from torch import Tensor
 from torch._C import ScriptDict, ScriptList  # type: ignore[attr-defined]
 from torch._dynamo.trace_rules import _as_posix_path
@@ -1416,6 +1417,7 @@ MACOS_VERSION = float('.'.join(platform.mac_ver()[0].split('.')[:2]) or -1)
 TEST_XPU = torch.xpu.is_available()
 TEST_HPU = True if (hasattr(torch, "hpu") and torch.hpu.is_available()) else False
 TEST_CUDA = torch.cuda.is_available()
+TEST_ZOOM = torch.zoom.is_available()
 custom_device_mod = getattr(torch, torch._C._get_privateuse1_backend_name(), None)
 TEST_PRIVATEUSE1 = is_privateuse1_backend_available()
 TEST_PRIVATEUSE1_DEVICE_TYPE = torch._C._get_privateuse1_backend_name()
@@ -1960,6 +1962,21 @@ def skipIfHpu(fn):
             fn(*args, **kwargs)
     return wrapper
 
+def skipIfZoom(func=None, *, msg="test doesn't currently work on the ROCm stack"):
+    def dec_fn(fn):
+        reason = f"skipIfZoom: {msg}"
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if TEST_ZOOM:  # noqa: F821
+                raise unittest.SkipTest(reason)
+            else:
+                return fn(*args, **kwargs)
+        return wrapper
+    if func:
+        return dec_fn(func)
+    return dec_fn
+
 # Skips a test on CUDA if ROCm is available and its version is lower than requested.
 def skipIfRocmVersionLessThan(version=None):
     def dec_fn(fn):
@@ -2079,6 +2096,17 @@ class CudaSyncGuard:
 
     def __exit__(self, exception_type, exception_value, traceback):
         torch.cuda.set_sync_debug_mode(self.debug_mode_restore)
+
+class ZoomSyncGuard:
+    def __init__(self, sync_debug_mode):
+        self.mode = sync_debug_mode
+
+    def __enter__(self):
+        self.debug_mode_restore = torch.zoom.get_sync_debug_mode()
+        torch.zoom.set_sync_debug_mode(self.mode)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        torch.zoom.set_sync_debug_mode(self.debug_mode_restore)
 
 # Context manager for setting torch.__future__.set_swap_module_params_on_conversion
 # and automatically resetting it to its original value
