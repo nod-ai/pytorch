@@ -82,9 +82,9 @@ file(GLOB hip_nvrtc_stub_cpp "hip/nvrtc_stub/*.cpp")
 file(GLOB miopen_h "miopen/*.h")
 file(GLOB miopen_cpp "miopen/*.cpp")
 
-file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h" "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/tunable/*.cuh" "zoom/tunable/*.h" "zoom/jit/*.cuh" "zoom/jit/*.h")
-file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp" "zoom/tunable/*.cpp" "zoom/jit/*.cpp")
-file(GLOB zoom_hip "zoom/*.cu" "zoom/detail/*.cu" "zoom/impl/*.cu" "zoom/tunable/*.cu")
+file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h" "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/tunable/*.h" "zoom/jit/*.cuh" "zoom/jit/*.h")
+file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp" "zoom/jit/*.cpp")
+file(GLOB zoom_hip "zoom/*.cu" "zoom/detail/*.cu")
 file(GLOB zoom_hiprtc_stub_h "zoom/hiprtc_stub/*.h")
 file(GLOB zoom_hiprtc_stub_cpp "zoom/hiprtc_stub/*.cpp")
 
