@@ -11,6 +11,7 @@
 #include <ATen/native/quantized/Copy.h>
 #include <ATen/native/TensorIterator.h>
 #include <ATen/zoom/jit/Loops.cuh>
+#include <ATen/zoom/jit/JitLoops.cuh>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -23,8 +24,66 @@
 
 namespace at::native {
 
-void neg_kernel_zoom(TensorIteratorBase &iter);
-void conj_kernel_zoom(TensorIteratorBase &iter);
+// forward decl, defined below
+void direct_copy_kernel_zoom(TensorIteratorBase &iter);
+
+// NB: Ignores the negative bit on tensors
+CONSTEXPR_EXCEPT_WIN_CUDA char neg_name[] = "neg_kernel";
+void neg_kernel_zoom(TensorIteratorBase& iter) {
+  auto dtype = iter.dtype();
+  if (at::isComplexType(dtype)) {
+  static const auto neg_string = jiterator_stringify(
+      template <typename T>
+      T neg_kernel(T a) {
+        return -a;
+      }
+  ); // neg_string
+  AT_DISPATCH_COMPLEX_TYPES_AND(kComplexHalf, dtype, "neg_zoom", [&]() {
+      jitted_gpu_kernel<
+        /*name=*/ neg_name,
+        /*return_dtype=*/ scalar_t,
+        /*common_dtype=*/ scalar_t,
+        /*arity=*/ 1>(iter, neg_string);
+  });
+
+  } else {
+  AT_DISPATCH_ALL_TYPES_AND2(ScalarType::Half, ScalarType::BFloat16, dtype, "neg_zoom", [&]() {
+    gpu_kernel(iter, []GPU_LAMBDA(scalar_t a) -> scalar_t {
+      return -a;
+    });
+  });
+  }
+}
+
+// NB: Ignores the negative bit on tensors
+CONSTEXPR_EXCEPT_WIN_CUDA char conj_name[] = "conj_kernel";
+void conj_kernel_zoom(TensorIteratorBase& iter) {
+  auto conj_chalf = [&] {
+    using scalar_t = c10::complex<at::Half>;
+
+      static const auto conj_string = jiterator_stringify(
+        template <typename T>
+        T conj_kernel(T z) {
+          return std::conj(z);
+        }
+      );
+      jitted_gpu_kernel<conj_name, scalar_t, scalar_t, 1>(iter, conj_string);
+
+  };
+
+  AT_DISPATCH_SWITCH(iter.common_dtype(), "conj_zoom",
+    AT_DISPATCH_CASE_ALL_TYPES_AND3(kBool, kBFloat16, kHalf, [&] {
+      // Conj is a no-op for non-complex types
+      direct_copy_kernel_zoom(iter);
+    })
+    AT_DISPATCH_CASE_COMPLEX_TYPES([&] {
+      gpu_kernel(iter, [] GPU_LAMBDA(scalar_t a) -> scalar_t {
+        return std::conj(a);
+      });
+    })
+    AT_DISPATCH_CASE(kComplexHalf, conj_chalf)
+  );
+}
 
 void float8_copy_kernel_zoom(TensorIteratorBase &iter) {
   ScalarType dtype = iter.dtype(0);

@@ -58,6 +58,7 @@ from torchgen.model import (
     DispatchKey,
     FRAGMENT_NAMESPACES,
     FunctionSchema,
+    is_zoom_dispatch_key,
     is_cuda_dispatch_key,
     is_generic_dispatch_key,
     is_ufunc_dispatch_key,
@@ -210,7 +211,7 @@ def parse_native_yaml_struct(
             use_out_as_primary=True,
             external=False,
             # Only cuda-like devices in tree require device guards
-            device_guard=is_cuda_dispatch_key(k) or is_xpu_dispatch_key(k),
+            device_guard=is_cuda_dispatch_key(k) or is_xpu_dispatch_key(k) or is_zoom_dispatch_key(k),
             index=v,
         )
     return ParsedYaml(rs, indices)
@@ -2235,6 +2236,13 @@ def gen_source_files(
 
     for dispatch_key in dispatch_keys:
         fm = file_manager_from_dispatch_key(dispatch_key, device_fms, cpu_fm)
+        if is_zoom_dispatch_key(dispatch_key):
+            extra_cuda_headers = """\
+            #include <c10/zoom/impl/ZoomGuardImpl.h>
+            #include <ATen/zoom/ATenZoomGeneral.h>
+            #include <ATen/zoom/ZoomDevice.h>
+            #include <ATen/zoom/ZoomContext.h>"""
+            
         if per_operator_headers:
 
             def operator_headers() -> list[str]:
@@ -2307,7 +2315,7 @@ def gen_source_files(
 
         register_dispatch_key_base_env = {
             "extra_cuda_headers": extra_cuda_headers
-            if is_cuda_dispatch_key(dispatch_key)
+            if (is_cuda_dispatch_key(dispatch_key) or is_zoom_dispatch_key(dispatch_key))
             else "",
             "external_backend_headers": "",
             "dispatch_headers": dest.gen_registration_headers(
@@ -2390,6 +2398,21 @@ def gen_source_files(
                             g, backend_indices[dispatch_key]
                         ),
                         "native_definitions": dest.compute_ufunc_cuda(g),
+                    },
+                )
+            elif dispatch_key is DispatchKey.PrivateUse1: # TODO(Arham): change keys
+                zoom_headers = "#include <ATen/zoom/jit/Loops.cuh>"
+                fm.write_with_template(
+                    f"UfuncZoom_{name}.cu",
+                    "UfuncZoom.cu",
+                    lambda: {
+                        "name": name,
+                        "zoom_headers": zoom_headers,
+                        "meta_declaration": compute_meta_function_declaration(g),
+                        "native_declaration": dest.compute_native_function_declaration(
+                            g, backend_indices[dispatch_key]
+                        ),
+                        "native_definitions": dest.compute_ufunc_zoom(g),
                     },
                 )
             else:
@@ -2960,10 +2983,11 @@ def main() -> None:
     core_fm = make_file_manager(options=options, install_dir=core_install_dir)
     cpu_fm = make_file_manager(options=options)
     cpu_vec_fm = make_file_manager(options=options)
+    zoom_fm = make_file_manager(options=options)
     cuda_fm = make_file_manager(options=options)
     ops_fm = make_file_manager(options=options, install_dir=ops_install_dir)
     aoti_fm = make_file_manager(options=options, install_dir=aoti_install_dir)
-    device_fms = {"cuda": cuda_fm}
+    device_fms = {"cuda": cuda_fm, "zoom": zoom_fm}
     if options.xpu:
         device_fms["xpu"] = make_file_manager(options=options)
 
@@ -2972,6 +2996,7 @@ def main() -> None:
     functions_keys = {
         DispatchKey.CPU,
         DispatchKey.CUDA,
+        DispatchKey.PrivateUse1, # TODO(Arham): change keys
         DispatchKey.CompositeImplicitAutograd,
         DispatchKey.CompositeImplicitAutogradNestedTensor,
         DispatchKey.CompositeExplicitAutograd,
@@ -3021,8 +3046,13 @@ def main() -> None:
             aoti_fm=aoti_fm,
             core_fm=core_fm,
             cpu_vec_fm=cpu_vec_fm,
+<<<<<<< HEAD
             cpu_fm=cpu_fm,
             device_fms=device_fms,
+=======
+            zoom_fm=zoom_fm,
+            cuda_fm=cuda_fm,
+>>>>>>> 53deb9560b6 (minimize, fix build, torchgen logic)
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
             rocm=options.rocm,
@@ -3045,7 +3075,12 @@ def main() -> None:
             backend_indices=backend_indices,
             core_fm=core_fm,
             cpu_fm=cpu_fm,
+<<<<<<< HEAD
             device_fms=device_fms,
+=======
+            zoom_fm=zoom_fm,
+            cuda_fm=cuda_fm,
+>>>>>>> 53deb9560b6 (minimize, fix build, torchgen logic)
             ops_fm=ops_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,

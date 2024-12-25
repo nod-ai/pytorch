@@ -3,30 +3,16 @@
 #include <ATen/DeviceGuard.h>
 #include <ATen/DynamicLibrary.h>
 #include <ATen/core/Vitals.h>
-// #include <ATen/cuda/CUDAConfig.h>
 #include <ATen/zoom/ZoomDevice.h>
 #include <c10/zoom/ZoomException.h>
 #include <ATen/zoom/PeerToPeerAccess.h>
 #include <ATen/zoom/PinnedMemoryAllocator.h>
 #include <ATen/zoom/hiprtc_stub/ATenHIPRTC.h>
 #include <ATen/zoom/detail/ZoomHooks.h>
-// #include <ATen/native/zoom/HIPFFTPlanCache.h>
 #include <c10/util/Exception.h>
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/zoom/ZoomFunctions.h>
 #include <c10/util/irange.h>
-
-// #if AT_CUDNN_ENABLED()
-// #include <ATen/cudnn/cudnn-wrapper.h>
-// #endif
-
-// #if AT_MAGMA_ENABLED()
-// #include <magma_v2.h>
-// #endif
-
-// #if defined(USE_ROCM)
-// #include <miopen/version.h>
-// #endif
 
 #include <sstream>
 #include <cstddef>
@@ -39,21 +25,10 @@ namespace c10::zoom::_internal {
 void setHasPrimaryContext(bool (*func)(DeviceIndex));
 }
 
-// defined in Aten/zoom/HIPblasHandlePool.cpp
-namespace at::zoom {
-  bool getHIPBlasAtomicsEnabled();
-}
-
 namespace at::zoom::detail {
 
 const at::zoom::HIPRTC& hiprtc();
 DeviceIndex current_device();
-
-// static void (*magma_init_fn)() = nullptr;
-
-// void set_magma_init_fn(void (*fn)()) {
-//   magma_init_fn = fn;
-// }
 
 namespace {
 bool _hasPrimaryContext(DeviceIndex device_index) {
@@ -147,13 +122,6 @@ bool ZoomHooks::isPinnedPtr(const void* data) const {
 
 bool ZoomHooks::hasROCM() const {
   return at::zoom::is_available();
-}
-
-// rocBLAS is deterministic if atomic operations are disabled
-// for details on when rocBLAS is guaranteed to be bitwise deterministic see below:
-// https://github.com/ROCm/rocBLAS/issues/1459#issuecomment-2272082035
-bool ZoomHooks::checkHIPBlasDeterministic() const {
-  return !at::zoom::getHIPBlasAtomicsEnabled();
 }
 
 // #if defined(USE_DIRECT_NVRTC) || defined(USE_DIRECT_HIPRTC)

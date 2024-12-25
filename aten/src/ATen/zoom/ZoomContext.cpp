@@ -2,7 +2,6 @@
 #include <c10/zoom/ZoomCachingAllocator.h>
 #include <c10/util/CallOnce.h>
 
-// #include <ATen/cuda/CUDAConfig.h>
 #include <mutex>
 #include <deque>
 #include <vector>

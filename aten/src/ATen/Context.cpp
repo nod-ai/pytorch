@@ -205,7 +205,6 @@ static constexpr const auto hipblaslt_allow_tf32 = "HIPBLASLT_ALLOW_TF32";
 
 bool Context::checkCuBLASConfigDeterministic() {
   bool cublas_config_deterministic = true;
-  #ifndef USE_ZOOM
   // If using CUDA 10.2 or greater, need to make sure CuBLAS workspace config
   // is set to deterministic setting
   if (hasCUDART()) {
@@ -213,10 +212,6 @@ bool Context::checkCuBLASConfigDeterministic() {
     return (workspace_config == cublas_deterministic_configs[0] || workspace_config == cublas_deterministic_configs[1]);
   }
   return cublas_config_deterministic;
-  #else
-  // Zoom uses hipBLAS with the rocBLAS backend - this is only deterministic if atomics are disabled
-  return checkHIPBlasDeterministic();
-  #endif
 }
 
 void Context::alertCuBLASConfigNotDeterministic() const {

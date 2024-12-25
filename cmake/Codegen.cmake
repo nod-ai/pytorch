@@ -258,6 +258,7 @@ if(INTERN_BUILD_ATEN_OPS)
     include("${CMAKE_BINARY_DIR}/aten/src/ATen/core_generated_${gen_type}.cmake")
     include("${CMAKE_BINARY_DIR}/aten/src/ATen/cpu_vec_generated_${gen_type}.cmake")
     include("${CMAKE_BINARY_DIR}/aten/src/ATen/cuda_generated_${gen_type}.cmake")
+    include("${CMAKE_BINARY_DIR}/aten/src/ATen/zoom_generated_${gen_type}.cmake")
     include("${CMAKE_BINARY_DIR}/aten/src/ATen/ops_generated_${gen_type}.cmake")
     if(USE_XPU)
         include("${CMAKE_BINARY_DIR}/aten/src/ATen/xpu_generated_${gen_type}.cmake")
@@ -266,6 +267,7 @@ if(INTERN_BUILD_ATEN_OPS)
     set(OUTPUT_LIST
       ${generated_${gen_type}}
       ${cuda_generated_${gen_type}}
+      ${zoom_generated_${gen_type}}
       ${core_generated_${gen_type}}
       ${cpu_vec_generated_${gen_type}}
       ${ops_generated_${gen_type}}
@@ -274,6 +276,7 @@ if(INTERN_BUILD_ATEN_OPS)
       ${CMAKE_BINARY_DIR}/aten/src/ATen/core_generated_${gen_type}.cmake
       ${CMAKE_BINARY_DIR}/aten/src/ATen/cpu_vec_generated_${gen_type}.cmake
       ${CMAKE_BINARY_DIR}/aten/src/ATen/cuda_generated_${gen_type}.cmake)
+      ${CMAKE_BINARY_DIR}/aten/src/ATen/zoom_generated_${gen_type}.cmake
     if(USE_XPU)
       list(APPEND OUTPUT_LIST
         ${xpu_generated_${gen_type}}
@@ -301,17 +304,25 @@ if(INTERN_BUILD_ATEN_OPS)
       ${generated_declarations_yaml} ${generated_unboxing_sources})
   add_custom_target(ATEN_CUDA_FILES_GEN_TARGET DEPENDS
       ${cuda_generated_headers} ${cuda_generated_sources})
+  add_custom_target(ATEN_ZOOM_FILES_GEN_TARGET DEPENDS
+      ${zoom_generated_headers} ${zoom_generated_sources})
   add_library(ATEN_CPU_FILES_GEN_LIB INTERFACE)
   add_library(ATEN_CUDA_FILES_GEN_LIB INTERFACE)
+  add_library(ATEN_ZOOM_FILES_GEN_LIB INTERFACE)
   add_dependencies(ATEN_CPU_FILES_GEN_LIB ATEN_CPU_FILES_GEN_TARGET)
   add_dependencies(ATEN_CUDA_FILES_GEN_LIB ATEN_CUDA_FILES_GEN_TARGET)
+  add_dependencies(ATEN_ZOOM_FILES_GEN_LIB ATEN_ZOOM_FILES_GEN_TARGET)
   
+  message(zoom_gen_headers="${zoom_generated_headers}")
+  message(zoom_gen_sources="${zoom_generated_sources}")
+
   message(cuda_gen_headers="${cuda_generated_headers}")
   message(cuda_gen_sources="${cuda_generated_sources}")
 
   if(USE_PER_OPERATOR_HEADERS)
     target_compile_definitions(ATEN_CPU_FILES_GEN_LIB INTERFACE AT_PER_OPERATOR_HEADERS)
     target_compile_definitions(ATEN_CUDA_FILES_GEN_LIB INTERFACE AT_PER_OPERATOR_HEADERS)
+    target_compile_definitions(ATEN_ZOOM_FILES_GEN_LIB INTERFACE AT_PER_OPERATOR_HEADERS)
   endif()
 
   if(USE_XPU)

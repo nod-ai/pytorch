@@ -31,6 +31,7 @@ from torchgen.model import (
     DispatchKey,
     gets_generated_out_inplace_wrapper,
     is_cuda_dispatch_key,
+    is_zoom_dispatch_key,
     NativeFunction,
     NativeFunctionsGroup,
     SchemaKind,
@@ -60,6 +61,8 @@ def gen_registration_headers(
             headers.append("#include <ATen/hip/EmptyTensor.h>")
         else:
             headers.append("#include <ATen/cuda/EmptyTensor.h>")
+    elif backend_index.dispatch_key == DispatchKey.PrivateUse1: #TODO(Arham): remove once we have a zoom key
+        headers.append("#include <ATen/zoom/EmptyTensor.h>")
     elif backend_index.dispatch_key == DispatchKey.MPS:
         headers.append("#include <ATen/mps/EmptyTensor.h>")
     elif backend_index.dispatch_key == DispatchKey.XPU:
@@ -89,10 +92,13 @@ def gen_empty_impl_names(
         DispatchKey.Meta,
         DispatchKey.CPU,
         DispatchKey.CUDA,
+        DispatchKey.PrivateUse1, # TODO (Arham) change keys
         DispatchKey.MPS,
         DispatchKey.XPU,
     ):
         dispatch = str(backend_index.dispatch_key).lower()
+        if backend_index.dispatch_key == DispatchKey.PrivateUse1:
+            dispatch = "zoom"
         empty_impl = f"at::detail::empty_{dispatch}"
         empty_strided_impl = f"at::detail::empty_strided_{dispatch}"
     elif backend_index.dispatch_key in (
@@ -516,6 +522,11 @@ return {sig.name()}({", ".join(e.expr for e in translate(cpp_sig.arguments(), si
                         # CUDA requires special handling
                         if is_cuda_dispatch_key(self.backend_index.dispatch_key):
                             device_guard = f"globalContext().lazyInitDevice(c10::DeviceType::CUDA);\n{device_guard}"
+
+                        if is_zoom_dispatch_key(self.backend_index.dispatch_key):
+                            device_guard = (
+                                f"globalContext().lazyInitDevice(c10::DeviceType::PrivateUse1);\n{device_guard}"
+                            )
                     else:
                         # kernel is operating on existing tensors
 
@@ -610,6 +621,7 @@ void set_output_{name}(
     def gen_class_set_output_body(self, k: SchemaKind, maybe_create_proxy: bool) -> str:
         if self.backend_index.dispatch_key in [
             DispatchKey.CUDA,
+            DispatchKey.PrivateUse1, # TODO (Arham): change keys
             DispatchKey.MPS,
             DispatchKey.XPU,
             DispatchKey.CompositeExplicitAutogradNonFunctional,
@@ -642,6 +654,7 @@ if (C10_UNLIKELY(maybe_proxy.has_value())) {
                 DispatchKey.Meta,
                 DispatchKey.CPU,
                 DispatchKey.CUDA,
+                DispatchKey.PrivateUse1, # TODO (Arham): change keys
                 DispatchKey.MPS,
                 DispatchKey.XPU,
                 DispatchKey.CompositeExplicitAutogradNonFunctional,
@@ -713,6 +726,9 @@ resize_out(out, sizes, strides, options);
                 guard_field = "c10::hip::OptionalHIPGuardMasqueradingAsCUDA guard_;"
             else:
                 guard_field = "c10::cuda::OptionalCUDAGuard guard_;"
+        # TODO (Arham): change keys
+        elif self.backend_index.dispatch_key == DispatchKey.PrivateUse1:
+            guard_field = "c10::OptionalDeviceGuard guard_;"
         elif (
             self.backend_index.dispatch_key
             == DispatchKey.CompositeExplicitAutogradNonFunctional

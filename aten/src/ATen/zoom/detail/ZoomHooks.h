@@ -20,7 +20,6 @@ struct ZoomHooks : public ZoomHooksInterface {
   bool isPinnedPtr(const void* data) const override;
   const Generator& getDefaultZoomGenerator(DeviceIndex device_index = -1) const override;
   bool hasROCM() const override;
-  bool checkHIPBlasDeterministic() const override;
   const at::zoom::HIPRTC& hiprtc() const override;
   DeviceIndex current_device() const override;
   bool hasPrimaryContext(DeviceIndex device_index) const override;
