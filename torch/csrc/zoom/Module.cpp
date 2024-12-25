@@ -329,83 +329,6 @@ at::Scalar as_scalar(PyObject* arg) {
   return at::Scalar(THPUtils_unpackDouble(arg));
 }
 
-// Entrypoint for the callable created by torch.zoom.jiterator
-// See jiterator.py for more details
-// PyObject* THCPModule_zoomJiteratorCompileAndLaunchKernel(
-//     PyObject* _unused,
-//     PyObject* args) {
-//   HANDLE_TH_ERRORS
-
-//   PyObject* code_string_o = nullptr;
-//   PyObject* kernel_name_o = nullptr;
-//   PyObject* return_by_ref_o = nullptr;
-//   PyObject* num_outputs_o = nullptr;
-//   PyObject* tensors_o = nullptr;
-//   PyObject* kwargs_o = nullptr;
-//   if (!PyArg_ParseTuple(
-//           args,
-//           "OOOOO|O",
-//           &code_string_o,
-//           &kernel_name_o,
-//           &return_by_ref_o,
-//           &num_outputs_o,
-//           &tensors_o,
-//           &kwargs_o)) {
-//     return nullptr;
-//   }
-
-//   const std::string code_string = THPUtils_unpackString(code_string_o);
-//   const std::string kernel_name = THPUtils_unpackString(kernel_name_o);
-//   const bool return_by_ref = THPUtils_unpackBool(return_by_ref_o);
-//   const int num_outputs = static_cast<int>(THPUtils_unpackLong(num_outputs_o));
-
-//   TORCH_CHECK(
-//       PyTuple_Check(tensors_o),
-//       "tensors argument is expected to "
-//       "be a tuple, but got ",
-//       THPUtils_typename(tensors_o));
-//   Py_ssize_t num_tensors = PyTuple_GET_SIZE(tensors_o);
-
-//   c10::SmallVector<at::Tensor> tensors;
-//   for (const auto i : c10::irange(num_tensors)) {
-//     PyObject* _tensor = PyTuple_GET_ITEM(tensors_o, i);
-//     TORCH_CHECK(
-//         THPVariable_Check(_tensor),
-//         i,
-//         " of input tensors tuple is not a Tensor");
-
-//     tensors.emplace_back(THPVariable_Unpack(_tensor));
-//   }
-
-//   c10::SmallVector<at::Scalar> extra_args;
-//   PyObject* key = nullptr;
-//   PyObject* value = nullptr;
-//   Py_ssize_t pos = 0;
-//   while (PyDict_Next(kwargs_o, &pos, &key, &value)) {
-//     extra_args.emplace_back(as_scalar(value));
-//   }
-
-//   c10::SmallVector<at::Tensor> outputs = at::zoom::CompileAndLaunchKernel(
-//       code_string,
-//       kernel_name,
-//       num_outputs,
-//       tensors,
-//       extra_args,
-//       return_by_ref);
-
-//   if (num_outputs == 1) {
-//     return THPVariable_Wrap(outputs[0]);
-//   } else {
-//     PyObject* output_tuple = PyTuple_New(num_outputs);
-//     for (int i = 0; i < num_outputs; ++i) {
-//       PyTuple_SetItem(output_tuple, i, THPVariable_Wrap(outputs[i]));
-//     }
-//     return output_tuple;
-//   }
-
-//   END_HANDLE_TH_ERRORS
-// }
-
 PyObject* THCPModule_zoomCachingAllocator_raw_delete(
     PyObject* _unused,
     PyObject* obj) {
@@ -443,26 +366,6 @@ PyObject* THCPModule_zoomSynchronize(PyObject* _unused, PyObject* noargs) {
   Py_RETURN_NONE;
   END_HANDLE_TH_ERRORS
 }
-
-// PyObject* THCPModule_zoomIPCCollect(PyObject* _unused, PyObject* noargs) {
-//   HANDLE_TH_ERRORS
-//   torch::zoomIPCCollect();
-//   Py_RETURN_NONE;
-//   END_HANDLE_TH_ERRORS
-// }
-
-// PyObject* THCPModule_zoomSleep(PyObject* _unused, PyObject* cycles) {
-//   HANDLE_TH_ERRORS
-//   TORCH_CHECK(
-//       THPUtils_checkLong(cycles), "torch.zoom._sleep(): expected 'int'");
-//   int64_t unpacked_cycles = THPUtils_unpackLong(cycles);
-//   {
-//     pybind11::gil_scoped_release no_gil;
-//     at::zoom::sleep(unpacked_cycles);
-//   }
-//   Py_RETURN_NONE;
-//   END_HANDLE_TH_ERRORS
-// }
 
 // We need to ensure that as long as a thread will NEVER loose the GIL as long
 // as it holds the CUDA mutex. Otherwise another thread might be scheduled and
@@ -929,30 +832,10 @@ static void registerZoomDeviceProperties(PyObject* module) {
         return stream.str();
       });
 
-  // m.def(
-  //     "_zoom_record_memory_history_legacy",
-  //     static_cast<void (*)(bool, bool, int64_t, bool, bool)>(
-  //         torch::zoom::_record_memory_history));
-
-  // m.def(
-  //     "_zoom_record_memory_history",
-  //     static_cast<void (*)(
-  //         std::optional<std::string>,
-  //         std::optional<std::string>,
-  //         const std::string&,
-  //         size_t)>(torch::zoom::_record_memory_history));
-
   m.def("_zoom_isHistoryEnabled", []() {
     return c10::zoom::ZoomCachingAllocator::isHistoryEnabled();
   });
 
-  // m.def("_zoom_get_conv_benchmark_empty_cache", []() {
-  //   return at::native::_cudnn_get_conv_benchmark_empty_cache();
-  // });
-
-  // m.def("_cudnn_set_conv_benchmark_empty_cache", [](bool enable) {
-  //   return at::native::_cudnn_set_conv_benchmark_empty_cache(enable);
-  // });
 }
 
 // We choose to ignore certain blocks that are currently allocated
@@ -1349,33 +1232,6 @@ static PyObject* THCPModule_initExtension(PyObject* self, PyObject* noargs) {
   END_HANDLE_TH_ERRORS
 }
 
-PyObject* THCPModule_getCurrentBlasHandle_wrap(
-    PyObject* self,
-    PyObject* noargs) {
-  HANDLE_TH_ERRORS
-  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-  hipblasHandle_t handle = at::zoom::getCurrentHIPBlasHandle();
-  return PyLong_FromVoidPtr(handle);
-  END_HANDLE_TH_ERRORS
-}
-
-
-// PyObject* THCPModule_rocm_is_backward_pass(
-//     PyObject* _unused,
-//     PyObject* noargs) {
-//   HANDLE_TH_ERRORS
-// #if USE_ROCM
-//   if (at::ROCmBackwardPassGuard::is_backward_pass()) {
-//     Py_RETURN_TRUE;
-//   } else {
-//     Py_RETURN_FALSE;
-//   }
-// #else
-//   Py_RETURN_FALSE;
-// #endif
-//   END_HANDLE_TH_ERRORS
-// }
-
 static PyObject* THCPModule_isCurrentStreamCapturing_wrap(
     PyObject* self,
     PyObject* noargs) {
@@ -1421,10 +1277,6 @@ static struct PyMethodDef _THCPModule_methods[] = {
     {"_zoom_getDefaultStream",
      THCPModule_getDefaultStream_wrap,
      METH_O,
-     nullptr},
-    {"_zoom_getCurrentBlasHandle",
-     THCPModule_getCurrentBlasHandle_wrap,
-     METH_NOARGS,
      nullptr},
     {"_zoom_isCurrentStreamCapturing",
      THCPModule_isCurrentStreamCapturing_wrap,
@@ -1491,14 +1343,6 @@ static struct PyMethodDef _THCPModule_methods[] = {
      THCPModule_zoomGetSyncDebugMode,
      METH_NOARGS,
      nullptr},
-    // {"_zoom_jiterator_compile_and_launch_kernel",
-    //  THCPModule_zoomJiteratorCompileAndLaunchKernel,
-    //  METH_VARARGS,
-    //  nullptr},
-    // {"_rocm_is_backward_pass",
-    //  THCPModule_rocm_is_backward_pass,
-    //  METH_NOARGS,
-    //  nullptr},
     {nullptr}};
 
 PyMethodDef* THCPModule_methods() {
@@ -1519,13 +1363,7 @@ void initHiprtBindings(PyObject* module);
 
 void initModule(PyObject* module) {
 //   python::initCommMethods(module);
-//   // As weird as it seems, this file is also compiled for ROCm,
-//   // so this condition might not always be true...
   shared::initHiprtBindings(module);
-//   shared::initNvtxBindings(module);
-// #if defined(USE_CUDNN) || defined(USE_ROCM)
-//   shared::initCudnnBindings(module);
-// #endif
   registerZoomDeviceProperties(module);
   registerZoomPluggableAllocator(module);
 }

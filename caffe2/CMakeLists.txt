@@ -1677,6 +1677,8 @@ if(MSVC AND BUILD_SHARED_LIBS)
     install(FILES $<TARGET_PDB_FILE:torch_cuda> DESTINATION "${TORCH_INSTALL_LIB_DIR}" OPTIONAL)
   elseif(USE_ROCM)
     install(FILES $<TARGET_PDB_FILE:torch_hip> DESTINATION "${TORCH_INSTALL_LIB_DIR}" OPTIONAL)
+  elseif(USE_ZOOM)
+    install(FILES $<TARGET_PDB_FILE:torch_zoom> DESTINATION "${TORCH_INSTALL_LIB_DIR}" OPTIONAL)
   endif()
 endif()
 
@@ -1822,16 +1824,13 @@ if(USE_ZOOM)
   target_link_libraries(torch_zoom PUBLIC c10_zoom)
   # target_link_libraries(torch_zoom PUBLIC c10)
 
-  # this is where lib amdhip64 is actually linked (e.g. HIP symbols)
-  # should be included in c10_zoom
-  # target_link_libraries(torch_zoom PUBLIC ${PYTORCH_HIP_LIBRARIES})
   if(NOT INTERN_BUILD_MOBILE)
     # TODO: Cut this over to ATEN_HIP_FILES_GEN_LIB.  At the moment, we
     # only generate CUDA files
     # NB: This dependency must be PRIVATE, because we don't install
     # ATEN_CUDA_FILES_GEN_LIB (it's a synthetic target just to get the
     # correct dependency from generated files.)
-    #target_link_libraries(torch_zoom PRIVATE ATEN_ZOOM_FILES_GEN_LIB)
+    target_link_libraries(torch_zoom PRIVATE ATEN_ZOOM_FILES_GEN_LIB)
   endif()
   target_link_libraries(torch_zoom PUBLIC torch_cpu_library ${Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS})
   target_link_libraries(torch_zoom PRIVATE ${Caffe2_ZOOM_DEPENDENCY_LIBS})

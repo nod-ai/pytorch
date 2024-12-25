@@ -153,7 +153,6 @@ static const char* const cublas_deterministic_configs[] = { ":4096:8", ":16:8" }
 
 bool Context::checkCuBLASConfigDeterministic() {
   bool cublas_config_deterministic = true;
-  #ifndef USE_ZOOM
   // If using CUDA 10.2 or greater, need to make sure CuBLAS workspace config
   // is set to deterministic setting
   if (hasCUDART() && (versionCUDART() >= 10020)) {
@@ -164,10 +163,6 @@ bool Context::checkCuBLASConfigDeterministic() {
     );
   }
   return cublas_config_deterministic;
-  #else
-  // Zoom uses hipBLAS with the rocBLAS backend - this is only deterministic if atomics are disabled
-  return checkHIPBlasDeterministic();
-  #endif
 }
 
 void Context::alertCuBLASConfigNotDeterministic() const {
