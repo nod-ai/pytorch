@@ -442,7 +442,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sgn_out
+    CPU, CUDA, PrivateUse1: sgn_out
     MPS: sgn_out_mps
     SparseCPU, SparseCUDA: sgn_sparse_out
     SparseCsrCPU, SparseCsrCUDA: sgn_sparse_csr_out
@@ -707,14 +707,14 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: all_out
+    CPU, CUDA, PrivateUse1: all_out
     MPS: all_out_mps
 
 - func: all.dims_out(Tensor self, int[]? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: all_dims_out
+    CPU, CUDA, PrivateUse1: all_dims_out
     CompositeExplicitAutograd: all_dims_out_default
   cpp_no_default_args: ['dim']
 
@@ -750,14 +750,14 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: any_out
+    CPU, CUDA, PrivateUse1: any_out
     MPS: any_out_mps
 
 - func: any.dims_out(Tensor self, int[]? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: any_dims_out
+    CPU, CUDA, PrivateUse1: any_dims_out
     CompositeExplicitAutograd: any_dims_out_default
   cpp_no_default_args: ['dim']
 
@@ -1259,7 +1259,7 @@
 - func: logical_not.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: logical_not_out
+    CPU, CUDA, PrivateUse1: logical_not_out
     MPS: logical_not_out_mps
   tags: pointwise
 
@@ -1352,6 +1352,7 @@
   dispatch:
     CPU: bmm_out_cpu
     CUDA: bmm_out_cuda
+    PrivateUse1: bmm_out_zoom
     MPS: bmm_out_mps
     SparseCPU: bmm_out_sparse_cpu
     SparseCUDA: bmm_out_sparse_cuda
@@ -1386,6 +1387,7 @@
   dispatch:
     CPU: cat_out_cpu
     CUDA: cat_out_cuda
+    PrivateUse1: cat_out_zoom
     MPS: cat_out_mps
     QuantizedCPU: cat_out_quantized_cpu
 
@@ -1797,7 +1799,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: cos_out
+    CPU, CUDA, PrivateUse1: cos_out
     MPS: cos_out_mps
   tags: pointwise
 
@@ -1933,6 +1935,7 @@
   dispatch:
     CPU: cummax_helper_cpu
     CUDA: cummax_helper_cuda
+    PrivateUse1: cummax_helper_zoom
 
 - func: cummin(Tensor self, int dim) -> (Tensor values, Tensor indices)
   device_check: NoCheck   # TensorIterator
@@ -1957,6 +1960,7 @@
   dispatch:
     CPU: cummin_helper_cpu
     CUDA: cummin_helper_cuda
+    PrivateUse1: cummin_helper_zoom
 
 - func: cummaxmin_backward(Tensor grad, Tensor input, Tensor indices, int dim) -> Tensor
   variants: function
@@ -1976,7 +1980,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: cumprod_out
+    CPU, CUDA, PrivateUse1: cumprod_out
     MPS: cumprod_out_mps
 
 - func: cumprod.dimname(Tensor self, Dimname dim, *, ScalarType? dtype=None) -> Tensor
@@ -2008,7 +2012,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: cumsum_out
+    CPU, CUDA, PrivateUse1: cumsum_out
     MPS: cumsum_out_mps
 
 - func: cumsum.dimname(Tensor self, Dimname dim, *, ScalarType? dtype=None) -> Tensor
@@ -2137,7 +2141,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: div_out
+    CPU, CUDA, PrivateUse1: div_out
     MPS: div_out_mps
     SparseCPU, SparseCUDA: div_out_sparse_zerodim
   tags: pointwise
@@ -2163,7 +2167,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: div_out_mode
+    CPU, CUDA, PrivateUse1: div_out_mode
     MPS: div_out_mode_mps
     SparseCPU, SparseCUDA: div_out_sparse_zerodim
   tags: pointwise
@@ -2736,7 +2740,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: floor_divide
+    CPU, CUDA, PrivateUse1: floor_divide
     MPS: floor_divide_mps
     SparseCPU, SparseCUDA: floor_divide_sparse
 
@@ -2744,14 +2748,14 @@
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: floor_divide_
+    CPU, CUDA, PrivateUse1: floor_divide_
     MPS: floor_divide_mps_
     SparseCPU, SparseCUDA: floor_divide_sparse_
 
 - func: floor_divide.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: floor_divide_out
+    CPU, CUDA, PrivateUse1: floor_divide_out
     MPS: floor_divide_out_mps
     SparseCPU, SparseCUDA: floor_divide_out_sparse_zerodim
 
@@ -3132,7 +3136,7 @@
   variants: function
   structured: True
   dispatch:
-    CPU, CUDA: isin_Tensor_Tensor_out
+    CPU, CUDA, PrivateUse1: isin_Tensor_Tensor_out
     MPS: isin_Tensor_Tensor_out_mps
 
 - func: isin.Tensor_Tensor(Tensor elements, Tensor test_elements, *, bool assume_unique=False, bool invert=False) -> Tensor
@@ -3143,7 +3147,7 @@
   variants: function
   structured: True
   dispatch:
-    CPU, CUDA: isin_Tensor_Scalar_out
+    CPU, CUDA, PrivateUse1: isin_Tensor_Scalar_out
 
 - func: isin.Tensor_Scalar(Tensor elements, Scalar test_element, *, bool assume_unique=False, bool invert=False) -> Tensor
   variants: function
@@ -3153,7 +3157,7 @@
   variants: function
   structured: True
   dispatch:
-    CPU, CUDA: isin_Scalar_Tensor_out
+    CPU, CUDA, PrivateUse1: isin_Scalar_Tensor_out
 
 - func: isin.Scalar_Tensor(Scalar element, Tensor test_elements, *, bool assume_unique=False, bool invert=False) -> Tensor
   variants: function
@@ -3246,6 +3250,7 @@
   dispatch:
     CPU: kthvalue_out_cpu
     CUDA: kthvalue_out_cuda
+    PrivateUse1: kthvalue_out_zoom
 
 - func: kthvalue.dimname(Tensor self, int k, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
   variants: function, method
@@ -3680,6 +3685,7 @@
   dispatch:
     CPU: log_softmax_cpu_out
     CUDA: log_softmax_cuda_out
+    PrivateUse1: log_softmax_zoom_out
     MPS: log_softmax_mps_out
 
 - func: _log_softmax_backward_data(Tensor grad_output, Tensor output, int dim, ScalarType input_dtype) -> Tensor
@@ -3690,17 +3696,20 @@
   dispatch:
     CPU: log_softmax_backward_cpu_out
     CUDA: log_softmax_backward_cuda_out
+    PrivateUse1: log_softmax_backward_zoom_out
     MPS: log_softmax_backward_mps_out
 
 - func: _logcumsumexp(Tensor self, int dim) -> Tensor
   dispatch:
     CPU: _logcumsumexp_cpu
     CUDA: _logcumsumexp_cuda
+    PrivateUse1: _logcumsumexp_zoom
 
 - func: _logcumsumexp.out(Tensor self, int dim, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
     CPU: _logcumsumexp_out_cpu
     CUDA: _logcumsumexp_out_cuda
+    PrivateUse1: _logcumsumexp_out_zoom
 
 - func: logcumsumexp(Tensor self, int dim) -> Tensor
   variants: function, method
@@ -3945,6 +3954,7 @@
   dispatch:
     CPU: median_cpu
     CUDA: median_cuda
+    PrivateUse1: median_zoom
     MPS: median_mps
   autogen: median.out
 
@@ -3957,6 +3967,7 @@
   dispatch:
     CPU: median_out_cpu
     CUDA: median_out_cuda
+    PrivateUse1: median_out_zoom
     MPS: median_out_mps
 
 - func: median.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -3969,6 +3980,7 @@
   dispatch:
     CPU: nanmedian_cpu
     CUDA: nanmedian_cuda
+    PrivateUse1: nanmedian_zoom
   autogen: nanmedian.out
 
 - func: nanmedian.dim(Tensor self, int dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -3980,6 +3992,7 @@
   dispatch:
     CPU: nanmedian_out_cpu
     CUDA: nanmedian_out_cuda
+    PrivateUse1: nanmedian_out_zoom
 
 - func: nanmedian.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
   variants: function, method
@@ -4108,6 +4121,7 @@
   dispatch:
     CPU: mm_out_cpu
     CUDA: mm_out_cuda
+    PrivateUse1: mm_out_zoom
     MPS: mm_out_mps
     SparseCPU, SparseCUDA: _sparse_mm_out
     SparseCsrCPU, SparseCsrCUDA: _sparse_csr_mm_out
@@ -4192,7 +4206,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: mul_out
+    CPU, CUDA, PrivateUse1: mul_out
     MPS: mul_out_mps
     SparseCPU: mul_out_sparse_cpu
     SparseCUDA: mul_out_sparse_cuda
@@ -4835,7 +4849,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: neg_out
+    CPU, CUDA, PrivateUse1: neg_out
     MPS: neg_out_mps
     SparseCPU, SparseCUDA: neg_out_sparse
     SparseCsrCPU, SparseCsrCUDA: neg_sparse_csr_out
@@ -4898,7 +4912,7 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, Meta, QuantizedCPU, QuantizedCUDA, ZeroTensor, MPS: _reshape_alias
+    CPU, CUDA, PrivateUse1, Meta, QuantizedCPU, QuantizedCUDA, ZeroTensor, MPS: _reshape_alias
     # We don't need to support mkldnn since this is handled explicitly by the reshape operator.
 
 - func: _mkldnn_reshape(Tensor self, int[] shape) -> Tensor
@@ -5301,7 +5315,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sin_out
+    CPU, CUDA, PrivateUse1: sin_out
     MPS: sin_out_mps
     SparseCsrCPU, SparseCsrCUDA: sin_sparse_csr_out
     SparseCPU, SparseCUDA: sin_sparse_out
@@ -5506,6 +5520,7 @@
   dispatch:
     CPU: softmax_cpu_out
     CUDA: softmax_cuda_out
+    PrivateUse1: softmax_zoom_out
     MPS: softmax_mps_out
 
 - func: _softmax_backward_data(Tensor grad_output, Tensor output, int dim, ScalarType input_dtype) -> Tensor
@@ -5518,6 +5533,7 @@
   dispatch:
     CPU: softmax_backward_cpu_out
     CUDA: softmax_backward_cuda_out
+    PrivateUse1: softmax_backward_zoom_out
     MPS: softmax_backward_mps_out
 
 - func: unsafe_split.Tensor(Tensor self, SymInt split_size, int dim=0) -> Tensor[]
@@ -6817,7 +6833,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: zero_
+    CPU, CUDA, PrivateUse1: zero_
     MPS: zero_mps_
     Meta: zero_meta_
     SparseCPU, SparseCUDA, SparseMeta: zero_sparse_
@@ -6831,7 +6847,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sub_out
+    CPU, CUDA, PrivateUse1: sub_out
     MPS: sub_out_mps
     SparseCPU, SparseCUDA: sub_out_sparse
   tags: pointwise
@@ -7943,6 +7959,7 @@
   dispatch:
     CPU: masked_fill__cpu
     CUDA: masked_fill__cuda
+    PrivateUse1: masked_fill__zoom
     QuantizedCPU: masked_fill__quantized_cpu
     QuantizedCUDA: masked_fill__quantized_cuda
     MPS: masked_fill__mps
@@ -7962,6 +7979,7 @@
   dispatch:
     CPU: masked_fill__cpu
     CUDA: masked_fill__cuda
+    PrivateUse1: masked_fill__zoom
     QuantizedCPU: masked_fill__quantized_cpu
     QuantizedCUDA: masked_fill__quantized_cuda
     MPS: masked_fill__mps
@@ -7993,12 +8011,14 @@
 - func: _masked_softmax(Tensor self, Tensor mask, int? dim=None, int? mask_type=None) -> Tensor
   dispatch:
     CUDA: masked_softmax_cuda
+    PrivateUse1: masked_softmax_zoom
     CPU: masked_softmax_cpu
   autogen: _masked_softmax.out
 
 - func: _masked_softmax_backward(Tensor grad_output, Tensor output, Tensor mask, int? dim=None) -> Tensor
   dispatch:
     CUDA: masked_softmax_backward_cuda
+    PrivateUse1: masked_softmax_backward_zoom
     CPU: masked_softmax_backward_cpu
   autogen: _masked_softmax_backward.out
 
@@ -8044,6 +8064,7 @@
   dispatch:
     CPU: index_add_cpu_out
     CUDA: index_add_cuda_out
+    PrivateUse1: index_add_zoom_out
     MPS: index_add_mps_out
 
 - func: index_add_(Tensor(a!) self, int dim, Tensor index, Tensor source, *, Scalar alpha=1) -> Tensor(a!)
@@ -8065,6 +8086,7 @@
   dispatch:
     CPU: index_reduce_cpu_out
     CUDA: index_reduce_cuda_out
+    PrivateUse1: index_reduce_zoom_out
 
 - func: index_reduce_(Tensor(a!) self, int dim, Tensor index, Tensor source, str reduce, *, bool include_self=True) -> Tensor(a!)
   structured_delegate: index_reduce.out
@@ -8725,6 +8747,7 @@
   dispatch:
     CPU: triu_cpu
     CUDA: triu_cuda
+    PrivateUse1: triu_zoom
     MPS: triu_mps_out
 
 - func: triu(Tensor self, int diagonal=0) -> Tensor
@@ -8736,6 +8759,7 @@
   dispatch:
     CPU: tril_cpu
     CUDA: tril_cuda
+    PrivateUse1: tril_zoom
     MPS: tril_mps_out
 
 - func: tril(Tensor self, int diagonal=0) -> Tensor
@@ -8759,6 +8783,7 @@
   dispatch:
     CPU: trace_cpu
     CUDA: trace_cuda
+    PrivateUse1: trace_zoom
     MPS: trace_mps
   autogen: trace.out
 
@@ -8874,7 +8899,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: ge_Scalar_out
+    CPU, CUDA, PrivateUse1: ge_Scalar_out
     MPS: ge_scalar_out_mps
     QuantizedCPU: ge_out_quantized_cpu
   tags: pointwise
@@ -8893,7 +8918,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: ge_Tensor_out
+    CPU, CUDA, PrivateUse1: ge_Tensor_out
     MPS: ge_tensor_out_mps
     QuantizedCPU: ge_out_quantized_cpu
   tags: pointwise
@@ -8938,7 +8963,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: le_Scalar_out
+    CPU, CUDA, PrivateUse1: le_Scalar_out
     MPS: le_scalar_out_mps
     QuantizedCPU: le_out_quantized_cpu
   tags: pointwise
@@ -8956,7 +8981,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: le_Tensor_out
+    CPU, CUDA, PrivateUse1: le_Tensor_out
     MPS: le_tensor_out_mps
     QuantizedCPU: le_out_quantized_cpu
   tags: pointwise
@@ -9001,7 +9026,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: gt_Scalar_out
+    CPU, CUDA, PrivateUse1: gt_Scalar_out
     MPS: gt_scalar_out_mps
     QuantizedCPU: gt_out_quantized_cpu
   tags: pointwise
@@ -9020,7 +9045,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: gt_Tensor_out
+    CPU, CUDA, PrivateUse1: gt_Tensor_out
     MPS: gt_tensor_out_mps
     QuantizedCPU: gt_out_quantized_cpu
   tags: pointwise
@@ -9065,7 +9090,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: lt_Scalar_out
+    CPU, CUDA, PrivateUse1: lt_Scalar_out
     MPS: lt_scalar_out_mps
     QuantizedCPU: lt_out_quantized_cpu
   tags: pointwise
@@ -9083,7 +9108,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: lt_Tensor_out
+    CPU, CUDA, PrivateUse1: lt_Tensor_out
     MPS: lt_tensor_out_mps
     QuantizedCPU: lt_out_quantized_cpu
   tags: pointwise
@@ -9141,6 +9166,7 @@
   dispatch:
     CPU, QuantizedCPU: index_select_out_cpu_
     CUDA, QuantizedCUDA: index_select_out_cuda
+    PrivateUse1: index_select_out_zoom
     MPS: index_select_out_mps
 
 - func: index_select(Tensor self, int dim, Tensor index) -> Tensor
@@ -9150,6 +9176,7 @@
     QuantizedCPU: index_select_quantized_cpu_
     CUDA: index_select_cuda
     QuantizedCUDA: index_select_quantized_cuda
+    PrivateUse1: index_select_zoom
     SparseCPU: index_select_sparse_cpu
     SparseCUDA: index_select_sparse_cuda
     MPS: index_select_mps
@@ -9574,7 +9601,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sign_out
+    CPU, CUDA, PrivateUse1: sign_out
     MPS: sign_out_mps
     SparseCPU, SparseCUDA: sign_sparse_out
     SparseCsrCPU, SparseCsrCUDA: sign_sparse_csr_out
@@ -9594,6 +9621,7 @@
   dispatch:
     CPU: signbit_out
     CUDA: signbit_out
+    PrivateUse1: signbit_out
     MPS: signbit_out_mps
     SparseCPU, SparseCUDA: signbit_sparse_out
     SparseCsrCPU, SparseCsrCUDA: signbit_sparse_csr_out
@@ -10009,7 +10037,7 @@
 - func: sort.values_stable(Tensor self, *, bool? stable, int dim=-1, bool descending=False, Tensor(a!) values, Tensor(b!) indices) -> (Tensor(a!) values, Tensor(b!) indices)
   structured: True
   dispatch:
-    CPU, CUDA: sort_stable_out
+    CPU, CUDA, PrivateUse1: sort_stable_out
     MPS: sort_stable_out_mps
 
 - func: sort(Tensor self, int dim=-1, bool descending=False) -> (Tensor values, Tensor indices)
@@ -10059,6 +10087,7 @@
   dispatch:
     CPU: topk_out_cpu
     CUDA: topk_out_cuda
+    PrivateUse1: topk_out_zoom
     MPS: topk_out_mps
 
 - func: topk(Tensor self, SymInt k, int dim=-1, bool largest=True, bool sorted=True) -> (Tensor values, Tensor indices)
@@ -10077,7 +10106,7 @@
   device_check: NoCheck
   structured: True
   dispatch:
-    CPU, CUDA: all_all_out
+    CPU, CUDA, PrivateUse1: all_all_out
     MPS: all_all_out_mps
 
 - func: any(Tensor self) -> Tensor
@@ -10092,7 +10121,7 @@
   device_check: NoCheck
   structured: True
   dispatch:
-    CPU, CUDA: any_all_out
+    CPU, CUDA, PrivateUse1: any_all_out
     MPS: any_all_out_mps
 
 - func: renorm.out(Tensor self, Scalar p, int dim, Scalar maxnorm, *, Tensor(a!) out) -> Tensor(a!)

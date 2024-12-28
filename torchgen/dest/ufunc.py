@@ -349,7 +349,7 @@ AT_DISPATCH_CASE(at::ScalarType::{dtype},
     {dtype_cases_str}
   );
 }}
-REGISTER_DISPATCH({stub_sig.name}, &{stub_sig.kernel_name});
+REGISTER_PRIVATEUSE1_DISPATCH({stub_sig.name}, &{stub_sig.kernel_name});
 {sig.defn()} {{
   {stub_sig.direct_call(sig.arguments())};
 }}
