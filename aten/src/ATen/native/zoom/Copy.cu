@@ -27,33 +27,8 @@ namespace at::native {
 // forward decl, defined below
 void direct_copy_kernel_zoom(TensorIteratorBase &iter);
 
-// NB: Ignores the negative bit on tensors
-CONSTEXPR_EXCEPT_WIN_CUDA char neg_name[] = "neg_kernel";
-void neg_kernel_zoom(TensorIteratorBase& iter) {
-  auto dtype = iter.dtype();
-  if (at::isComplexType(dtype)) {
-  static const auto neg_string = jiterator_stringify(
-      template <typename T>
-      T neg_kernel(T a) {
-        return -a;
-      }
-  ); // neg_string
-  AT_DISPATCH_COMPLEX_TYPES_AND(kComplexHalf, dtype, "neg_zoom", [&]() {
-      jitted_gpu_kernel<
-        /*name=*/ neg_name,
-        /*return_dtype=*/ scalar_t,
-        /*common_dtype=*/ scalar_t,
-        /*arity=*/ 1>(iter, neg_string);
-  });
-
-  } else {
-  AT_DISPATCH_ALL_TYPES_AND2(ScalarType::Half, ScalarType::BFloat16, dtype, "neg_zoom", [&]() {
-    gpu_kernel(iter, []GPU_LAMBDA(scalar_t a) -> scalar_t {
-      return -a;
-    });
-  });
-  }
-}
+// forward decl, defined in UnarySignKernels.cu
+void neg_kernel_zoom(TensorIteratorBase& iter);
 
 // NB: Ignores the negative bit on tensors
 CONSTEXPR_EXCEPT_WIN_CUDA char conj_name[] = "conj_kernel";
