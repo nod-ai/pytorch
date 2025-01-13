@@ -28,14 +28,15 @@ namespace at::native {
         } else if (batch1.size(2) == 0) {
             return result.zero_();
         }
+        TORCH_CHECK(batch1.sizes()[2] == batch2.sizes()[1], "batch1 dim 2 must match batch2 dim 1");
 
         c10::MaybeOwned<Tensor> result_ = c10::MaybeOwned<Tensor>::borrowed(result);
         IntArrayRef result_strides = result.strides();
         IntArrayRef result_sizes = result.sizes();
 
-        int m = result_sizes[1];
-        int n = result_sizes[2];
-        int k = batch1.sizes()[2];
+        int m = batch1.sizes()[1];
+        int n = batch1.sizes()[2];
+        int k = batch2.sizes()[2];
         int num_batches = result_->sizes()[0];
 
         AT_DISPATCH_FLOATING_TYPES_AND2(at::ScalarType::Half, at::ScalarType::BFloat16, self.scalar_type(), "bmm_hip", [&] {
