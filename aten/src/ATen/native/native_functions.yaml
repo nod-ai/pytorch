@@ -816,7 +816,7 @@
 - func: argmax.out(Tensor self, int? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: argmax_out
+    CPU, CUDA, PrivateUse1: argmax_out
     MPS: argmax_out_mps
 
 - func: argmin(Tensor self, int? dim=None, bool keepdim=False) -> Tensor
@@ -828,7 +828,7 @@
 - func: argmin.out(Tensor self, int? dim=None, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: argmin_out
+    CPU, CUDA, PrivateUse1: argmin_out
     MPS: argmin_out_mps
 
 - func: acosh(Tensor self) -> Tensor
@@ -1194,7 +1194,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: bitwise_not_out
+    CPU, CUDA, PrivateUse1: bitwise_not_out
     MPS: bitwise_not_out_mps
   tags: pointwise
 
@@ -2564,7 +2564,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: exp_out
+    CPU, CUDA, PrivateUse1: exp_out
     MPS: exp_out_mps
   tags: pointwise
 
@@ -2609,7 +2609,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: expm1_out
+    CPU, CUDA, PrivateUse1: expm1_out
     MPS: expm1_out_mps
     SparseCPU, SparseCUDA: expm1_sparse_out
     SparseCsrCPU, SparseCsrCUDA: expm1_sparse_csr_out
@@ -3061,7 +3061,7 @@
   precomputed:
   - indices -> DimVector sizes, DimVector strides
   dispatch:
-    CPU, CUDA, MPS: index_out
+    CPU, CUDA, MPS, PrivateUse1: index_out
 
 # Used by inductor to signal indexing without bounds checks
 # Note that we don't support boolean indexing, to avoid dynamic output shapes
@@ -3076,7 +3076,7 @@
   precomputed:
   - dim -> int dim
   dispatch:
-    CPU, CUDA: index_copy_out
+    CPU, CUDA, PrivateUse1: index_copy_out
 
 - func: index_copy_(Tensor(a!) self, int dim, Tensor index, Tensor source) -> Tensor(a!)
   variants: method
@@ -3298,7 +3298,7 @@
 
 - func: nan_to_num.out(Tensor self, float? nan=None, float? posinf=None, float? neginf=None, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: nan_to_num_out
+    CPU, CUDA, PrivateUse1: nan_to_num_out
     MPS: nan_to_num_out_mps
     SparseCPU, SparseCUDA: nan_to_num_sparse_out
   tags: pointwise
@@ -3797,7 +3797,7 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: aminmax_out
+    CPU, CUDA, PrivateUse1: aminmax_out
     MPS: aminmax_out_mps
 
 - func: _compute_linear_combination(Tensor input, Tensor coefficients) -> Tensor
@@ -3822,7 +3822,7 @@
   precomputed:
   - dim -> int dim
   dispatch:
-    CPU, CUDA: max_out
+    CPU, CUDA, PrivateUse1: max_out
     MPS: max_out_mps
 
 - func: max.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -4013,7 +4013,7 @@
   precomputed:
   - dim -> int dim
   dispatch:
-    CPU, CUDA: min_out
+    CPU, CUDA, PrivateUse1: min_out
     MPS: min_out_mps
 
 - func: min.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
@@ -5132,7 +5132,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: rsqrt_out
+    CPU, CUDA, PrivateUse1: rsqrt_out
     MPS: rsqrt_out_mps
   tags: pointwise
 
@@ -5764,7 +5764,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: sum_out
+    CPU, CUDA, PrivateUse1: sum_out
     MPS: sum_out_mps
 
 - func: sum.DimnameList_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
@@ -5778,12 +5778,12 @@
 - func: nansum(Tensor self, int[1]? dim=None, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
   variants: function, method
   dispatch:
-    CPU, CUDA: nansum
+    CPU, CUDA, PrivateUse1: nansum
     MPS: nansum_mps
 
 - func: nansum.out(Tensor self, int[1]? dim=None, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: nansum_out
+    CPU, CUDA, PrivateUse1: nansum_out
     MPS: nansum_out_mps
 
 - func: sum_to_size(Tensor self, SymInt[] size) -> Tensor
@@ -5816,7 +5816,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sqrt_out
+    CPU, CUDA, PrivateUse1: sqrt_out
     MPS: sqrt_out_mps
     SparseCPU, SparseCUDA: sqrt_sparse_out
     SparseCsrCPU, SparseCsrCUDA: sqrt_sparse_csr_out
@@ -5911,7 +5911,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: prod
+    CPU, CUDA, PrivateUse1: prod
     MPS: prod_mps
   autogen: prod.out
   tags: core
@@ -5926,7 +5926,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: prod_out
+    CPU, CUDA, PrivateUse1: prod_out
     MPS: prod_out_mps
 
 - func: prod.dim_Dimname(Tensor self, Dimname dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
@@ -6107,7 +6107,7 @@
 - func: flip(Tensor self, int[] dims) -> Tensor
   variants: function, method
   dispatch:
-    CPU, QuantizedCPU, CUDA, QuantizedCUDA: flip
+    CPU, QuantizedCPU, CUDA, QuantizedCUDA, PrivateUse1: flip
     MPS: flip_mps
   autogen: flip.out
   tags: core
@@ -6770,7 +6770,7 @@
 
 - func: frexp.Tensor_out(Tensor self, *, Tensor(a!) mantissa, Tensor(b!) exponent) -> (Tensor(a!) mantissa, Tensor(b!) exponent)
   dispatch:
-    CPU, CUDA: frexp_out
+    CPU, CUDA, PrivateUse1: frexp_out
   tags: pointwise
 
 # Deprecated (v.1.12)
@@ -8048,7 +8048,7 @@
 - func: put_(Tensor(a!) self, Tensor index, Tensor source, bool accumulate=False) -> Tensor(a!)
   variants: method
   dispatch:
-    CPU, CUDA: put_
+    CPU, CUDA, PrivateUse1: put_
   autogen: put.out
 
 - func: put(Tensor self, Tensor index, Tensor source, bool accumulate=False) -> Tensor
@@ -8102,6 +8102,7 @@
   dispatch:
     CPU: index_fill_
     CUDA: index_fill_
+    PrivateUse1: index_fill_
     MPS: index_fill_mps_
   autogen: index_fill.int_Scalar_out
 
@@ -8115,7 +8116,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method
   dispatch:
-    CPU, CUDA: index_fill_
+    CPU, CUDA, PrivateUse1: index_fill_
     MPS: index_fill_mps_
   autogen: index_fill.int_Tensor_out
 
@@ -8154,7 +8155,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_src_out
+    CPU, CUDA, PrivateUse1: scatter_src_out
     MPS: scatter_src_out_mps
 
 - func: scatter.value(Tensor self, int dim, Tensor index, Scalar value) -> Tensor
@@ -8170,7 +8171,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_value_out
+    CPU, CUDA, PrivateUse1: scatter_value_out
     MPS: scatter_value_out_mps
 
 - func: scatter.reduce(Tensor self, int dim, Tensor index, Tensor src, *, str reduce) -> Tensor
@@ -8185,7 +8186,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_reduce_out
+    CPU, CUDA, PrivateUse1: scatter_reduce_out
     MPS: scatter_reduce_out_mps
 
 - func: scatter.value_reduce(Tensor self, int dim, Tensor index, Scalar value, *, str reduce) -> Tensor
@@ -8200,7 +8201,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_value_reduce_out
+    CPU, CUDA, PrivateUse1: scatter_value_reduce_out
     MPS: scatter_value_reduce_out_mps
 
 - func: scatter.dimname_src(Tensor self, Dimname dim, Tensor index, Tensor src) -> Tensor
@@ -8222,7 +8223,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_add
+    CPU, CUDA, PrivateUse1: scatter_add
     MPS: scatter_add_mps_out
 
 - func: scatter_add.dimname(Tensor self, Dimname dim, Tensor index, Tensor src) -> Tensor
@@ -8241,7 +8242,7 @@
   structured: True
   variants: function
   dispatch:
-    CPU, CUDA: scatter_reduce_two
+    CPU, CUDA, PrivateUse1: scatter_reduce_two
 
 - func: eq_.Scalar(Tensor(a!) self, Scalar other) -> Tensor(a!)
   structured_delegate: eq.Scalar_out
@@ -8259,7 +8260,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_and_out
+    CPU, CUDA, PrivateUse1: bitwise_and_out
     MPS: bitwise_and_out_mps
   tags: pointwise
 
@@ -8326,7 +8327,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_or_out
+    CPU, CUDA, PrivateUse1: bitwise_or_out
     MPS: bitwise_or_out_mps
   tags: pointwise
 
@@ -8393,7 +8394,7 @@
   structured_inherits: TensorIteratorBase
   variants: function
   dispatch:
-    CPU, CUDA: bitwise_xor_out
+    CPU, CUDA, PrivateUse1: bitwise_xor_out
     MPS: bitwise_xor_out_mps
   tags: pointwise
 
@@ -8718,7 +8719,7 @@
   tags: nondeterministic_seeded
   variants: method
   dispatch:
-    CPU, CUDA: exponential_
+    CPU, CUDA, PrivateUse1: exponential_
     MPS: exponential_mps_
   autogen: exponential, exponential.out
 
@@ -9150,12 +9151,12 @@
 
 - func: take.out(Tensor self, Tensor index, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: take_out
+    CPU, CUDA, PrivateUse1: take_out
 
 - func: take(Tensor self, Tensor index) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: take
+    CPU, CUDA, PrivateUse1: take
 
 - func: take_along_dim.out(Tensor self, Tensor indices, int? dim=None, *, Tensor(a!) out) -> Tensor(a!)
 
@@ -9248,7 +9249,7 @@
 - func: gather.out(Tensor self, int dim, Tensor index, *, bool sparse_grad=False, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: gather_out
+    CPU, CUDA, PrivateUse1: gather_out
     MPS: gather_out_mps
 
 - func: gather(Tensor self, int dim, Tensor index, *, bool sparse_grad=False) -> Tensor
@@ -9464,13 +9465,13 @@
 - func: multinomial.out(Tensor self, int num_samples, bool replacement=False, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
   tags: nondeterministic_seeded
   dispatch:
-    CPU, CUDA: multinomial_out
+    CPU, CUDA, PrivateUse1: multinomial_out
     MPS: multinomial_out_mps
 
 - func: multinomial(Tensor self, int num_samples, bool replacement=False, *, Generator? generator=None) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: multinomial
+    CPU, CUDA, PrivateUse1: multinomial
     MPS: multinomial_mps
   tags: nondeterministic_seeded
 
@@ -9905,14 +9906,14 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: min
+    CPU, CUDA, PrivateUse1: min
     MPS: min_mps
     QuantizedCPU: min_quantized_cpu
 
 - func: min.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: min_unary_out
+    CPU, CUDA, PrivateUse1: min_unary_out
     QuantizedCPU: min_quantized_unary_out
 
 - func: fmin(Tensor self, Tensor other) -> Tensor
@@ -9933,7 +9934,7 @@
   device_check: NoCheck   # TensorIterator
   variants: method, function
   dispatch:
-    CPU, CUDA: max
+    CPU, CUDA, PrivateUse1: max
     MPS: max_mps
     QuantizedCPU: max_quantized_cpu
 
@@ -9980,7 +9981,7 @@
 - func: max.unary_out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: max_unary_out
+    CPU, CUDA, PrivateUse1: max_unary_out
     QuantizedCPU: max_quantized_unary_out
 
 - func: minimum(Tensor self, Tensor other) -> Tensor
@@ -14092,7 +14093,7 @@
   python_module: linalg
   structured: True
   dispatch:
-    CPU, CUDA: linalg_vector_norm_out
+    CPU, CUDA, PrivateUse1: linalg_vector_norm_out
     MPS: linalg_vector_norm_out_mps
 
 - func: linalg_matrix_norm(Tensor self, Scalar ord, int[] dim=[-2,-1], bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
