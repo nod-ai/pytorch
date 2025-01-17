@@ -1097,12 +1097,18 @@ if(USE_ROCM OR USE_ZOOM)
     # This is needed for library added by hip_add_library (same for hip_add_executable)
     hip_include_directories(${Caffe2_HIP_INCLUDE})
 
-    set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+    if(USE_ZOOM)
+      set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+        hip::amdhip64 MIOpen hiprtc::hiprtc hipcub::hipcub)
+      list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS hip::hiprand)
+    else()
+      set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
       hip::amdhip64 MIOpen hiprtc::hiprtc) # libroctx will be linked in with MIOpen
 
-    # Math libraries
-    list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
-      roc::hipblas roc::rocblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver roc::hipblaslt)
+      # Math libraries
+      list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+        roc::hipblas roc::rocblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver roc::hipblaslt)
+    endif()
 
     # ---[ Kernel asserts
     # Kernel asserts is disabled for ROCm by default.
@@ -1244,7 +1250,7 @@ if(USE_GLOO)
       add_library(gloo SHARED IMPORTED)
       set_target_properties(gloo PROPERTIES IMPORTED_LOCATION ${Gloo_LIBRARY})
       # need to use Gloo_INCLUDE_DIRS over third_party/gloo to find Gloo's auto-generated config.h
-      include_directories(BEFORE SYSTEM ${Gloo_INCLUDE_DIRS})
+      include_directories(BEFORE SYSTEM ${Gloo_INCLUDE_DIRS})s
     endif()
     set(BUILD_TEST ${__BUILD_TEST})
     set(BUILD_BENCHMARK ${__BUILD_BENCHMARK})
