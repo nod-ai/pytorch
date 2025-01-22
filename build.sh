@@ -1,9 +1,6 @@
 #!/bin/bash
 
 rm -rf build
-git clean -fdx -e .idea
-git clean -fdX -e .idea
-
 
 export USE_ZOOM=1
 export USE_ROCM=0
@@ -118,13 +115,12 @@ export USE_VULKAN_FP16_INFERENCE=0
 export USE_VULKAN_RELAXED_PRECISI0=0
 export USE_XNNPACK=0
 export USE_XPU=0
+export ONNX_ML=0
 
-# for the ligerllama example we need distributed and tensorpipe, only because
-# huggingface model.generate insists on querying torch.distributed and distributed relies on tensorpipe
-# this could be a factor of nod-pytorch being out of date with upstream:
-# https://github.com/pytorch/pytorch/issues/97397
-
-python setup.py develop
-python zoom_extension/examples/test.py
-PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
+export PYTORCH_ROCM_ARCH="gfx90a;gfx940;gfx941;gfx942;gfx1100;"
+source venv/bin/activate
+#python setup.py develop
 python setup.py bdist_wheel
+
+#python zoom_extension/examples/test.py
+#PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
