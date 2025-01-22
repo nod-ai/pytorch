@@ -1459,7 +1459,7 @@ def _addmm_activation(
 ):
     out = addmm(self, mat1, mat2, beta, alpha)
     if use_gelu:
-        if self.is_cuda:
+        if self.is_cuda or self.is_zoom:
             return aten.gelu(out, approximate="tanh")
         else:
             return aten.gelu(out)
@@ -2608,7 +2608,7 @@ def _index_copy(
 def log_sigmoid_forward(self: Tensor) -> Tuple[Tensor, Tensor]:
     min = torch.minimum(self.new_zeros(()), self)
     z = torch.exp(-torch.abs(self))
-    if self.is_cuda:
+    if (self.is_cuda or self.is_zoom):
         buffer = self.new_zeros((0,))
     else:
         buffer = z
@@ -2853,7 +2853,7 @@ def _upsample_nearest(
 
         # following "heuristic: only use channels_last path when it's faster than the contiguous path"
         n_channels = input.shape[1]
-        if input.device.type == "cuda" and n_channels < 4:
+        if (input.device.type == "cuda" or input.device.type == "zoom") and n_channels < 4:
             memory_format = torch.contiguous_format
 
         result = result.contiguous(memory_format=memory_format)
@@ -3686,7 +3686,7 @@ def _upsample_linear(
     memory_format = utils.suggest_memory_format(input)
 
     # following "heuristic: only use channels_last path when it's faster than the contiguous path"
-    if input.device.type == "cuda" and n_channels < 16:
+    if (input.device.type == "cuda" or input.device.type == "zoom") and n_channels < 16:
         memory_format = torch.contiguous_format
 
     assert isinstance(result, torch.Tensor)

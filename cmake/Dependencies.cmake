@@ -1155,7 +1155,7 @@ if(USE_CUDNN)
 endif()
 
 # ---[ HIP
-if(USE_ROCM)
+if(USE_ROCM OR USE_ZOOM)
   # This prevents linking in the libtinfo from /opt/conda/lib which conflicts with ROCm libtinfo.
   # Currently only active for Ubuntu 20.04 and greater versions.
   if(UNIX AND EXISTS "/etc/os-release")
@@ -1184,7 +1184,12 @@ if(USE_ROCM)
   include(${CMAKE_CURRENT_LIST_DIR}/public/LoadHIP.cmake)
   if(PYTORCH_FOUND_HIP)
     message(INFO "Compiling with HIP for AMD.")
-    caffe2_update_option(USE_ROCM ON)
+    if(USE_ROCM)
+      caffe2_update_option(USE_ROCM ON)
+    endif()
+    if(USE_ZOOM)
+      caffe2_update_option(USE_ZOOM ON)
+    endif()
 
     if(USE_NCCL AND NOT USE_SYSTEM_NCCL)
       message(INFO "Forcing USE_SYSTEM_NCCL to ON since it's required by using RCCL")
@@ -1235,12 +1240,17 @@ if(USE_ROCM)
     # This is needed for library added by hip_add_library (same for hip_add_executable)
     hip_include_directories(${Caffe2_HIP_INCLUDE})
 
-    set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+    if(USE_ZOOM)
+      set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+      ${PYTORCH_HIP_LIBRARIES} ${hipcub_LIBRARIES} ${ROCM_HIPRTC_LIB})
+      list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS hip::hiprand)
+    else()
+      set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
       ${PYTORCH_HIP_LIBRARIES} ${PYTORCH_MIOPEN_LIBRARIES} ${hipcub_LIBRARIES} ${ROCM_HIPRTC_LIB} ${ROCM_ROCTX_LIB})
-    list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS ${hipblaslt_LIBRARIES})
-
-    list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
-      roc::hipblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver)
+      list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS ${hipblaslt_LIBRARIES})
+      list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
+        roc::hipblas hip::hipfft hip::hiprand roc::hipsparse roc::hipsolver)
+    endif()
 
     # ---[ Kernel asserts
     # Kernel asserts is disabled for ROCm by default.
@@ -1251,7 +1261,10 @@ if(USE_ROCM)
       message(STATUS "Disabling Kernel Assert for ROCm")
     endif()
 
-    include(${CMAKE_CURRENT_LIST_DIR}/External/aotriton.cmake)
+    if(USE_ROCM)
+      include(${CMAKE_CURRENT_LIST_DIR}/External/aotriton.cmake)
+    endif()
+    
     if(USE_CUDA)
       caffe2_update_option(USE_MEM_EFF_ATTENTION OFF)
     endif()

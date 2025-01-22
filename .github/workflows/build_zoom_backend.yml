@@ -1,0 +1,149 @@
+name: "Build Zoom wheel"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_debug_with_tmate:
+        type: boolean
+        description: 'Run the build with tmate session'
+        required: false
+        default: false
+      debug_with_tmate:
+        type: boolean
+        description: 'Run the build with a tmate session ONLY in case of failure'
+        required: false
+        default: false
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "ubuntu-22.04"
+            runs-on: "nodai-amdgpu-mi250-x86-64"
+            # runs-on: "azure-cpubuilder-linux-scale"
+            # container: "rocm/pytorch:rocm6.2.3_ubuntu22.04_py3.10_pytorch_release_2.3.0"
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: ${{ matrix.name }}
+
+    env:
+      CACHE_DIR: ${{ github.workspace }}/.container-cache
+      # either the PR number or `branch-N` where N always increments
+      CACHE_KEY: linux-build-test-cpp-asserts-manylinux-v2-${{ format('{0}-{1}', github.ref_name, github.run_number) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    permissions:
+      id-token: write
+      contents: write
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4.2.2
+        with:
+          submodules: true
+
+      - name: Enable cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key:  ${{ env.CACHE_KEY }}
+          restore-keys: linux-build-test-cpp-
+
+#      - name: "Setting up Python"
+#        run: |
+#          sudo apt update
+#          sudo apt install software-properties-common -y
+#          sudo add-apt-repository ppa:deadsnakes/ppa -y
+#          sudo apt install python3.11 python3-pip -y
+#          sudo apt-get install python3.11-dev python3.11-venv build-essential -y
+
+      - name: "Build PyTorch"
+        id: build
+        run: |
+          
+          # curl -sSL https://raw.githubusercontent.com/mrodden/get-rocm/refs/heads/master/get-rocm.py -o get-rocm.py
+          # sudo python3.11 get-rocm.py --rocm-version 6.2.3
+
+          export CCACHE_DIR="${{ env.CACHE_DIR }}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          export CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,time_macros
+
+          python3.11 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          ./build.sh
+
+      - name: "Audit"
+        id: audit
+        run: |
+
+          sudo apt install patchelf
+          source venv/bin/activate
+          pip install auditwheel
+          auditwheel repair -w dist --plat manylinux_2_39_x86_64 dist/torch*
+
+      - name: "Test"
+        id: test
+        run: |
+
+          # smoke test
+          python zoom_extension/examples/test.py
+          # device tests
+          PYTORCH_TEST_WITH_SLOW=1 TORCH_TEST_DEVICES=zoom_extension/test/pytorch_test_base.py ./test.sh
+          
+          cat zoom_test_errors.log
+          cat zoom_unimplemented_operators.log
+
+      - name: Save cache
+        uses: actions/cache/save@v3
+        if: ${{ !cancelled() }}
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ env.CACHE_KEY }}
+
+      - name: Upload artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}_artifact
+          path: dist
+          if-no-files-found: warn
+
+      - name: Release current commit
+        if: ${{ !cancelled() }}
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          artifacts: "dist/torch*.whl"
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "latest"
+          name: "latest"
+          removeArtifacts: false
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
+
+      - name: "Setup tmate session"
+        if: ${{ (failure() && inputs.debug_with_tmate) || inputs.force_debug_with_tmate }}
+        uses: mxschmitt/action-tmate@v3.18
+        with:
+          limit-access-to-actor: true
+          install-dependencies: ${{ startsWith(matrix.runs-on, 'macos') || startsWith(matrix.runs-on, 'windows') }}

@@ -310,7 +310,7 @@ constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 #define C10_HIP_HOST_DEVICE
 #endif
 
-#if defined(USE_ROCM)
+#if defined(USE_ROCM) || defined(USE_ZOOM)
 #define C10_WARP_SIZE warpSize // = 64 or 32 (Defined in hip_runtime.h)
 #else
 #define C10_WARP_SIZE 32
