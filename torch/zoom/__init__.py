@@ -44,7 +44,7 @@ else:
             return -1
         raise RuntimeError("PyTorch was compiled without Zoom support")
 
-
+from .zoom_triton_mm import *
 
 _initialized = False
 _tls = threading.local()
