@@ -797,6 +797,7 @@
   dispatch:
     CPU, Meta: arange_out
     CUDA: arange_cuda_out
+    PrivateUse1: arange_zoom_out
     MPS: arange_mps_out
   cpp_no_default_args: ['step']
 
@@ -3431,6 +3432,7 @@
   dispatch:
     CPU, Meta: linspace_out
     CUDA: linspace_cuda_out
+    PrivateUse1: linspace_zoom_out
     MPS: linspace_out_mps
 
 - func: linspace.Tensor_Tensor_out(Tensor start, Tensor end, int steps, *, Tensor(a!) out) -> Tensor(a!)
@@ -3647,6 +3649,7 @@
   dispatch:
     CPU, Meta: logspace_out
     CUDA: logspace_cuda_out
+    PrivateUse1: logspace_zoom_out
 
 - func: logspace.Tensor_Tensor_out(Tensor start, Tensor end, int steps, float base=10.0, *, Tensor(a!) out) -> Tensor(a!)
   category_override: factory
@@ -4795,6 +4798,7 @@
   dispatch:
     CPU, Meta: range_out
     CUDA: range_cuda_out
+    PrivateUse1: range_zoom_out
     MPS: range_mps_out
   cpp_no_default_args: ['step']
 
