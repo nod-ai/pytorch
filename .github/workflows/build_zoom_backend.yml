@@ -79,7 +79,8 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r requirements.txt
-          sudo ./build.sh
+          chmod +x ./build.sh
+          ./build.sh
 
       - name: "Audit"
         id: audit
