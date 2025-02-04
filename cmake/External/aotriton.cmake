@@ -6,7 +6,10 @@ if(NOT __AOTRITON_INCLUDED)
   set(__AOTRITON_INSTALL_DIR "${PROJECT_SOURCE_DIR}/torch")
   ExternalProject_Add(aotriton_external
     GIT_REPOSITORY https://github.com/ROCm/aotriton.git
-    GIT_TAG 24a3fe9cb57e5cda3c923df29743f9767194cc27
+    # Note (Arham): I changed this commit because the one in nod-ai was old and had some errors,
+    # in upstream pytorch this commit tag is determined by some CI actions that would be useful to copy
+    # in order to keep this working
+    GIT_TAG 04b5df8c8123f90cba3ede7e971e6fbc6040d506
     SOURCE_DIR ${__AOTRITON_SOURCE_DIR}
     BINARY_DIR ${__AOTRITON_BUILD_DIR}
     PREFIX ${__AOTRITON_INSTALL_DIR}

@@ -21,6 +21,7 @@ c10::Allocator* GetCPUAllocatorMaybePinned(bool pin_memory) {
     } else if (at::globalContext().hasXPU()) {
       return at::detail::getXPUHooks().getPinnedMemoryAllocator();
     } else if(at::isPrivateUse1HooksRegistered()) {
+      // TODO(Arham): exchange keys
       return at::GetPrivateUse1HooksInterface()->getPinnedMemoryAllocator();
     } else {
       TORCH_CHECK(false, "Need to provide pin_memory allocator to use pin memory.")

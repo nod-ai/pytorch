@@ -1,0 +1,125 @@
+name: "Build PyTorch"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_debug_with_tmate:
+        type: boolean
+        description: 'Run the build with tmate session'
+        required: false
+        default: false
+      debug_with_tmate:
+        type: boolean
+        description: 'Run the build with a tmate session ONLY in case of failure'
+        required: false
+        default: false
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "ubuntu-22.04"
+            runs-on: "mi300"
+            # container: "rocm/pytorch:rocm6.2.3_ubuntu22.04_py3.10_pytorch_release_2.3.0"
+            # runs-on: "nod-ai-shared-cpubuilder-manylinux-x86_64"
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: ${{ matrix.name }}
+
+    env:
+      CACHE_DIR: ${{ github.workspace }}/.container-cache
+      # either the PR number or `branch-N` where N always increments
+      CACHE_KEY: linux-build-test-cpp-asserts-manylinux-v2-${{ format('{0}-{1}', github.ref_name, github.run_number) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    permissions:
+      id-token: write
+      contents: write
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: "Check out repository"
+        uses: actions/checkout@v4.2.2
+        with:
+          submodules: true
+
+      - name: Enable cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key:  ${{ env.CACHE_KEY }}
+          restore-keys: linux-build-test-cpp-
+
+      - name: "Build PyTorch"
+        id: build
+        run: |
+
+          export CCACHE_DIR="${{ env.CACHE_DIR }}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          export CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,time_macros
+
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: "Audit"
+        id: audit
+        run: |
+
+          sudo apt install patchelf
+          source venv/bin/activate
+          pip install auditwheel
+          auditwheel repair -w dist --plat manylinux_2_39_x86_64 dist/torch*
+
+      - name: Save cache
+        uses: actions/cache/save@v3
+        if: ${{ !cancelled() }}
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ env.CACHE_KEY }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}_artifact
+          path: dist
+          if-no-files-found: warn
+
+      - name: Release current commit
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          artifacts: "dist/torch*.whl"
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          tag: "latest"
+          name: "latest"
+          removeArtifacts: false
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
+
+      - name: "Setup tmate session"
+        if: ${{ (failure() && inputs.debug_with_tmate) || inputs.force_debug_with_tmate }}
+        uses: mxschmitt/action-tmate@v3.18
+        with:
+          limit-access-to-actor: true
+          install-dependencies: ${{ startsWith(matrix.runs-on, 'macos') || startsWith(matrix.runs-on, 'windows') }}

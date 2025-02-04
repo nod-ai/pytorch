@@ -82,6 +82,12 @@ file(GLOB hip_nvrtc_stub_cpp "hip/nvrtc_stub/*.cpp")
 file(GLOB miopen_h "miopen/*.h")
 file(GLOB miopen_cpp "miopen/*.cpp")
 
+file(GLOB zoom_h "zoom/*.h" "zoom/detail/*.h" "zoom/*.cuh" "zoom/detail/*.cuh" "zoom/tunable/*.h" "zoom/jit/*.cuh" "zoom/jit/*.h")
+file(GLOB zoom_cpp "zoom/*.cpp" "zoom/detail/*.cpp" "zoom/jit/*.cpp")
+file(GLOB zoom_hip "zoom/*.cu" "zoom/detail/*.cu")
+file(GLOB zoom_hiprtc_stub_h "zoom/hiprtc_stub/*.h")
+file(GLOB zoom_hiprtc_stub_cpp "zoom/hiprtc_stub/*.cpp")
+
 file(GLOB mkl_cpp "mkl/*.cpp")
 file(GLOB mkldnn_cpp "mkldnn/*.cpp")
 
@@ -165,6 +171,13 @@ file(GLOB native_transformers_hip_hip "native/transformers/hip/*.hip")
 file(GLOB native_transformers_hip_cpp "native/transformers/hip/*.cpp")
 file(GLOB native_quantized_cudnn_hip_cpp "native/quantized/cudnn/hip/*.cpp")
 file(GLOB native_utils_cpp "native/utils/*.cpp")
+
+file(GLOB native_zoom_hip "native/zoom/*.cu")
+file(GLOB native_zoom_hip_h "native/zoom/*.cuh")
+file(GLOB native_zoom_cpp "native/zoom/*.cpp")
+file(GLOB native_zoom_linalg_cpp "native/zoom/linalg/*.cpp")
+file(GLOB native_sparse_zoom_hip "native/sparse/zoom/*.cu")
+file(GLOB native_sparse_zoom_cpp "native/sparse/zoom/*.cpp")
 
 # flash_attention sources
 file(GLOB flash_attention_cuda_cu "native/transformers/cuda/flash_attn/*.cu")
@@ -339,6 +352,26 @@ if(USE_ROCM)
     ${native_cudnn_hip_cpp}
     ${miopen_cpp}
     ${all_hip_cpp}
+  )
+endif()
+
+if(USE_ZOOM)
+  list(APPEND ATen_ZOOM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/zoom)
+  list(APPEND ATen_ZOOM_SRCS
+    ${ATen_ZOOM_SRCS}
+    ${zoom_hip}
+    ${native_zoom_hip}
+    ${native_zoom_hip_h}
+    ${native_sparse_zoom_hip}
+  )
+  list(APPEND all_zoom_cpp
+    ${native_sparse_zoom_cpp}
+    ${zoom_cpp}
+    ${native_zoom_cpp}
+    ${native_zoom_linalg_cpp}
+    ${zoom_generated_sources}
+    ${ATen_ZOOM_SRCS}
+    ${all_zoom_cpp}
   )
 endif()
 
@@ -546,6 +579,7 @@ endif()
 # Include CPU paths for CUDA/HIP as well
 list(APPEND ATen_CUDA_INCLUDE ${ATen_CPU_INCLUDE})
 list(APPEND ATen_HIP_INCLUDE ${ATen_CPU_INCLUDE})
+list(APPEND ATen_ZOOM_INCLUDE ${ATen_CPU_INCLUDE})
 list(APPEND ATen_VULKAN_INCLUDE ${ATen_CPU_INCLUDE})
 
 # We have two libraries: libATen_cpu.so and libATen_cuda.so,
@@ -576,6 +610,12 @@ if(USE_ROCM)
   # list(APPEND ATen_HIP_DEPENDENCY_LIBS ATEN_CUDA_FILES_GEN_LIB)
 endif()
 
+if(USE_ZOOM)
+  set(ATen_ZOOM_SRCS ${all_zoom_cpp})
+  set(ATen_HIPRTC_STUB_SRCS ${zoom_hiprtc_stub_cpp})
+  list(APPEND ATen_ZOOM_DEPENDENCY_LIBS ATEN_ZOOM_FILES_GEN_LIB)
+endif()
+
 set(ATEN_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/${AT_INSTALL_INCLUDE_DIR}")
 configure_file(ATenConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/cmake-exports/ATenConfig.cmake")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake-exports/ATenConfig.cmake"
@@ -583,7 +623,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake-exports/ATenConfig.cmake"
 
 set(INSTALL_HEADERS ${base_h} ${ATen_CORE_HEADERS} ${native_nested_h} ${ATen_TRANSFORMER_HEADERS})
 if(NOT INTERN_BUILD_MOBILE)
-  list(APPEND INSTALL_HEADERS ${native_h} ${native_cpu_h} ${native_ao_sparse_h} ${native_quantized_h} ${cuda_h} ${native_cuda_h} ${native_hip_h} ${cudnn_h} ${hip_h} ${xpu_h} ${mps_h} ${native_mps_h} ${native_utils_h} ${miopen_h})
+  list(APPEND INSTALL_HEADERS ${native_h} ${native_cpu_h} ${native_ao_sparse_h} ${native_quantized_h} ${cuda_h} ${native_cuda_h} ${native_hip_h} ${cudnn_h} ${hip_h} ${zoom_h} ${xpu_h} ${mps_h} ${native_mps_h} ${native_utils_h} ${miopen_h})
   # Metal
   if(USE_PYTORCH_METAL_EXPORT)
     # Add files needed from exporting metal models(optimized_for_mobile)
@@ -611,7 +651,7 @@ foreach(HEADER  ${INSTALL_HEADERS})
 endforeach()
 
 # TODO: Install hip_generated_headers when we have it
-foreach(HEADER ${generated_headers} ${cuda_generated_headers})
+foreach(HEADER ${generated_headers} ${cuda_generated_headers} ${zoom_generated_headers})
   # NB: Assumed to be flat
   install(FILES ${HEADER} DESTINATION ${AT_INSTALL_INCLUDE_DIR}/ATen)
 endforeach()
@@ -652,7 +692,10 @@ set(ATen_CUDA_LINALG_SRCS ${ATen_CUDA_LINALG_SRCS} PARENT_SCOPE)
 set(ATen_CUDA_SRCS_W_SORT_BY_KEY ${ATen_CUDA_SRCS_W_SORT_BY_KEY} PARENT_SCOPE)
 set(ATen_CUDA_CU_SRCS_W_SORT_BY_KEY ${ATen_CUDA_CU_SRCS_W_SORT_BY_KEY} PARENT_SCOPE)
 set(ATen_NVRTC_STUB_SRCS ${ATen_NVRTC_STUB_SRCS} PARENT_SCOPE)
+set(ATen_HIPRTC_STUB_SRCS ${ATen_HIPRTC_STUB_SRCS} PARENT_SCOPE)
 set(ATen_HIP_SRCS ${ATen_HIP_SRCS} PARENT_SCOPE)
+set(ATen_ZOOM_SRCS ${ATen_ZOOM_SRCS} PARENT_SCOPE)
+set(ATen_HIPRTC_STUB_SRCS ${ATen_HIPRTC_STUB_SRCS} PARENT_SCOPE)
 set(ATen_MPS_SRCS ${ATen_MPS_SRCS} PARENT_SCOPE)
 set(ATen_XPU_SRCS ${ATen_XPU_SRCS} PARENT_SCOPE)
 set(ATen_QUANTIZED_SRCS ${ATen_QUANTIZED_SRCS} PARENT_SCOPE)
@@ -671,12 +714,14 @@ set(ATen_CPU_INCLUDE ${ATen_CPU_INCLUDE} PARENT_SCOPE)
 set(ATen_THIRD_PARTY_INCLUDE ${ATen_THIRD_PARTY_INCLUDE} PARENT_SCOPE)
 set(ATen_CUDA_INCLUDE ${ATen_CUDA_INCLUDE} PARENT_SCOPE)
 set(ATen_HIP_INCLUDE ${ATen_HIP_INCLUDE} PARENT_SCOPE)
+set(ATen_ZOOM_INCLUDE ${ATen_ZOOM_INCLUDE} PARENT_SCOPE)
 set(ATen_XPU_INCLUDE ${ATen_XPU_INCLUDE} PARENT_SCOPE)
 set(ATen_VULKAN_INCLUDE ${ATen_VULKAN_INCLUDE} PARENT_SCOPE)
 set(ATen_CPU_DEPENDENCY_LIBS ${ATen_CPU_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_CUDA_DEPENDENCY_LIBS ${ATen_CUDA_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_XPU_DEPENDENCY_LIBS ${ATen_XPU_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(ATen_HIP_DEPENDENCY_LIBS ${ATen_HIP_DEPENDENCY_LIBS} PARENT_SCOPE)
+set(ATen_ZOOM_DEPENDENCY_LIBS ${ATen_ZOOM_DEPENDENCY_LIBS} PARENT_SCOPE)
 set(FLASH_ATTENTION_CUDA_SOURCES ${FLASH_ATTENTION_CUDA_SOURCES} PARENT_SCOPE)
 set(MEM_EFF_ATTENTION_CUDA_SOURCES ${MEM_EFF_ATTENTION_CUDA_SOURCES} PARENT_SCOPE)
 set(ATen_ATTENTION_KERNEL_SRCS ${ATen_ATTENTION_KERNEL_SRCS} PARENT_SCOPE)

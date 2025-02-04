@@ -11,8 +11,13 @@
 #include <ATen/cuda/DeviceUtils.cuh>
 #include <ATen/native/cuda/DeviceSqrt.cuh>
 #elif defined(__HIPCC__)
-#include <ATen/hip/DeviceUtils.cuh>
-#include <ATen/native/hip/DeviceSqrt.cuh>
+  #ifdef USE_ZOOM
+    #include <ATen/zoom/DeviceUtils.cuh>  
+    #include <ATen/native/zoom/DeviceSqrt.cuh>
+  #else
+    #include <ATen/hip/DeviceUtils.cuh>
+    #include <ATen/native/hip/DeviceSqrt.cuh>
+  #endif
 #endif
 #if defined(__CUDACC__) || defined(__HIPCC__)
 #include <thrust/pair.h>
@@ -56,7 +61,11 @@ inline C10_DEVICE scalar_t min_propagate_nan(scalar_t a, scalar_t b) {
 #include <c10/cuda/CUDAMathCompat.h>
 #define compat_pow c10::cuda::compat::pow
 #elif defined(__HIPCC__)
-#include <c10/hip/HIPMathCompat.h>
+#ifdef USE_ZOOM
+    #include <c10/zoom/HIPMathCompat.h>
+  #else
+    #include <c10/hip/HIPMathCompat.h>
+  #endif
 #define compat_pow c10::hip::compat::pow
 #else
 #define compat_pow std::pow

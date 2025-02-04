@@ -35,6 +35,7 @@ struct PyTensorType {
   THPDtype* dtype;
   THPLayout* layout;
   bool is_cuda;
+  bool is_zoom;
   bool is_xpu;
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-magic-numbers,modernize-avoid-c-arrays)
   char name[64];
@@ -130,6 +131,15 @@ static PyObject* Tensor_is_cuda(PyTensorType* self, void* unused) {
   }
 }
 
+static PyObject* Tensor_is_zoom(PyTensorType* self, void* unused) {
+  if (self->is_zoom) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+}
+
+
 static PyObject* Tensor_is_xpu(PyTensorType* self, void* unused) {
   if (self->is_xpu) {
     Py_RETURN_TRUE;
@@ -166,6 +176,7 @@ static struct PyGetSetDef metaclass_properties[] = {
     {"dtype", (getter)Tensor_dtype, nullptr, nullptr, nullptr},
     {"layout", (getter)Tensor_layout, nullptr, nullptr, nullptr},
     {"is_cuda", (getter)Tensor_is_cuda, nullptr, nullptr, nullptr},
+    {"is_zoom", (getter)Tensor_is_zoom, nullptr, nullptr, nullptr},
     {"is_xpu", (getter)Tensor_is_xpu, nullptr, nullptr, nullptr},
     {"is_sparse", (getter)Tensor_is_sparse, nullptr, nullptr, nullptr},
     {"is_sparse_csr", (getter)Tensor_is_sparse_csr, nullptr, nullptr, nullptr},
@@ -247,6 +258,9 @@ static void set_type(
   type_obj.dtype = (THPDtype*)Py_NewRef(torch::getTHPDtype(scalarType));
   type_obj.is_cuda =
       (backend == at::Backend::CUDA || backend == at::Backend::SparseCUDA);
+  // TODO(Arham): exchange keys
+  type_obj.is_zoom =
+      (backend == at::Backend::PrivateUse1 || backend == at::Backend::SparsePrivateUse1);
   type_obj.is_xpu =
       (backend == at::Backend::XPU || backend == at::Backend::SparseXPU);
 }
