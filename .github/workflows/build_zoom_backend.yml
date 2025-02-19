@@ -87,6 +87,7 @@ jobs:
         run: |
 
           sudo apt install patchelf
+          python -m venv venv
           source venv/bin/activate
           pip install auditwheel
           auditwheel repair -w dist --plat manylinux_2_39_x86_64 dist/torch*
