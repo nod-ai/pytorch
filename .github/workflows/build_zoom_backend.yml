@@ -58,7 +58,7 @@ jobs:
       - name: "Check out repository"
         uses: actions/checkout@v4.2.2
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Enable cache
         uses: actions/cache/restore@v3
