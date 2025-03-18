@@ -32,3 +32,9 @@ inline std::string torch_tensor_device_name(const at::Tensor& ten) {
       x.is_cuda(),                                             \
       #x " must be a CUDA tensor; it is currently on device ", \
       torch_tensor_device_name(x))
+
+#define TENSOR_ON_ZOOM_GPU(x)                                  \
+TORCH_CHECK(                                                 \
+    x.is_privateuseone(),                                             \
+    #x " must be a Zoom tensor; it is currently on device ", \
+    torch_tensor_device_name(x))

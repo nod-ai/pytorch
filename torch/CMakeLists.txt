@@ -284,8 +284,13 @@ if(USE_DISTRIBUTED)
 endif()
 
 if(USE_NCCL AND NOT WIN32)
-    list(APPEND TORCH_PYTHON_SRCS
-      ${TORCH_SRC_DIR}/csrc/cuda/python_nccl.cpp)
+    if(NOT USE_ZOOM)
+      list(APPEND TORCH_PYTHON_SRCS
+        ${TORCH_SRC_DIR}/csrc/cuda/python_nccl.cpp)
+    else()
+      list(APPEND TORCH_PYTHON_SRCS
+        ${TORCH_SRC_DIR}/csrc/zoom/python_nccl.cpp)
+    endif()
     list(APPEND TORCH_PYTHON_COMPILE_DEFINITIONS USE_NCCL)
 endif()
 

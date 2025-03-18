@@ -1,8 +1,13 @@
 #pragma once
 
 #include <ATen/ATen.h>
+#ifdef USE_ZOOM
+#include <ATen/zoom/ZoomEvent.h>
+#include <c10/zoom/ZoomStream.h>
+#else
 #include <ATen/cuda/CUDAEvent.h>
 #include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/csrc/distributed/c10d/Store.hpp>
 #include <torch/csrc/distributed/c10d/Work.hpp>
 
@@ -76,17 +81,23 @@ class TORCH_API IntraNodeComm : public c10::intrusive_ptr_target {
   void get(size_t rank, at::Tensor tensor, int64_t offset = 0);
 
  private:
+  #ifdef USE_ZOOM
+  using GPUStream = c10::zoom::ZoomStream;
+  #else
+  using GPUStream = at::cuda::CUDAStream;
+  #endif
+
   at::Tensor oneShotAllReduce(
       const at::Tensor& input,
-      at::cuda::CUDAStream& stream);
+      GPUStream& stream);
 
   at::Tensor twoShotAllReduce(
       const at::Tensor& input,
-      at::cuda::CUDAStream& stream);
+      GPUStream& stream);
 
   at::Tensor hybridCubeMeshAllReduce(
       const at::Tensor& input,
-      at::cuda::CUDAStream& stream);
+      GPUStream& stream);
 
   c10::intrusive_ptr<Store> store_;
   size_t rank_;
@@ -128,18 +139,25 @@ class TORCH_API IntraNodeComm : public c10::intrusive_ptr_target {
  * synchronization can also be performed via IntraNodeWork::wait().
  */
 class IntraNodeCommWork : public c10d::Work {
+  #ifdef USE_ZOOM
+  using GPUEvent = at::zoom::ZoomEvent;
+  #define getCurrentStream c10::zoom::getCurrentZoomStream
+  #else
+  using GPUEvent = at::cuda::CUDAEvent;
+  #define getCurrentStream at::cuda::getCurrentCUDAStream
+  #endif
  public:
   IntraNodeCommWork() : c10d::Work() {
     event_.record();
   }
 
   bool wait(std::chrono::milliseconds timeout = kNoTimeout) override {
-    event_.block(at::cuda::getCurrentCUDAStream());
+    event_.block(getCurrentStream());
     return true;
   }
 
  private:
-  at::cuda::CUDAEvent event_;
+  GPUEvent event_;
 };
 
 TORCH_API int64_t getIntraNodeCommUsageCounter();

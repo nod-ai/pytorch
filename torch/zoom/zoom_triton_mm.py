@@ -157,6 +157,11 @@ dtype_max = {
 def mm_out_zoom(self, mat2, out):
     batched_matmul(self.unsqueeze(0), mat2.unsqueeze(0), out.unsqueeze(0), None, None, False)
     
+def addmm_out_zoom(self, mat1, mat2, beta, alpha, out):
+    mm_out_zoom(mat1, mat2, out)
+    out = (beta * self) + (alpha * out)
+    return out
+    
 def bmm_out_zoom(self, mat2, out):
     batched_matmul(self, mat2, out, None, None, False)
 
@@ -169,6 +174,15 @@ def mm(self, mat2):
     out = self.new_empty((self.size(0), mat2.size(1)))
     mm_out_zoom(self, mat2, out)
     return out
+
+@register_kernel("aten::addmm.out", "zoom")
+def addmm_out(self, mat1, mat2, beta, alpha, out):
+    return addmm_out_zoom(self, mat1, mat2, beta, alpha, out)
+
+@register_kernel("aten::addmm", "zoom")
+def addmm(self, mat1, mat2, beta=1, alpha=1):
+    out = self.new_empty((mat1.size(0), mat2.size(1)))
+    return addmm_out_zoom(self, mat1, mat2, beta, alpha, out)
     
 @register_kernel("aten::bmm.out", "zoom")
 def bmm_out(self, mat2, out):

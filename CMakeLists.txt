@@ -237,7 +237,7 @@ cmake_dependent_option(
     "MPS_FOUND" OFF)
 cmake_dependent_option(
     USE_NCCL "Use NCCL" ON
-    "USE_CUDA OR USE_ROCM;UNIX;NOT APPLE" OFF)
+    "USE_CUDA OR USE_ROCM OR USE_ZOOM;UNIX;NOT APPLE" OFF)
 cmake_dependent_option(USE_RCCL "Use RCCL" ON
     USE_NCCL OFF)
 cmake_dependent_option(

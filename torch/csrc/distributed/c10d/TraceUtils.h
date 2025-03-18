@@ -296,10 +296,16 @@ inline std::string retrieveDesyncReport(
 
 #ifdef USE_C10D_NCCL
 
+#ifdef USE_ZOOM
+using GPUEvent = at::zoom::ZoomEvent;
+#else
+using GPUEvent = at::cuda::CUDAEvent;
+#endif
+
 /* Helper used by work::getDuration() and nccl flight recorder */
 float getDurationFromEvent(
-    at::cuda::CUDAEvent& ncclStartEvent,
-    at::cuda::CUDAEvent& ncclEndEvent) {
+    GPUEvent& ncclStartEvent,
+    GPUEvent& ncclEndEvent) {
   TORCH_CHECK(
       ncclEndEvent.query(),
       "getDuration can only be called after work is succeeded.")
@@ -419,7 +425,7 @@ struct NCCLTraceBuffer {
     capture_cpp_stack_ = getCvarBool({"TORCH_NCCL_TRACE_CPP_STACK"}, false);
     enabled_ = max_entries_ > 0;
   }
-  using Event = at::cuda::CUDAEvent;
+  using Event = GPUEvent;
   struct Entry {
     size_t id_; // incremented id in the trace buffer
                 // used to figure out where in the circular entries

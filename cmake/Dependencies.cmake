@@ -1275,9 +1275,9 @@ endif()
 
 # ---[ NCCL
 if(USE_NCCL)
-  if(NOT (USE_CUDA OR USE_ROCM))
+  if(NOT (USE_CUDA OR USE_ROCM OR USE_ZOOM))
     message(WARNING
-        "Not using CUDA/ROCM, so disabling USE_NCCL. Suppress this warning with "
+        "Not using CUDA/ROCM/ZOOM, so disabling USE_NCCL. Suppress this warning with "
         "-DUSE_NCCL=OFF.")
     caffe2_update_option(USE_NCCL OFF)
   elseif(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -1289,6 +1289,9 @@ if(USE_NCCL)
   elseif(USE_ROCM)
     include(${CMAKE_CURRENT_LIST_DIR}/External/rccl.cmake)
     list(APPEND Caffe2_CUDA_DEPENDENCY_LIBS __caffe2_nccl)
+  elseif(USE_ZOOM)
+    include(${CMAKE_CURRENT_LIST_DIR}/External/rccl.cmake)
+    list(APPEND Caffe2_ZOOM_DEPENDENCY_LIBS __caffe2_nccl)
   endif()
 endif()
 
@@ -1331,7 +1334,7 @@ if(USE_DISTRIBUTED AND USE_TENSORPIPE)
     list(APPEND Caffe2_DEPENDENCY_LIBS tensorpipe)
     if(USE_CUDA)
       list(APPEND Caffe2_CUDA_DEPENDENCY_LIBS tensorpipe_cuda)
-    elseif(USE_ROCM)
+    elseif(USE_ROCM OR USE_ZOOM)
       message(WARNING "TensorPipe doesn't yet support ROCm")
       # Not yet...
       # list(APPEND Caffe2_HIP_DEPENDENCY_LIBS tensorpipe_hip)

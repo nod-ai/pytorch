@@ -192,8 +192,8 @@ class Backend(str):
     }
 
     backend_capability: Dict[str, List[str]] = {
-        GLOO : ["cpu", "cuda"],
-        NCCL : ["cuda"],
+        GLOO : ["cpu", "cuda", "zoom"],
+        NCCL : ["cuda", "zoom"],
         UCC : ["cpu", "cuda"],
         MPI : ["cpu", "cuda"],
     }
@@ -268,7 +268,7 @@ class Backend(str):
                 "`cuda`. Please specify it via the `devices` argument of "
                 "`register_backend`."
             )
-            Backend.backend_capability[name.lower()] = ["cpu", "cuda"]
+            Backend.backend_capability[name.lower()] = ["cpu", "cuda", "zoom"]
         elif isinstance(devices, str):
             # Single device string specified. Simply convert to list.
             Backend.backend_capability[name.lower()] = [devices]
@@ -332,6 +332,7 @@ class BackendConfig:
             self.device_backend_map = {
                 "cpu" : backend_val,
                 "cuda" : backend_val,
+                "zoom" : backend_val,
                 "xpu" : backend_val,
             }
 
@@ -1183,6 +1184,12 @@ def _set_pg_timeout(timeout: timedelta, group: Optional[ProcessGroup] = None) ->
             backends.add(backend)
     if torch.device("cuda") in devices:
         backend = group._get_backend(torch.device("cuda"))
+        if is_nccl_available() and isinstance(backend, ProcessGroupNCCL):
+            backends.add(backend)  # type: ignore[arg-type]
+        elif is_gloo_available() and isinstance(backend, ProcessGroupGloo):
+            backends.add(backend)  # type: ignore[arg-type]
+    if torch.device("zoom") in devices:
+        backend = group._get_backend(torch.device("zoom"))
         if is_nccl_available() and isinstance(backend, ProcessGroupNCCL):
             backends.add(backend)  # type: ignore[arg-type]
         elif is_gloo_available() and isinstance(backend, ProcessGroupGloo):
@@ -2139,7 +2146,7 @@ def batch_isend_irecv(p2p_op_list):
     _check_p2p_op_list(p2p_op_list)
     group = p2p_op_list[0].group
     device = p2p_op_list[0].tensor.device
-    if device.type == "cuda":
+    if device.type in ["cuda", "zoom"]:
         # NCCL style coalescing
         with _coalescing_manager(group, device, async_ops=True) as cm:
             for p2p_op in p2p_op_list:

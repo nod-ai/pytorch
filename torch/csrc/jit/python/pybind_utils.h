@@ -32,8 +32,13 @@
 #include <ATen/core/function_schema.h>
 #include <c10/core/Stream.h>
 #ifdef USE_C10D_NCCL
+#ifdef USE_ZOOM
+#include <c10/zoom/ZoomCachingAllocator.h>
+#include <c10/zoom/ZoomStream.h>
+#else
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAStream.h>
+#endif
 #endif
 #include <c10/util/Exception.h>
 #include <c10/util/Optional.h>

@@ -1,6 +1,11 @@
 #include <ATen/Dispatch.h>
+#ifdef USE_ZOOM
+#include <ATen/zoom/ZoomContext.h>
+#include <c10/zoom/ZoomGuard.h>
+#else
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#endif
 #include <torch/csrc/distributed/c10d/Utils.hpp>
 #include <torch/torch.h>
 #include <algorithm>
@@ -15,7 +20,11 @@ __global__ void checkForNaN(T* data, size_t size) {
   size_t stride = blockDim.x * gridDim.x;
 
   for (size_t i = tid; i < size; i += stride) {
+    #ifdef USE_ZOOM
+    ZOOM_KERNEL_ASSERT(!isnan(data[i]));
+    #else
     CUDA_KERNEL_ASSERT(!isnan(data[i]));
+    #endif
   }
 }
 
@@ -37,7 +46,11 @@ void checkForNan(const at::Tensor& tensor) {
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(tensor.scalar_type(), "checkForNaN", [&] {
     checkForNaN<scalar_t><<<numBlocks, numThreadsPerBlock>>>(
         tensor.data_ptr<scalar_t>(), tensor.numel());
+    #ifdef USE_ZOOM
+    C10_ZOOM_KERNEL_LAUNCH_CHECK();
+    #else
     C10_CUDA_KERNEL_LAUNCH_CHECK();
+    #endif
   });
 
 }

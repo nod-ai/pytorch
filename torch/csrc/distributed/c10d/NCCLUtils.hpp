@@ -12,7 +12,12 @@
 #include <ATen/ATen.h>
 #include <c10/util/Exception.h>
 #include <c10/util/Optional.h>
+
+#ifdef USE_ZOOM
+#include <rccl/rccl.h>
+#else
 #include <nccl.h>
+#endif
 
 #if defined(NCCL_MAJOR) && (NCCL_MAJOR == 2) && defined(NCCL_MINOR) && \
     (NCCL_MINOR >= 14)
