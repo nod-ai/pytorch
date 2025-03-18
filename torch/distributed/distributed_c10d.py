@@ -272,12 +272,12 @@ class Backend(str):  # noqa: SLOT000
         "xpu": XCCL,
     }
 
-    backend_capability: dict[str, list[str]] = {
-        GLOO: ["cpu", "cuda"],
-        NCCL: ["cuda"],
+    backend_capability: Dict[str, List[str]] = {
+        GLOO : ["cpu", "cuda"],
+        NCCL : ["cuda", "zoom"],
         XCCL: ["xpu"],
-        UCC: ["cpu", "cuda"],
-        MPI: ["cpu", "cuda"],
+        UCC : ["cpu", "cuda"],
+        MPI : ["cpu", "cuda"],
     }
 
     backend_type_map: dict[str, ProcessGroup.BackendType] = {
@@ -352,7 +352,7 @@ class Backend(str):  # noqa: SLOT000
                 "`cuda`. Please specify it via the `devices` argument of "
                 "`register_backend`."
             )
-            Backend.backend_capability[name.lower()] = ["cpu", "cuda"]
+            Backend.backend_capability[name.lower()] = ["cpu", "cuda", "zoom"]
         elif isinstance(devices, str):
             # Single device string specified. Simply convert to list.
             Backend.backend_capability[name.lower()] = [devices]
@@ -424,9 +424,10 @@ class BackendConfig:
             )
             backend_val = Backend(backend)
             self.device_backend_map = {
-                "cpu": backend_val,
-                "cuda": backend_val,
-                "xpu": backend_val,
+                "cpu" : backend_val,
+                "cuda" : backend_val,
+                "zoom" : backend_val,
+                "xpu" : backend_val,
             }
 
         logger.info("Using backend config: %s", self.device_backend_map)
@@ -1517,6 +1518,12 @@ def _set_pg_timeout(timeout: timedelta, group: Optional[ProcessGroup] = None) ->
             backends.add(backend)
     if torch.device("cuda") in devices:
         backend = group._get_backend(torch.device("cuda"))
+        if is_nccl_available() and isinstance(backend, ProcessGroupNCCL):
+            backends.add(backend)  # type: ignore[arg-type]
+        elif is_gloo_available() and isinstance(backend, ProcessGroupGloo):
+            backends.add(backend)  # type: ignore[arg-type]
+    if torch.device("zoom") in devices:
+        backend = group._get_backend(torch.device("zoom"))
         if is_nccl_available() and isinstance(backend, ProcessGroupNCCL):
             backends.add(backend)  # type: ignore[arg-type]
         elif is_gloo_available() and isinstance(backend, ProcessGroupGloo):
@@ -2639,12 +2646,12 @@ def batch_isend_irecv(p2p_op_list: list[P2POp]) -> list[Work]:
     if group is None:
         group = _get_default_group()
     device = p2p_op_list[0].tensor.device
-
+    
     def peer_kwarg(op: P2POp) -> dict[str, int]:
         key = "group_dst" if op.op == isend else "group_src"
         return {key: op.group_peer}
 
-    if type(group) == ProcessGroup and group._get_backend(device).supports_coalescing:
+    if type(group) == ProcessGroup and (group._get_backend(device).supports_coalescing or device.type == "zoom"):
         # NCCL style coalescing
         with _coalescing_manager(group, device, async_ops=True) as cm:
             for p2p_op in p2p_op_list:

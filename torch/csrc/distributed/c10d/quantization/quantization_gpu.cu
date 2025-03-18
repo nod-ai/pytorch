@@ -1,4 +1,8 @@
+#ifdef USE_ZOOM
+#include <c10/zoom/ZoomGuard.h>
+#else
 #include <c10/cuda/CUDAGuard.h>
+#endif
 #include <torch/csrc/distributed/c10d/Utils.hpp>
 #include <torch/csrc/distributed/c10d/quantization/quantization_gpu.h>
 #include <torch/csrc/distributed/c10d/quantization/quantization_utils.h>
@@ -52,12 +56,28 @@ __global__ void _bfloat16_to_float_cuda_kernel(
 
 namespace torch::distributed::c10d::quantization {
 
+#ifdef USE_ZOOM
+#define TENSOR_ON_GPU(x) TENSOR_ON_ZOOM_GPU(x)
+using GPUGuard = c10::zoom::OptionalZoomGuard;
+#define get_stream c10::zoom::getCurrentZoomStream
+#define KERNEL_LAUNCH_CHECK() C10_ZOOM_KERNEL_LAUNCH_CHECK() 
+#define DeviceKey c10::DispatchKey::PrivateUse1
+#define Device PrivateUse1
+#else
+#define TENSOR_ON_GPU(x) TENSOR_ON_CUDA_GPU(x)
+using GPUGuard = at::cuda::OptionalCUDAGuard;
+#define get_stream at::cuda::getCurrentCUDAStream
+#define KERNEL_LAUNCH_CHECK() C10_CUDA_KERNEL_LAUNCH_CHECK()
+#define DeviceKey c10::DispatchKey::CUDA
+#define Device CUDA
+#endif
+
 at::Tensor _float_to_bfloat16_cuda(const at::Tensor& input) {
-  TENSOR_ON_CUDA_GPU(input);
+  TENSOR_ON_GPU(input);
   // Currently it supports 2D inputs
   TENSOR_NDIM_EQUALS(input, 2);
 
-  at::cuda::OptionalCUDAGuard device_guard;
+  GPUGuard device_guard;
   device_guard.set_index(input.get_device());
 
   const auto nrows = input.size(0);
@@ -88,7 +108,7 @@ at::Tensor _float_to_bfloat16_cuda(const at::Tensor& input) {
       gridDim,
       blockDim,
       0,
-      at::cuda::getCurrentCUDAStream()>>>(
+      get_stream()>>>(
       input.const_data_ptr<float>(),
       nrows,
       ncols,
@@ -98,17 +118,17 @@ at::Tensor _float_to_bfloat16_cuda(const at::Tensor& input) {
       reinterpret_cast<uint16_t*>(output.mutable_data_ptr<at::Half>())
 #endif
       );
-  C10_CUDA_KERNEL_LAUNCH_CHECK();
+KERNEL_LAUNCH_CHECK();
 
   return output;
 }
 
 at::Tensor _bfloat16_to_float_cuda(const at::Tensor& input) {
-  TENSOR_ON_CUDA_GPU(input);
+  TENSOR_ON_GPU(input);
   // Currently it supports 2D inputs
   TENSOR_NDIM_EQUALS(input, 2);
 
-  at::cuda::OptionalCUDAGuard device_guard;
+  GPUGuard device_guard;
   device_guard.set_index(input.get_device());
 
   const auto nrows = input.size(0);
@@ -136,7 +156,7 @@ at::Tensor _bfloat16_to_float_cuda(const at::Tensor& input) {
       gridDim,
       blockDim,
       0,
-      at::cuda::getCurrentCUDAStream()>>>(
+      get_stream()>>>(
 #if HAS_NCCL_BF16_DATATYPE
       reinterpret_cast<const uint16_t*>(input.const_data_ptr<at::BFloat16>()),
 #else
@@ -145,17 +165,17 @@ at::Tensor _bfloat16_to_float_cuda(const at::Tensor& input) {
       nrows,
       ncols,
       output.mutable_data_ptr<float>());
-  C10_CUDA_KERNEL_LAUNCH_CHECK();
+  KERNEL_LAUNCH_CHECK();
 
   return output;
 }
 
 #define DISPATCH_TO_CUDA(name, function) \
-  m.impl(name, torch::dispatch(c10::DispatchKey::CUDA, TORCH_FN(function)))
+    m.impl(name, torch::dispatch(DeviceKey, TORCH_FN(function)))
 
-TORCH_LIBRARY_IMPL(quantization, CUDA, m) {
-  DISPATCH_TO_CUDA("_Bfloat16QuantizedToFloat", _bfloat16_to_float_cuda);
-  DISPATCH_TO_CUDA("_FloatToBfloat16Quantized", _float_to_bfloat16_cuda);
+TORCH_LIBRARY_IMPL(quantization, Device, m) {
+    DISPATCH_TO_CUDA("_Bfloat16QuantizedToFloat", _bfloat16_to_float_cuda);
+    DISPATCH_TO_CUDA("_FloatToBfloat16Quantized", _float_to_bfloat16_cuda);
 }
 
 } // namespace torch::distributed::c10d::quantization

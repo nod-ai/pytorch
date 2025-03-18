@@ -467,8 +467,12 @@ size_t hashTensors(const std::vector<at::Tensor>& tensors) {
         std::vector<char> dst(data_size);
         // This is needed so that we trigger a device synchronization so we can
         // get the collective finished if launched on GPU and hash its output.
-        AT_CUDA_CHECK(
-            cudaMemcpy(dst.data(), src, data_size, cudaMemcpyDeviceToHost));
+        #ifdef USE_ZOOM
+        C10_ZOOM_CHECK(hipMemcpy(dst.data(), src, data_size, hipMemcpyDeviceToHost));
+        #else
+        AT_CUDA_CHECK(cudaMemcpy(dst.data(), src, data_size, cudaMemcpyDeviceToHost));
+        #endif
+
         for (size_t i = 0; i < data_size; ++i) {
           // Update the hash for each byte in the tensor
           hash = c10::hash_combine(hash, c10::get_hash(dst[i], data_size));

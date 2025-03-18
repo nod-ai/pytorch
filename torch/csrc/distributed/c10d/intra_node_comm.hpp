@@ -1,7 +1,11 @@
 #pragma once
 
 #include <ATen/ATen.h>
+#ifdef USE_ZOOM
+#include <c10/zoom/ZoomStream.h>
+#else
 #include <c10/cuda/CUDAStream.h>
+#endif
 #include <torch/csrc/distributed/c10d/Store.hpp>
 #include <torch/csrc/distributed/c10d/SymmetricMemory.hpp>
 #include <torch/csrc/distributed/c10d/Work.hpp>
@@ -55,13 +59,19 @@ class TORCH_API IntraNodeComm : public c10::intrusive_ptr_target {
   at::Tensor allReduce(const at::Tensor& input, AllReduceAlgo algo);
 
  private:
+  #ifdef USE_ZOOM
+  using GPUStream = c10::zoom::ZoomStream;
+  #else
+  using GPUStream = at::cuda::CUDAStream;
+  #endif
+
   at::Tensor oneShotAllReduce(
       const at::Tensor& input,
-      at::cuda::CUDAStream& stream);
+      GPUStream& stream);
 
   at::Tensor twoShotAllReduce(
       const at::Tensor& input,
-      at::cuda::CUDAStream& stream);
+      GPUStream& stream);
 
   c10::intrusive_ptr<Store> store_;
   size_t rank_;

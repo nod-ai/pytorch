@@ -708,6 +708,23 @@ libtorch_cuda_sources = libtorch_cuda_core_sources + libtorch_cuda_distributed_s
     "torch/csrc/cuda/nccl.cpp",
 ]
 
+# Zoom Variants of distributed sources
+libtorch_zoom_distributed_base_sources = [
+    "torch/csrc/distributed/c10d/reducer_zoom.cpp",
+]
+
+libtorch_zoom_distributed_extra_sources = [
+    "torch/csrc/distributed/c10d/NCCLUtils.cpp",
+    "torch/csrc/distributed/c10d/ProcessGroupZoomNCCL.cpp",
+    "torch/csrc/distributed/c10d/ProcessGroupUCC.cpp",
+    "torch/csrc/distributed/c10d/UCCTracing.cpp",
+    "torch/csrc/distributed/c10d/UCCUtils.cpp",
+    "torch/csrc/distributed/c10d/intra_node_comm_zoom.cpp",
+    "torch/csrc/distributed/c10d/intra_node_comm_zoom.cu",
+    "torch/csrc/distributed/c10d/Utils.cu",
+    "torch/csrc/distributed/c10d/quantization/quantization_gpu.cu",
+]
+
 torch_cpp_srcs = [
     "torch/csrc/api/src/cuda.cpp",  # this just forwards stuff, no real CUDA
     "torch/csrc/api/src/data/datasets/mnist.cpp",
@@ -792,6 +809,11 @@ libtorch_python_cuda_sources = libtorch_python_cuda_core_sources + [
     "torch/csrc/cuda/Tensor.cpp",
 ]
 
+libtorch_zoom_core_sources = [
+    "torch/csrc/zoom/comm.cpp",
+    "torch/csrc/zoom/memory_snapshot.cpp",
+]
+
 libtorch_python_zoom_sources = [
     "torch/csrc/zoom/Module.cpp",
     "torch/csrc/zoom/Event.cpp",
@@ -800,8 +822,6 @@ libtorch_python_zoom_sources = [
     "torch/csrc/zoom/Graph.cpp",
     "torch/csrc/zoom/utils.cpp",
     "torch/csrc/zoom/ZoomPluggableAllocator.cpp",
-    "torch/csrc/zoom/comm.cpp",
-    "torch/csrc/zoom/memory_snapshot.cpp",
     "torch/csrc/zoom/shared/hiprt.cpp",
 ]
 

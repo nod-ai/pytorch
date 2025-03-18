@@ -76,7 +76,13 @@ TORCH_LIBRARY_IMPL(_, AutogradCUDA, m) {
   m.fallback(AUTOGRAD_FALLBACK);
 }
 
+
 TORCH_LIBRARY_IMPL(_, AutogradMTIA, m) {
+  m.fallback(AUTOGRAD_FALLBACK);
+}
+
+// TODO(Arham): replace with zoom key
+TORCH_LIBRARY_IMPL(_, AutogradPrivateUse1, m) {
   m.fallback(AUTOGRAD_FALLBACK);
 }
 

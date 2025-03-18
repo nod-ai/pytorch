@@ -27,13 +27,22 @@
 #include <torch/csrc/distributed/c10d/logger.hpp>
 
 #include <ATen/DynamicLibrary.h>
+#ifdef USE_ZOOM
+#include <ATen/zoom/ZoomContext.h>
+#include <ATen/zoom/ZoomEvent.h>
+#include <c10/zoom/ZoomCachingAllocator.h>
+#include <c10/zoom/ZoomGuard.h>
+#include <c10/zoom/ZoomStream.h>
+#else
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAEvent.h>
-#include <c10/core/Stream.h>
-#include <c10/core/StreamGuard.h>
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
+#endif
+
+#include <c10/core/Stream.h>
+#include <c10/core/StreamGuard.h>
 
 #include <torch/custom_class.h>
 
@@ -366,12 +375,17 @@ class TORCH_API ProcessGroupNCCL : public Backend {
     // The cached list of CUDA devices to operate on
     at::Device device_;
 
+    #ifdef USE_ZOOM
+    std::shared_ptr<at::zoom::ZoomEvent> ncclStartEvent_;
+    std::shared_ptr<at::zoom::ZoomEvent> ncclEndEvent_;
+    #else
     // The start CUDA event of NCCL operator tracking this work item. These
     // start CUDA events are needed by desync debugging if enabled.
     std::shared_ptr<at::cuda::CUDAEvent> ncclStartEvent_;
 
     // The end CUDA event of NCCL operator tracking this work item.
     std::shared_ptr<at::cuda::CUDAEvent> ncclEndEvent_;
+    #endif
 
     // The NCCL communicator used for this work item.
     std::shared_ptr<NCCLComm> ncclComm_;
@@ -1204,11 +1218,16 @@ class TORCH_API ProcessGroupNCCL : public Backend {
   // Add Work Pointer to workVector
   void workEnqueue(const c10::intrusive_ptr<ProcessGroupNCCL::WorkNCCL>&);
 
+  #ifdef USE_ZOOM
+  std::unordered_map<std::string, c10::zoom::ZoomStream> ncclStreams_;
+  std::unordered_map<std::string, at::zoom::ZoomEvent> ncclEvents_;
+  #else
   // The CUDA streams used by NCCL kernels
   std::unordered_map<std::string, at::cuda::CUDAStream> ncclStreams_;
 
   // The CUDA events used to sync NCCL streams
   std::unordered_map<std::string, at::cuda::CUDAEvent> ncclEvents_;
+  #endif
 
   // Device Indexes used for all collectives in this group
   std::set<c10::DeviceIndex> usedDeviceIdxs_;
@@ -1217,7 +1236,11 @@ class TORCH_API ProcessGroupNCCL : public Backend {
   int coalescing_state_ = 0;
 
   // Stores device indexes for all collectives run inside a coalescing block
+  #ifdef USE_ZOOM
+  at::Device coalescedDevice_ = at::Device("zoom");
+  #else
   at::Device coalescedDevice_ = at::Device("cuda");
+  #endif
 
   // Stores communicators for all collectives run inside a coalescing block
   std::shared_ptr<NCCLComm> coalescedComm_ = nullptr;

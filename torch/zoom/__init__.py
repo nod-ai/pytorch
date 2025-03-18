@@ -291,6 +291,105 @@ def can_device_access_peer(device: _device_t, peer_device: _device_t) -> bool:
     return torch._C._zoom_canDeviceAccessPeer(device, peer_device)
 
 
+class StreamContext:
+    r"""Context-manager that selects a given stream.
+
+    All Zoom kernels queued within its context will be enqueued on a selected
+    stream.
+
+    Args:
+        Stream (Stream): selected stream. This manager is a no-op if it's
+            ``None``.
+    .. note:: Streams are per-device.
+    """
+    cur_stream: Optional["torch.zoom.Stream"]
+
+    def __init__(self, stream: Optional["torch.zoom.Stream"]):
+        self.stream = stream
+        self.idx = _get_device_index(None, True)
+        if not torch.jit.is_scripting():
+            if self.idx is None:
+                self.idx = -1
+
+        self.src_prev_stream = (
+            None if not torch.jit.is_scripting() else torch.zoom.default_stream(None)
+        )
+        self.dst_prev_stream = (
+            None if not torch.jit.is_scripting() else torch.zoom.default_stream(None)
+        )
+
+    def __enter__(self):
+        # Local cur_stream variable for type refinement
+        cur_stream = self.stream
+        # Return if stream is None or Zoom device not available
+        if cur_stream is None or self.idx == -1:
+            return
+        self.src_prev_stream = torch.zoom.current_stream(None)
+
+        # If the stream is not on the current device, then
+        # set the current stream on the device
+        if self.src_prev_stream.device != cur_stream.device:
+            with device(cur_stream.device):
+                self.dst_prev_stream = torch.zoom.current_stream(cur_stream.device)
+        torch.zoom.set_stream(cur_stream)
+
+    def __exit__(self, type: Any, value: Any, traceback: Any):
+        # Local cur_stream variable for type refinement
+        cur_stream = self.stream
+        # If stream is None or no Zoom device available, return
+        if cur_stream is None or self.idx == -1:
+            return
+
+        # Reset the stream on the original device
+        # and destination device
+        if self.src_prev_stream.device != cur_stream.device:  # type: ignore[union-attr]
+            torch.zoom.set_stream(self.dst_prev_stream)  # type: ignore[arg-type]
+        torch.zoom.set_stream(self.src_prev_stream)  # type: ignore[arg-type]
+
+
+def stream(stream: Optional["torch.zoom.Stream"]) -> StreamContext:
+    r"""Wrap around the Context-manager StreamContext that selects a given stream.
+
+    Arguments:
+        stream (Stream): selected stream. This manager is a no-op if it's
+            ``None``.
+    ..Note:: In eager mode stream is of type Stream class while in JIT it is
+    an object of the custom class ``torch.classes.zoom.Stream``.
+    """
+    return StreamContext(stream)
+
+
+def _set_stream_by_id(stream_id, device_index, device_type):
+    r"""set stream specified by the stream id, device index and
+        device type
+
+    Args: stream_id (int): stream id in stream pool
+          device_index (int): device index in topo
+          device_type (int): enum device type
+    """
+    torch._C._zoom_setStream(
+        stream_id=stream_id,
+        device_index=device_index,
+        device_type=device_type,
+    )
+
+
+def set_stream(stream: Stream):
+    r"""Set the current stream.This is a wrapper API to set the stream.
+        Usage of this function is discouraged in favor of the ``stream``
+        context manager.
+
+    Args:
+        stream (Stream): selected stream. This function is a no-op
+            if this argument is ``None``.
+    """
+    if stream is None:
+        return
+    _set_stream_by_id(
+        stream_id=stream.stream_id,
+        device_index=stream.device_index,
+        device_type=stream.device_type,
+    )
 
 def current_device() -> int:
     r"""Return the index of a currently selected device."""

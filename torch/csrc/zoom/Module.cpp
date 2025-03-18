@@ -22,7 +22,9 @@
 #include <c10/zoom/ZoomFunctions.h>
 #include <c10/zoom/ZoomMiscFunctions.h>
 #include <ATen/zoom/HIPGraphsUtils.hpp>
-
+#ifdef USE_NCCL
+#include <torch/csrc/zoom/python_nccl.h>
+#endif
 #include <c10/util/CallOnce.h>
 #include <c10/util/irange.h>
 
@@ -1343,6 +1345,23 @@ static struct PyMethodDef _THCPModule_methods[] = {
      THCPModule_zoomGetSyncDebugMode,
      METH_NOARGS,
      nullptr},
+  #ifdef USE_NCCL
+    {"_nccl_version", THCPModule_nccl_version, METH_NOARGS, nullptr},
+    {"_nccl_version_suffix",
+     THCPModule_nccl_version_suffix,
+     METH_NOARGS,
+     nullptr},
+    {"_nccl_unique_id", THCPModule_nccl_unique_id, METH_NOARGS, nullptr},
+    {"_nccl_init_rank", THCPModule_nccl_init_rank, METH_VARARGS, nullptr},
+    {"_nccl_reduce", THCPModule_nccl_reduce, METH_VARARGS, nullptr},
+    {"_nccl_all_reduce", THCPModule_nccl_all_reduce, METH_VARARGS, nullptr},
+    {"_nccl_broadcast", THCPModule_nccl_broadcast, METH_VARARGS, nullptr},
+    {"_nccl_all_gather", THCPModule_nccl_all_gather, METH_VARARGS, nullptr},
+    {"_nccl_reduce_scatter",
+     THCPModule_nccl_reduce_scatter,
+     METH_VARARGS,
+     nullptr},
+  #endif
     {nullptr}};
 
 PyMethodDef* THCPModule_methods() {
