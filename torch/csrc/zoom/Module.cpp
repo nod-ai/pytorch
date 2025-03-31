@@ -163,6 +163,16 @@ PyObject* THCPModule_getDeviceCount_wrap(PyObject* self, PyObject* noargs) {
   END_HANDLE_TH_ERRORS
 }
 
+PyObject* THCPModule_hasBLAS(PyObject* self, PyObject* noargs) {
+  HANDLE_TH_ERRORS
+  #ifdef ENABLE_ZOOM_BLAS
+    Py_RETURN_TRUE;
+  #else
+    Py_RETURN_FALSE;
+  #endif
+  END_HANDLE_TH_ERRORS
+}
+
 PyObject* THCPModule_getArchFlags(PyObject* self, PyObject* noargs) {
   HANDLE_TH_ERRORS
   poison_fork();
@@ -1262,6 +1272,10 @@ static struct PyMethodDef _THCPModule_methods[] = {
      THCPModule_getDeviceCount_wrap,
      METH_NOARGS,
      nullptr},
+     {"_zoom_hasBLAS",
+      THCPModule_hasBLAS,
+      METH_NOARGS,
+      nullptr},
     {"_zoom_canDeviceAccessPeer",
      THCPModule_canDeviceAccessPeer_wrap,
      METH_VARARGS,

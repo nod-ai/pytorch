@@ -232,6 +232,8 @@ option(USE_MAGMA "Use MAGMA" ON)
 option(USE_PYTORCH_METAL "Use Metal for PyTorch iOS build" OFF)
 option(USE_PYTORCH_METAL_EXPORT "Export Metal models on MacOSX desktop" OFF)
 option(USE_NATIVE_ARCH "Use -march=native" OFF)
+option(ENABLE_ZOOM_BLAS "Use HIPBlas Kernels in the ZOOM backend" ON)
+option(DISABLE_HIPBLASLT "Disable HIPBlasLt Kernels in the ZOOM backend" OFF)
 cmake_dependent_option(
     USE_MPS "Use MPS for macOS build" ON
     "MPS_FOUND" OFF)

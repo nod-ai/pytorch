@@ -178,6 +178,13 @@ if(HIP_FOUND)
     find_package_and_print_version(rocprim REQUIRED)
     find_package_and_print_version(hipcub REQUIRED)
     find_package_and_print_version(rocthrust REQUIRED)
+
+    if(ENABLE_ZOOM_BLAS)
+      find_package_and_print_version(hipblas REQUIRED)
+      if(NOT DISABLE_HIPBLASLT)
+        find_package_and_print_version(hipblaslt REQUIRED)
+      endif()
+    endif()
   endif()
 
 

@@ -638,6 +638,7 @@
   dispatch:
     CPU: addmv_out_cpu
     CUDA: addmv_out_cuda
+    PrivateUse1: addmv_out_hip
     MPS: addmv_out_mps
     SparseCsrCPU: addmv_out_sparse_compressed
     SparseCsrCUDA: addmv_out_sparse_compressed_cuda
@@ -1056,6 +1057,7 @@
   dispatch:
     CPU: baddbmm_out_cpu
     CUDA: baddbmm_out_cuda
+    PrivateUse1: baddbmm_out_hip
     MPS: baddbmm_out_mps
     SparseCsrCUDA: baddbmm_out_sparse_csr_cuda
 
@@ -1357,6 +1359,7 @@
   dispatch:
     CPU: bmm_out_cpu
     CUDA: bmm_out_cuda
+    PrivateUse1: bmm_out_hip
     MPS: bmm_out_mps
     SparseCPU: bmm_out_sparse_cpu
     SparseCUDA: bmm_out_sparse_cuda
@@ -2261,6 +2264,7 @@
   dispatch:
     CPU: dot
     CUDA: dot_cuda
+    PrivateUse1: dot_hip
     MPS: dot_mps
 
 - func: dot.out(Tensor self, Tensor tensor, *, Tensor(a!) out) -> Tensor(a!)
@@ -2272,6 +2276,7 @@
   dispatch:
     CPU: vdot
     CUDA: vdot_cuda
+    PrivateUse1: vdot_hip
 
 - func: vdot.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
@@ -4127,6 +4132,7 @@
   dispatch:
     CPU: mm_out_cpu
     CUDA: mm_out_cuda
+    PrivateUse1: mm_out_hip
     MPS: mm_out_mps
     SparseCPU, SparseCUDA: _sparse_mm_out
     SparseCsrCPU, SparseCsrCUDA: _sparse_csr_mm_out
@@ -4135,11 +4141,13 @@
   dispatch:
     CPU: _int_mm_cpu
     CUDA: _int_mm_cuda
+    PrivateUse1: _int_mm_hip
 
 - func: _int_mm.out(Tensor self, Tensor mat2, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
     CPU: _int_mm_out_cpu
     CUDA: _int_mm_out_cuda
+    PrivateUse1: _int_mm_out_hip
 
 - func: _convert_weight_to_int4pack(Tensor self, int innerKTiles) -> Tensor
   dispatch:
@@ -6980,6 +6988,7 @@
   dispatch:
     CPU: addmm_out_cpu
     CUDA: addmm_out_cuda
+    PrivateUse1: addmm_out_hip
     MPS: addmm_out_mps
     SparseCPU: addmm_out_sparse_dense_cpu
     SparseCUDA: addmm_out_sparse_dense_cuda
@@ -7009,6 +7018,7 @@
   dispatch:
     CPU: addmm_activation_out_cpu
     CUDA: addmm_activation_out_cuda
+    PrivateUse1: addmm_activation_out_hip
 
 - func: _addmm_activation(Tensor self, Tensor mat1, Tensor mat2, *, Scalar beta=1, Scalar alpha=1, bool use_gelu=False) -> Tensor
   structured_delegate: _addmm_activation.out
@@ -7018,11 +7028,13 @@
   variants: function
   dispatch:
     CUDA: _scaled_mm_cuda
+    PrivateUse1: _scaled_mm_hip
 
 - func: _scaled_mm.out(Tensor self, Tensor mat2, *, Tensor? bias=None, ScalarType? out_dtype=None, Tensor? scale_a=None, Tensor? scale_b=None, Tensor? scale_result=None, bool use_fast_accum=False, Tensor(a!) out, Tensor(b!) out_amax) -> (Tensor(a!), Tensor(b!))
   variants: function
   dispatch:
     CUDA: _scaled_mm_out_cuda
+    PrivateUse1: _scaled_mm_out_hip
 
 # NOTE [ Sparse: autograd and API ]
 #
@@ -8652,18 +8664,18 @@
 - func: addbmm_(Tensor(a!) self, Tensor batch1, Tensor batch2, *, Scalar beta=1, Scalar alpha=1) -> Tensor(a!)
   variants: method
   dispatch:
-    CPU, CUDA: addbmm_
+    CPU, CUDA, PrivateUse1: addbmm_
     MPS: addbmm_mps_
 
 - func: addbmm.out(Tensor self, Tensor batch1, Tensor batch2, *, Scalar beta=1, Scalar alpha=1, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: addbmm_out
+    CPU, CUDA, PrivateUse1: addbmm_out
     MPS: addbmm_out_mps
 
 - func: addbmm(Tensor self, Tensor batch1, Tensor batch2, *, Scalar beta=1, Scalar alpha=1) -> Tensor
   variants: method, function
   dispatch:
-    CPU, CUDA: addbmm
+    CPU, CUDA, PrivateUse1: addbmm
     MPS: addbmm_mps
 
 - func: random_.from(Tensor(a!) self, int from, int? to, *, Generator? generator=None) -> Tensor(a!)
