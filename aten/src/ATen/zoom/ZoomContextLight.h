@@ -4,6 +4,13 @@
 #include <hip/hip_runtime.h>
 #include <c10/core/Allocator.h>
 #include <c10/zoom/ZoomFunctions.h>
+#ifdef ENABLE_ZOOM_BLAS
+#include <hipblas/hipblas.h>
+#ifndef DISABLE_HIPBLASLT
+#include <hipblaslt/hipblaslt.h>
+#include <hipblaslt/hipblaslt-ext.hpp>
+#endif
+#endif
 
 namespace c10 {
 struct Allocator;
@@ -59,5 +66,12 @@ TORCH_ZOOM_API bool canDeviceAccessPeer(
     c10::DeviceIndex peer_device);
 
 TORCH_ZOOM_API c10::Allocator* getZoomDeviceAllocator();
+
+#ifdef ENABLE_ZOOM_BLAS
+TORCH_ZOOM_API hipblasHandle_t getCurrentHIPBlasHandle();
+#ifndef DISABLE_HIPBLASLT
+TORCH_ZOOM_API hipblasLtHandle_t getCurrentHIPBlasLtHandle();
+#endif
+#endif
 
 } // namespace at::zoom

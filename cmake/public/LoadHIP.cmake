@@ -197,6 +197,12 @@ if(HIP_FOUND)
       find_package_and_print_version(rocprim REQUIRED)
       find_package_and_print_version(hipcub REQUIRED)
       find_package_and_print_version(rocthrust REQUIRED)
+      if(ENABLE_ZOOM_BLAS)
+        find_package_and_print_version(hipblas REQUIRED)
+        if(NOT DISABLE_HIPBLASLT)
+          find_package_and_print_version(hipblaslt REQUIRED)
+        endif()
+      endif()
       # workaround cmake 4 build issue
       if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0.0")
         message(WARNING "Work around hiprtc cmake failure for cmake >= 4")
@@ -212,7 +218,6 @@ if(HIP_FOUND)
   if(UNIX)
     find_package_and_print_version(rccl)
     find_package_and_print_version(hsa-runtime64 REQUIRED)
-
     # roctx is part of roctracer
     find_library(ROCM_ROCTX_LIB roctx64 HINTS ${ROCM_PATH}/lib)
 
@@ -241,7 +246,7 @@ if(HIP_FOUND)
         set(HIPBLASLT_VEC_EXT OFF)
         message("hipblaslt is NOT using scale pointer vec ext: ${hipblaslt_compile_output}")
         #message("hipblaslt is NOT using scale pointer vec ext")
-      endif()
-    endif()
+
+    
   endif()
 endif()

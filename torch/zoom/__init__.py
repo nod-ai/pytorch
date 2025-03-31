@@ -44,7 +44,9 @@ else:
             return -1
         raise RuntimeError("PyTorch was compiled without Zoom support")
 
-from .zoom_triton_mm import *
+# load triton backup BLAS kernels when without HIPBlas
+if not (hasattr(torch._C, "_zoom_hasBLAS") and torch._C._zoom_hasBLAS()):
+    from .zoom_triton_mm import *
 
 _initialized = False
 _tls = threading.local()

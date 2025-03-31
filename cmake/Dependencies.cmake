@@ -1101,6 +1101,12 @@ if(USE_ROCM OR USE_ZOOM)
       set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
         hip::amdhip64 MIOpen hiprtc::hiprtc hipcub::hipcub)
       list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS hip::hiprand)
+      if(ENABLE_ZOOM_BLAS)
+        if(NOT DISABLE_HIPBLASLT)
+          list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS ${hipblaslt_LIBRARIES})
+        endif()
+        list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS roc::hipblas)
+      endif()
     else()
       set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
       hip::amdhip64 MIOpen hiprtc::hiprtc) # libroctx will be linked in with MIOpen
