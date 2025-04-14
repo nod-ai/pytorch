@@ -30,35 +30,8 @@ void direct_copy_kernel_zoom(TensorIteratorBase &iter);
 // forward decl, defined in UnarySignKernels.cu
 void neg_kernel_zoom(TensorIteratorBase& iter);
 
-// NB: Ignores the negative bit on tensors
-CONSTEXPR_EXCEPT_WIN_CUDA char conj_name[] = "conj_kernel";
-void conj_kernel_zoom(TensorIteratorBase& iter) {
-  auto conj_chalf = [&] {
-    using scalar_t = c10::complex<at::Half>;
-
-      static const auto conj_string = jiterator_stringify(
-        template <typename T>
-        T conj_kernel(T z) {
-          return std::conj(z);
-        }
-      );
-      jitted_gpu_kernel<conj_name, scalar_t, scalar_t, 1>(iter, conj_string);
-
-  };
-
-  AT_DISPATCH_SWITCH(iter.common_dtype(), "conj_zoom",
-    AT_DISPATCH_CASE_ALL_TYPES_AND3(kBool, kBFloat16, kHalf, [&] {
-      // Conj is a no-op for non-complex types
-      direct_copy_kernel_zoom(iter);
-    })
-    AT_DISPATCH_CASE_COMPLEX_TYPES([&] {
-      gpu_kernel(iter, [] GPU_LAMBDA(scalar_t a) -> scalar_t {
-        return std::conj(a);
-      });
-    })
-    AT_DISPATCH_CASE(kComplexHalf, conj_chalf)
-  );
-}
+// forward decl, defined in UnaryComplexKernels.cu
+void conj_kernel_zoom(TensorIteratorBase& iter);
 
 void float8_copy_kernel_zoom(TensorIteratorBase &iter) {
   ScalarType dtype = iter.dtype(0);
