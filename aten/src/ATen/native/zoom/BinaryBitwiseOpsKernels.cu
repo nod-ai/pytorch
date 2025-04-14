@@ -5,6 +5,9 @@
 #include <ATen/native/TensorIterator.h>
 #include <ATen/native/BinaryOps.h>
 
+// NOTE: CUDA on Windows requires that the enclosing function
+// of a __device__ lambda not have internal linkage.
+
 namespace at::native {
 
 template<typename scalar_t>
