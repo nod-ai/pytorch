@@ -169,11 +169,13 @@
   dispatch:
     CPU: _assert_async_cpu
     CUDA: _assert_async_cuda
+    PrivateUse1: _assert_async_zoom
 
 - func: _assert_async.msg(Tensor self, str assert_msg) -> ()
   dispatch:
     CPU: _assert_async_msg_cpu
     CUDA: _assert_async_msg_cuda
+    PrivateUse1: _assert_async_msg_zoom
 
 - func: _assert_scalar(Scalar self, str assert_msg) -> ()
   dispatch:
@@ -658,7 +660,7 @@
 - func: addr(Tensor self, Tensor vec1, Tensor vec2, *, Scalar beta=1, Scalar alpha=1) -> Tensor
   variants: function, method
   dispatch:
-    CPU, CUDA: addr
+    CPU, CUDA, PrivateUse1: addr
     MPS: addr_mps
     CompositeExplicitAutograd: math_addr
 
@@ -669,7 +671,7 @@
 
 - func: addr.out(Tensor self, Tensor vec1, Tensor vec2, *, Scalar beta=1, Scalar alpha=1, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: addr_out
+    CPU, CUDA, PrivateUse1: addr_out
     MPS: addr_out_mps
     CompositeExplicitAutograd: math_addr_out
 
@@ -1201,6 +1203,7 @@
   dispatch:
     CPU: _bincount_cpu
     CUDA: _bincount_cuda
+    PrivateUse1: _bincount_zoom
     MPS: _bincount_mps
   tags: dynamic_output_shape
   autogen: bincount.out
@@ -3078,6 +3081,7 @@
   dispatch:
     CPU: _validate_compressed_sparse_indices_cpu
     CUDA: _validate_compressed_sparse_indices_cuda
+    PrivateUse1: _validate_compressed_sparse_indices_zoom
 
 - func: _cufft_get_plan_cache_size(DeviceIndex device_index) -> int
 
@@ -3178,7 +3182,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA, MPS: _index_put_impl_
+    CPU, CUDA, PrivateUse1, MPS: _index_put_impl_
     QuantizedCPU: _index_put_impl_quantized_cpu_
     QuantizedCUDA: _index_put_impl_quantized_cuda_
   autogen: _index_put_impl, _index_put_impl.out
@@ -3323,6 +3327,7 @@
   dispatch:
     CPU: layer_norm_cpu
     CUDA: layer_norm_cuda
+    PrivateUse1: layer_norm_zoom
     MPS: layer_norm_mps
     CompositeExplicitAutograd: math_native_layer_norm
     NestedTensorCPU, NestedTensorCUDA: nested_layer_norm
@@ -3333,6 +3338,7 @@
   dispatch:
     CPU: layer_norm_backward_cpu
     CUDA: layer_norm_backward_cuda
+    PrivateUse1: layer_norm_backward_zoom
     MPS: layer_norm_backward_mps
     NestedTensorCPU, NestedTensorCUDA: layer_norm_backward_nested
   autogen: native_layer_norm_backward.out
@@ -3611,7 +3617,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: logaddexp_out
+    CPU, CUDA, PrivateUse1: logaddexp_out
     MPS: logaddexp_out_mps
   tags: pointwise
 
@@ -3624,7 +3630,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: logaddexp2_out
+    CPU, CUDA, PrivateUse1: logaddexp2_out
     MPS: logaddexp2_out_mps
   tags: pointwise
 
@@ -3915,7 +3921,7 @@
 - func: amax.out(Tensor self, int[1] dim=[], bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: amax_out
+    CPU, CUDA, PrivateUse1: amax_out
     MPS: amax_out_mps
 
 # Return: (Tensor output, Tensor indices)
@@ -4098,7 +4104,7 @@
 - func: amin.out(Tensor self, int[1] dim=[], bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
   structured: True
   dispatch:
-    CPU, CUDA: amin_out
+    CPU, CUDA, PrivateUse1: amin_out
     MPS: amin_out_mps
 
 # TODO: Add this function to MPS dispatch key so that we avoid declaring it in
@@ -4254,7 +4260,7 @@
 - func: mode(Tensor self, int dim=-1, bool keepdim=False) -> (Tensor values, Tensor indices)
   variants: function, method
   dispatch:
-    CPU, CUDA: mode
+    CPU, CUDA, PrivateUse1: mode
 
 - func: mode.values(Tensor self, int dim=-1, bool keepdim=False, *, Tensor(a!) values, Tensor(b!) indices) -> (Tensor(a!) values, Tensor(b!) indices)
   dispatch:
@@ -4652,6 +4658,7 @@
   variants: method
   dispatch:
     # the NestedTensor keys are necessary because NestedTensor has been removed
+    PrivateUse1: is_pinned_zoom
     # from the CompositeExplicitAutograd keyset see Note [NestedTensor Not Included in Backend Keys]
     CompositeExplicitAutograd, NestedTensorCPU: is_pinned
     SparseCsrCPU: is_pinned_sparse_compressed
@@ -4887,6 +4894,7 @@
   dispatch:
     CPU: randperm_out_cpu
     CUDA: randperm_out_cuda
+    PrivateUse1: randperm_out_zoom
     MPS: randperm_out_mps
 
 - func: range.step(Scalar start, Scalar end, Scalar step=1, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
@@ -4986,6 +4994,7 @@
   dispatch:
     CPU: repeat_interleave_cpu
     CUDA: repeat_interleave_cuda
+    PrivateUse1: repeat_interleave_zoom
     MPS: repeat_interleave_mps
   tags: dynamic_output_shape
   autogen: repeat_interleave.Tensor_out
@@ -6236,6 +6245,7 @@
   dispatch:
     CPU, MPS: roll
     CUDA: roll_cuda
+    PrivateUse1: roll_zoom
   autogen: roll.out
 
 # default int[] value [0,1] should not add space after comma, since codegen parser uses ', ' to split args
@@ -6437,6 +6447,7 @@
   dispatch:
     CPU: _unique_cpu
     CUDA: _unique_cuda
+    PrivateUse1: _unique_zoom
   autogen: _unique.out
 
 - func: unique_dim(Tensor self, int dim, bool sorted=True, bool return_inverse=False, bool return_counts=False) -> (Tensor, Tensor, Tensor)
@@ -6444,6 +6455,7 @@
   dispatch:
     CPU: unique_dim_cpu
     CUDA: unique_dim_cuda
+    PrivateUse1: unique_dim_zoom
   tags: dynamic_output_shape
   autogen: unique_dim.out
 
@@ -6452,6 +6464,7 @@
   dispatch:
     CPU: unique_consecutive_cpu
     CUDA: unique_consecutive_cuda
+    PrivateUse1: unique_consecutive_zoom
     MPS: unique_consecutive_mps
   tags: dynamic_output_shape
   autogen: unique_consecutive.out
@@ -6461,6 +6474,7 @@
   dispatch:
     CPU: unique_dim_consecutive_cpu
     CUDA: unique_dim_consecutive_cuda
+    PrivateUse1: unique_dim_consecutive_zoom
     MPS: unique_dim_consecutive_mps
   tags: dynamic_output_shape
   autogen: unique_dim_consecutive.out
@@ -6474,6 +6488,7 @@
   dispatch:
     CPU: _unique2_cpu
     CUDA: _unique2_cuda
+    PrivateUse1: _unique2_zoom
     MPS: _unique2_mps
   tags: dynamic_output_shape
   autogen: _unique2.out
@@ -6621,6 +6636,7 @@
   dispatch:
     CPU: weight_norm_cpu
     CUDA: weight_norm_cuda
+    PrivateUse1: weight_norm_zoom
     MPS: weight_norm_mps
   autogen: _weight_norm_interface.out
 
@@ -6629,6 +6645,7 @@
   dispatch:
     CPU: weight_norm_backward_cpu
     CUDA: weight_norm_backward_cuda
+    PrivateUse1: weight_norm_backward_zoom
     MPS: weight_norm_backward_mps
   autogen: _weight_norm_interface_backward.out
 
@@ -6871,7 +6888,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: norm_out
+    CPU, CUDA, PrivateUse1: norm_out
     MPS: norm_out_mps
 
 # These four redispatch in their implementation, so OK to be CompositeImplicitAutograd
@@ -7041,7 +7058,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: heaviside_out
+    CPU, CUDA, PrivateUse1: heaviside_out
   tags: pointwise
 
 - func: heaviside(Tensor self, Tensor values) -> Tensor
@@ -7916,6 +7933,7 @@
 - func: _thnn_fused_lstm_cell(Tensor input_gates, Tensor hidden_gates, Tensor cx, Tensor? input_bias=None, Tensor? hidden_bias=None) -> (Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_lstm_cell_cuda
+    PrivateUse1: _thnn_fused_lstm_cell_zoom
   autogen: _thnn_fused_lstm_cell.out
 
 # NB: The composite version of this function below is a simple wrapper that duplicates some of the outputs
@@ -7924,6 +7942,7 @@
 - func: _thnn_fused_lstm_cell_backward_impl(Tensor? grad_hy, Tensor? grad_cy, Tensor cx, Tensor cy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_lstm_cell_backward_impl_cuda
+    PrivateUse1: _thnn_fused_lstm_cell_backward_impl_zoom
   autogen: _thnn_fused_lstm_cell_backward_impl.out
 
 - func: _thnn_fused_lstm_cell_backward(Tensor? grad_hy, Tensor? grad_cy, Tensor cx, Tensor cy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
@@ -7933,11 +7952,13 @@
 - func: _thnn_fused_gru_cell(Tensor input_gates, Tensor hidden_gates, Tensor hx, Tensor? input_bias=None, Tensor? hidden_bias=None) -> (Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_gru_cell_cuda
+    PrivateUse1: _thnn_fused_gru_cell_zoom
   autogen: _thnn_fused_gru_cell.out
 
 - func: _thnn_fused_gru_cell_backward(Tensor grad_hy, Tensor workspace, bool has_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
   dispatch:
     CUDA: _thnn_fused_gru_cell_backward_cuda
+    PrivateUse1: _thnn_fused_gru_cell_backward_zoom
   autogen: _thnn_fused_gru_cell_backward.out
 
 - func: _thnn_differentiable_gru_cell_backward(Tensor grad_hy, Tensor input_gates, Tensor hidden_gates, Tensor hx, Tensor? input_bias, Tensor? hidden_bias) -> (Tensor, Tensor, Tensor, Tensor, Tensor)
@@ -8097,7 +8118,7 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, MPS: is_set_to
+    CPU, CUDA, PrivateUse1, MPS: is_set_to
 
 - func: masked_fill_.Scalar(Tensor(a!) self, Tensor mask, Scalar value) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
@@ -9859,12 +9880,14 @@
   dispatch:
     CPU, MPS: histogram_histc_out
     CUDA: _histc_out_cuda
+    PrivateUse1: _histc_out_zoom
 
 - func: histc(Tensor self, int bins=100, Scalar min=0, Scalar max=0) -> Tensor
   variants: method, function
   dispatch:
     CPU, MPS: histogram_histc
     CUDA: _histc_cuda
+    PrivateUse1: _histc_zoom
 
 - func: histogram.bins_tensor_out(Tensor self, Tensor bins, *, Tensor? weight=None, bool density=False, Tensor(a!) hist, Tensor(b!) bin_edges) -> (Tensor(a!) hist, Tensor(b!) bin_edges)
   dispatch:
@@ -10002,7 +10025,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: nextafter_out
+    CPU, CUDA, PrivateUse1, MPS: nextafter_out
   tags: pointwise
 
 - func: nextafter(Tensor self, Tensor other) -> Tensor
@@ -10289,7 +10312,7 @@
   device_check: NoCheck   # TensorIterator
   structured: True
   dispatch:
-    CPU, CUDA: renorm_out
+    CPU, CUDA, PrivateUse1: renorm_out
     MPS: renorm_out_mps
 
 - func: renorm(Tensor self, Scalar p, int dim, Scalar maxnorm) -> Tensor
@@ -10307,13 +10330,13 @@
   device_check: NoCheck
   device_guard: False
   dispatch:
-    CPU, CUDA, Meta, MPS: unfold
+    CPU, CUDA, PrivateUse1, Meta, MPS: unfold
     QuantizedCPU, QuantizedCUDA: unfold
 
 - func: unfold_backward(Tensor grad_in, SymInt[] input_sizes, int dim, int size, int step) -> Tensor
   variants: function
   dispatch:
-    CPU, CUDA, MPS: unfold_backward
+    CPU, CUDA, MPS, PrivateUse1: unfold_backward
   autogen: unfold_backward.out
 
 - func: equal(Tensor self, Tensor other) -> bool
@@ -12092,7 +12115,7 @@
   structured_inherits: TensorIteratorBase
   python_module: nn
   dispatch:
-    CPU, CUDA: glu_out
+    CPU, CUDA, PrivateUse1: glu_out
     MPS: glu_out_mps
 
 - func: glu(Tensor self, int dim=-1) -> Tensor
@@ -12753,6 +12776,7 @@
     CPU: reflection_pad1d_out_cpu
     QuantizedCPU: reflection_pad1d_out_quantized_cpu
     CUDA: reflection_pad1d_out_cuda
+    PrivateUse1: reflection_pad1d_out_zoom
     MPS: reflection_pad1d_out_mps
 
 - func: reflection_pad1d(Tensor self, SymInt[2] padding) -> Tensor
@@ -12766,6 +12790,7 @@
   dispatch:
     CPU: reflection_pad1d_backward_out_cpu
     CUDA: reflection_pad1d_backward_out_cuda
+    PrivateUse1: reflection_pad1d_backward_out_zoom
     MPS: reflection_pad1d_backward_out_mps
 
 - func: reflection_pad1d_backward(Tensor grad_output, Tensor self, SymInt[2] padding) -> Tensor
@@ -12777,6 +12802,7 @@
   dispatch:
     CPU, QuantizedCPU: reflection_pad2d_out_cpu
     CUDA: reflection_pad2d_out_cuda
+    PrivateUse1: reflection_pad2d_out_zoom
     MPS: reflection_pad2d_out_mps
 
 - func: reflection_pad2d(Tensor self, SymInt[4] padding) -> Tensor
@@ -12785,6 +12811,7 @@
     CPU: reflection_pad2d_cpu
     QuantizedCPU: reflection_pad2d_quantized_cpu
     CUDA: reflection_pad2d_cuda
+    PrivateUse1: reflection_pad2d_zoom
     MPS: reflection_pad2d_mps
   tags: core
 
@@ -12793,6 +12820,7 @@
   dispatch:
     CPU: reflection_pad2d_backward_out_cpu
     CUDA: reflection_pad2d_backward_out_cuda
+    PrivateUse1: reflection_pad2d_backward_out_zoom
     MPS: reflection_pad2d_backward_out_mps
 
 - func: reflection_pad2d_backward(Tensor grad_output, Tensor self, SymInt[4] padding) -> Tensor
@@ -12800,6 +12828,7 @@
   dispatch:
     CPU: reflection_pad2d_backward_cpu
     CUDA: reflection_pad2d_backward_cuda
+    PrivateUse1: reflection_pad2d_backward_zoom
     MPS: reflection_pad2d_backward_mps
 
 - func: reflection_pad3d.out(Tensor self, SymInt[6] padding, *, Tensor(a!) out) -> Tensor(a!)
@@ -12808,6 +12837,7 @@
   dispatch:
     CPU: reflection_pad3d_out_cpu
     CUDA: reflection_pad3d_out_cuda
+    PrivateUse1: reflection_pad3d_out_zoom
     MPS: reflection_pad3d_out_mps
 
 - func: reflection_pad3d(Tensor self, SymInt[6] padding) -> Tensor
@@ -12821,6 +12851,7 @@
   dispatch:
     CPU: reflection_pad3d_backward_out_cpu
     CUDA: reflection_pad3d_backward_out_cuda
+    PrivateUse1: reflection_pad3d_backward_out_zoom
     MPS: reflection_pad3d_backward_out_mps
 
 - func: reflection_pad3d_backward(Tensor grad_output, Tensor self, SymInt[6] padding) -> Tensor
@@ -12833,6 +12864,7 @@
   dispatch:
     CPU: replication_pad1d_out_cpu
     CUDA: replication_pad1d_out_cuda
+    PrivateUse1: replication_pad1d_out_zoom
     MPS: replication_pad1d_out_mps
 
 - func: replication_pad1d(Tensor self, SymInt[2] padding) -> Tensor
@@ -12845,6 +12877,7 @@
   dispatch:
     CPU: replication_pad1d_backward_out_cpu
     CUDA: replication_pad1d_backward_out_cuda
+    PrivateUse1: replication_pad1d_backward_out_zoom
     MPS: replication_pad1d_backward_out_mps
 
 - func: replication_pad1d_backward(Tensor grad_output, Tensor self, SymInt[2] padding) -> Tensor
@@ -12857,6 +12890,7 @@
   dispatch:
     CPU: replication_pad2d_out_cpu
     CUDA: replication_pad2d_out_cuda
+    PrivateUse1: replication_pad2d_out_zoom
     MPS: replication_pad2d_out_mps
 
 - func: replication_pad2d(Tensor self, SymInt[4] padding) -> Tensor
@@ -12869,6 +12903,7 @@
   dispatch:
     CPU: replication_pad2d_backward_out_cpu
     CUDA: replication_pad2d_backward_out_cuda
+    PrivateUse1: replication_pad2d_backward_out_zoom
     MPS: replication_pad2d_backward_out_mps
 
 - func: replication_pad2d_backward(Tensor grad_output, Tensor self, SymInt[4] padding) -> Tensor
@@ -12876,6 +12911,7 @@
   dispatch:
     CPU: replication_pad2d_backward_cpu
     CUDA: replication_pad2d_backward_cuda
+    PrivateUse1: replication_pad2d_backward_zoom
     MPS: replication_pad2d_backward_mps
 
 - func: replication_pad3d.out(Tensor self, SymInt[6] padding, *, Tensor(a!) out) -> Tensor(a!)
@@ -12884,6 +12920,7 @@
   dispatch:
     CPU: replication_pad3d_out_cpu
     CUDA: replication_pad3d_out_cuda
+    PrivateUse1: replication_pad3d_out_zoom
     MPS: replication_pad3d_out_mps
 
 - func: replication_pad3d(Tensor self, SymInt[6] padding) -> Tensor
@@ -12897,6 +12934,7 @@
   dispatch:
     CPU: replication_pad3d_backward_out_cpu
     CUDA: replication_pad3d_backward_out_cuda
+    PrivateUse1: replication_pad3d_backward_out_zoom
     MPS: replication_pad3d_backward_out_mps
 
 - func: replication_pad3d_backward(Tensor grad_output, Tensor self, SymInt[6] padding) -> Tensor
@@ -12904,6 +12942,7 @@
   dispatch:
     CPU: replication_pad3d_backward_cpu
     CUDA: replication_pad3d_backward_cuda
+    PrivateUse1: replication_pad3d_backward_zoom
     MPS: replication_pad3d_backward_mps
 
 - func: _pad_circular(Tensor self, SymInt[] pad) -> Tensor
@@ -12978,6 +13017,7 @@
   dispatch:
     CPU: upsample_linear1d_out_cpu
     CUDA: upsample_linear1d_out_cuda
+    PrivateUse1: upsample_linear1d_out_zoom
     MPS: upsample_linear1d_out_mps
 
 - func: upsample_linear1d(Tensor self, SymInt[1] output_size, bool align_corners, float? scales=None) -> Tensor
@@ -12990,6 +13030,7 @@
   dispatch:
     CPU: upsample_linear1d_backward_out_cpu
     CUDA: upsample_linear1d_backward_out_cuda
+    PrivateUse1: upsample_linear1d_backward_out_zoom
     MPS: upsample_linear1d_backward_out_mps
 
 - func: upsample_linear1d_backward(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, bool align_corners, float? scales=None) -> Tensor
@@ -13002,6 +13043,7 @@
   dispatch:
     CPU: upsample_bilinear2d_out_cpu
     CUDA: upsample_bilinear2d_out_cuda
+    PrivateUse1: upsample_bilinear2d_out_zoom
     MPS: upsample_bilinear2d_out_mps
 
 - func: upsample_bilinear2d(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13016,6 +13058,7 @@
   dispatch:
     CPU: upsample_bilinear2d_backward_out_cpu
     CUDA: upsample_bilinear2d_backward_out_cuda
+    PrivateUse1: upsample_bilinear2d_backward_out_zoom
     MPS: upsample_bilinear2d_backward_out_mps
 
 - func: upsample_bilinear2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13029,6 +13072,7 @@
     CPU: _upsample_bilinear2d_aa_out_cpu
     CUDA: _upsample_bilinear2d_aa_out_cuda
     MPS: _upsample_bilinear2d_aa_out_mps
+    PrivateUse1: _upsample_bilinear2d_aa_out_zoom
 
 - func: _upsample_bilinear2d_aa(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13040,6 +13084,7 @@
   dispatch:
     CPU: _upsample_bilinear2d_aa_backward_out_cpu
     CUDA: _upsample_bilinear2d_aa_backward_out_cuda
+    PrivateUse1: _upsample_bilinear2d_aa_backward_out_zoom
 
 - func: _upsample_bilinear2d_aa_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13052,6 +13097,7 @@
     CPU: upsample_bicubic2d_out_cpu
     CUDA: upsample_bicubic2d_out_cuda
     MPS: upsample_bicubic2d_out_mps
+    PrivateUse1: upsample_bicubic2d_out_zoom
 
 - func: upsample_bicubic2d(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13064,6 +13110,7 @@
     CPU: upsample_bicubic2d_backward_out_cpu
     CUDA: upsample_bicubic2d_backward_out_cuda
     MPS: upsample_bicubic2d_backward_out_mps
+    PrivateUse1: upsample_bicubic2d_backward_out_zoom
 
 - func: upsample_bicubic2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13075,6 +13122,7 @@
   dispatch:
     CPU: _upsample_bicubic2d_aa_out_cpu
     CUDA: _upsample_bicubic2d_aa_out_cuda
+    PrivateUse1: _upsample_bicubic2d_aa_out_zoom
 
 - func: _upsample_bicubic2d_aa(Tensor self, SymInt[2] output_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13086,6 +13134,7 @@
   dispatch:
     CPU: _upsample_bicubic2d_aa_backward_out_cpu
     CUDA: _upsample_bicubic2d_aa_backward_out_cuda
+    PrivateUse1: _upsample_bicubic2d_aa_backward_out_zoom
 
 - func: _upsample_bicubic2d_aa_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, bool align_corners, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13097,6 +13146,7 @@
   dispatch:
     CPU: upsample_trilinear3d_out_cpu
     CUDA: upsample_trilinear3d_out_cuda
+    PrivateUse1: upsample_trilinear3d_out_zoom
 
 - func: upsample_trilinear3d(Tensor self, SymInt[3] output_size, bool align_corners, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13108,6 +13158,7 @@
   dispatch:
     CPU: upsample_trilinear3d_backward_out_cpu
     CUDA: upsample_trilinear3d_backward_out_cuda
+    PrivateUse1: upsample_trilinear3d_backward_out_zoom
 
 - func: upsample_trilinear3d_backward(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, bool align_corners, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13119,6 +13170,7 @@
   dispatch:
     CPU: upsample_nearest1d_out_cpu
     CUDA: upsample_nearest1d_out_cuda
+    PrivateUse1: upsample_nearest1d_out_zoom
     MPS: upsample_nearest1d_out_mps
 
 - func: _upsample_nearest_exact1d.out(Tensor self, SymInt[1] output_size, float? scales=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -13127,6 +13179,7 @@
   dispatch:
     CPU: _upsample_nearest_exact1d_out_cpu
     CUDA: _upsample_nearest_exact1d_out_cuda
+    PrivateUse1: _upsample_nearest_exact1d_out_zoom
     MPS: _upsample_nearest_exact1d_out_mps
 
 - func: upsample_nearest1d(Tensor self, SymInt[1] output_size, float? scales=None) -> Tensor
@@ -13143,6 +13196,7 @@
   dispatch:
     CPU: upsample_nearest1d_backward_out_cpu
     CUDA: upsample_nearest1d_backward_out_cuda
+    PrivateUse1: upsample_nearest1d_backward_out_zoom
     MPS: upsample_nearest1d_backward_out_mps
 
 - func: _upsample_nearest_exact1d_backward.grad_input(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, float? scales=None, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -13151,6 +13205,7 @@
   dispatch:
     CPU: _upsample_nearest_exact1d_backward_out_cpu
     CUDA: _upsample_nearest_exact1d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact1d_backward_out_zoom
     MPS: _upsample_nearest_exact1d_backward_out_mps
 
 - func: upsample_nearest1d_backward(Tensor grad_output, SymInt[1] output_size, SymInt[3] input_size, float? scales=None) -> Tensor
@@ -13167,6 +13222,7 @@
   dispatch:
     CPU: upsample_nearest2d_out_cpu
     CUDA: upsample_nearest2d_out_cuda
+    PrivateUse1: upsample_nearest2d_out_zoom
     MPS: upsample_nearest2d_out_mps
 
 - func: _upsample_nearest_exact2d.out(Tensor self, SymInt[2] output_size, float? scales_h=None, float? scales_w=None, *, Tensor(a!) out) -> Tensor(a!)
@@ -13175,6 +13231,7 @@
   dispatch:
     CPU: _upsample_nearest_exact2d_out_cpu
     CUDA: _upsample_nearest_exact2d_out_cuda
+    PrivateUse1: _upsample_nearest_exact2d_out_zoom
     MPS: _upsample_nearest_exact2d_out_mps
 
 - func: upsample_nearest2d(Tensor self, SymInt[2] output_size, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13195,6 +13252,7 @@
   dispatch:
     CPU: upsample_nearest2d_backward_out_cpu
     CUDA: upsample_nearest2d_backward_out_cuda
+    PrivateUse1: upsample_nearest2d_backward_out_zoom
     MPS: upsample_nearest2d_backward_out_mps
 
 - func: _upsample_nearest_exact2d_backward.grad_input(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, float? scales_h=None, float? scales_w=None, *, Tensor(a!) grad_input) -> Tensor(a!)
@@ -13203,6 +13261,7 @@
   dispatch:
     CPU: _upsample_nearest_exact2d_backward_out_cpu
     CUDA: _upsample_nearest_exact2d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact2d_backward_out_zoom
     MPS: _upsample_nearest_exact2d_backward_out_mps
 
 - func: upsample_nearest2d_backward(Tensor grad_output, SymInt[2] output_size, SymInt[4] input_size, float? scales_h=None, float? scales_w=None) -> Tensor
@@ -13219,6 +13278,7 @@
   dispatch:
     CPU: upsample_nearest3d_out_cpu
     CUDA: upsample_nearest3d_out_cuda
+    PrivateUse1: upsample_nearest3d_out_zoom
 
 - func: _upsample_nearest_exact3d.out(Tensor self, SymInt[3] output_size, float? scales_d=None, float? scales_h=None, float? scales_w=None, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13226,6 +13286,7 @@
   dispatch:
     CPU: _upsample_nearest_exact3d_out_cpu
     CUDA: _upsample_nearest_exact3d_out_cuda
+    PrivateUse1: _upsample_nearest_exact3d_out_zoom
 
 - func: upsample_nearest3d(Tensor self, SymInt[3] output_size, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13245,6 +13306,7 @@
   dispatch:
     CPU: upsample_nearest3d_backward_out_cpu
     CUDA: upsample_nearest3d_backward_out_cuda
+    PrivateUse1: upsample_nearest3d_backward_out_zoom
 
 - func: _upsample_nearest_exact3d_backward.grad_input(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, float? scales_d=None, float? scales_h=None, float? scales_w=None, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
@@ -13252,6 +13314,7 @@
   dispatch:
     CPU: _upsample_nearest_exact3d_backward_out_cpu
     CUDA: _upsample_nearest_exact3d_backward_out_cuda
+    PrivateUse1: _upsample_nearest_exact3d_backward_out_zoom
 
 - func: upsample_nearest3d_backward(Tensor grad_output, SymInt[3] output_size, SymInt[5] input_size, float? scales_d=None, float? scales_h=None, float? scales_w=None) -> Tensor
   python_module: nn
@@ -13785,7 +13848,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA, MPS: special_zeta_out
+    CPU, CUDA, MPS, PrivateUse1: special_zeta_out
   tags: pointwise
 
 - func: special_zeta.self_scalar_out(Scalar self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
@@ -14815,13 +14878,13 @@
 - func: segment_reduce(Tensor data, str reduce, *, Tensor? lengths=None, Tensor? indices=None, Tensor? offsets=None, int axis=0, bool unsafe=False, Scalar? initial=None) -> Tensor
   variants: function
   dispatch:
-    CPU, CUDA: segment_reduce_kernel
+    CPU, CUDA, PrivateUse1: segment_reduce_kernel
   autogen: segment_reduce.out
 
 - func: _segment_reduce_backward(Tensor grad, Tensor output, Tensor data, str reduce, *, Tensor? lengths=None, Tensor? offsets=None, int axis=0, Scalar? initial=None) -> Tensor
   variants: function
   dispatch:
-    CPU, CUDA: _segment_reduce_backward_kernel
+    CPU, CUDA, PrivateUse1: _segment_reduce_backward_kernel
   autogen: _segment_reduce_backward.out
 
 - func: pad_sequence(Tensor[] sequences, bool batch_first=False, float padding_value=0.0, str padding_side="right") -> Tensor
@@ -15685,7 +15748,7 @@
 - func: special_laguerre_polynomial_l.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_laguerre_polynomial_l_out
+    CPU, CUDA, PrivateUse1: special_laguerre_polynomial_l_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15734,7 +15797,7 @@
 - func: special_legendre_polynomial_p.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_legendre_polynomial_p_out
+    CPU, CUDA, PrivateUse1: special_legendre_polynomial_p_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15765,7 +15828,7 @@
 
 - func: special_modified_bessel_i0.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_modified_bessel_i0_out
+    CPU, CUDA, PrivateUse1: special_modified_bessel_i0_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15780,7 +15843,7 @@
 
 - func: special_modified_bessel_i1.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_modified_bessel_i1_out
+    CPU, CUDA, PrivateUse1: special_modified_bessel_i1_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15795,7 +15858,7 @@
 
 - func: special_modified_bessel_k0.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_modified_bessel_k0_out
+    CPU, CUDA, PrivateUse1: special_modified_bessel_k0_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15810,7 +15873,7 @@
 
 - func: special_modified_bessel_k1.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_modified_bessel_k1_out
+    CPU, CUDA, PrivateUse1: special_modified_bessel_k1_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15825,7 +15888,7 @@
 
 - func: special_scaled_modified_bessel_k0.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_scaled_modified_bessel_k0_out
+    CPU, CUDA, PrivateUse1: special_scaled_modified_bessel_k0_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15840,7 +15903,7 @@
 
 - func: special_scaled_modified_bessel_k1.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: special_scaled_modified_bessel_k1_out
+    CPU, CUDA, PrivateUse1: special_scaled_modified_bessel_k1_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15873,7 +15936,7 @@
 - func: special_shifted_chebyshev_polynomial_t.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_shifted_chebyshev_polynomial_t_out
+    CPU, CUDA, PrivateUse1: special_shifted_chebyshev_polynomial_t_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15922,7 +15985,7 @@
 - func: special_shifted_chebyshev_polynomial_u.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_shifted_chebyshev_polynomial_u_out
+    CPU, CUDA, PrivateUse1: special_shifted_chebyshev_polynomial_u_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -15971,7 +16034,7 @@
 - func: special_shifted_chebyshev_polynomial_v.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_shifted_chebyshev_polynomial_v_out
+    CPU, CUDA, PrivateUse1: special_shifted_chebyshev_polynomial_v_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -16020,7 +16083,7 @@
 - func: special_shifted_chebyshev_polynomial_w.out(Tensor x, Tensor n, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck
   dispatch:
-    CPU, CUDA: special_shifted_chebyshev_polynomial_w_out
+    CPU, CUDA, PrivateUse1: special_shifted_chebyshev_polynomial_w_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True
@@ -16051,7 +16114,7 @@
 
 - func: special_spherical_bessel_j0.out(Tensor x, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA, MPS: special_spherical_bessel_j0_out
+    CPU, CUDA, MPS, PrivateUse1: special_spherical_bessel_j0_out
   python_module: special
   structured_inherits: TensorIteratorBase
   structured: True

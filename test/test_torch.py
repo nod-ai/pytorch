@@ -6023,7 +6023,6 @@ else:
             if lazy_init_scale:
                 # Dummy scale() call to ensure the scale tensor is lazily initialized.
                 s1.scale(torch.full((1,), 4.0, dtype=torch.float32, device=device))
-                print(type(s1._scale), s1._scale.dtype)
                 if "cuda" == device.type:
                     self.assertTrue(isinstance(s1._scale, torch.cuda.FloatTensor))
                 else:

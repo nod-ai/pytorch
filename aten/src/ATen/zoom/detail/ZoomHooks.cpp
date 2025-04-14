@@ -18,7 +18,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <iostream>
 #include <string>
 
 namespace c10::zoom::_internal {
@@ -210,7 +209,6 @@ std::string ZoomHooks::showConfig() const {
 
 int ZoomHooks::getNumGPUs() const {
   auto cnt = c10::zoom::device_count();
-  std::cout << "numgpu: " << cnt << std::endl;
   return cnt;
 }
 

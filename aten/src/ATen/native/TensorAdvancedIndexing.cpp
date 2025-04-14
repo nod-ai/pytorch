@@ -884,10 +884,11 @@ Tensor& put_(
     const Tensor& source,
     const bool accumulate) {
   // See note [Writing Nondeterministic Operations]
-  // Nondeterministic when index contains duplicate entries and we do not
-  // accumulate If we accumulate on GPU, we use atomicGPUAdd, which is
-  // non-deterministic
-  if (!accumulate || (accumulate && self.device().type() == DeviceType::CUDA)) {
+  // Nondeterministic when index contains duplicate entries and we do not accumulate
+  // If we accumulate on GPU, we use atomicGPUAdd, which is non-deterministic
+  // TODO(Arham): replace PU1 with Zoom key
+  bool non_deterministic_device = self.device().type() == DeviceType::CUDA || self.device().type() == DeviceType::PrivateUse1;
+  if (!accumulate || (accumulate && non_deterministic_device)) {
     at::globalContext().alertNotDeterministic("put_");
   }
 
@@ -1007,8 +1008,9 @@ Tensor& _index_put_impl_(
       at::assert_no_overlap(self, *index);
     }
   }
-  if ((self.device().type() == DeviceType::CUDA ||
-       self.device().type() == DeviceType::XPU) &&
+  // TODO(Arham): replace PU1 with Zoom key
+  bool non_deterministic_device = (self.device().type() == DeviceType::CUDA || self.device().type() == DeviceType::XPU || self.device().type() == DeviceType::PrivateUse1);
+  if ((non_deterministic_device) &&
       (accumulate || globalContext().deterministicAlgorithms())) {
     TORCH_CHECK(
         value_.device() == self.device(),
@@ -1107,7 +1109,8 @@ TORCH_IMPL_FUNC(index_copy_out)
     result.copy_(self);
 
   // See Note [Enabling Deterministic Operations]
-  if (result.is_cuda() && globalContext().deterministicAlgorithms()) {
+  // TODO(Arham): exchange keys
+  if ((result.is_cuda() || result.is_privateuseone()) && globalContext().deterministicAlgorithms()) {
     torch::List<std::optional<Tensor>> indices;
     indices.resize(dim + 1);
     indices.set(dim, index);
@@ -2270,9 +2273,11 @@ void scatter_impl(
     return;
 
   auto op = ReductionType::SUM;
+  // TODO(Arham): replace PU1 with Zoom key
   bool deterministic = globalContext().deterministicAlgorithms() &&
       (self.device().type() == DeviceType::CUDA ||
-       self.device().type() == DeviceType::XPU);
+       self.device().type() == DeviceType::XPU ||
+       self.device().type() == DeviceType::PrivateUse1);
 
   if (reduce.has_value()) {
     op = get_operator_enum(reduce.value(), use_new_options);
@@ -2375,9 +2380,11 @@ TORCH_IMPL_FUNC(scatter_add)
 
   // See Note [Enabling Deterministic Operations]
   // Avoid gpuAtomicAdd for CUDA and XPU if deterministic mode is turned on
+  // TODO(Arham): replace PU1 with Zoom key
   if (globalContext().deterministicAlgorithms() &&
       (self.device().type() == DeviceType::CUDA ||
-       self.device().type() == DeviceType::XPU)) {
+       self.device().type() == DeviceType::XPU ||
+       self.device().type() == DeviceType::PrivateUse1)) {
     _scatter_via_index_put(self, dim, index, src, mut_out, /*accumulate*/ true);
   } else {
     if (can_use_expanded_index_path(
