@@ -406,7 +406,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: angle
+    CPU, CUDA, PrivateUse1: angle
     MPS: angle_mps
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: angle_sparse_csr
   tags: pointwise
@@ -414,7 +414,7 @@
 - func: angle.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: angle_out
+    CPU, CUDA, PrivateUse1: angle_out
     MPS: angle_out_mps
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: angle_sparse_csr_out
   tags: pointwise
@@ -490,7 +490,7 @@
 
 - func: conj_physical.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: conj_physical_out
+    CPU, CUDA, PrivateUse1: conj_physical_out
     MPS: conj_physical_out_mps
     SparseCPU, SparseCUDA: conj_physical_out_sparse
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: conj_physical_sparse_csr_out
@@ -531,7 +531,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: acos_out
+    CPU, CUDA, PrivateUse1: acos_out
     MPS: acos_out_mps
   tags: pointwise
 
@@ -862,7 +862,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: acosh_out
+    CPU, CUDA, PrivateUse1: acosh_out
     MPS: acosh_out_mps
   tags: pointwise
 # arccosh, alias for acosh
@@ -895,7 +895,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: asinh_out
+    CPU, CUDA, PrivateUse1: asinh_out
     MPS: asinh_out_mps
     SparseCPU, SparseCUDA: asinh_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: asinh_sparse_csr_out
@@ -930,7 +930,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: atanh_out
+    CPU, CUDA, PrivateUse1: atanh_out
     MPS: atanh_out_mps
     SparseCPU, SparseCUDA: atanh_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: atanh_sparse_csr_out
@@ -988,7 +988,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: asin_out
+    CPU, CUDA, PrivateUse1: asin_out
     MPS: asin_out_mps
     SparseCPU, SparseCUDA: asin_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: asin_sparse_csr_out
@@ -1026,7 +1026,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: atan_out
+    CPU, CUDA, PrivateUse1: atan_out
     MPS: atan_out_mps
     SparseCPU, SparseCUDA: atan_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: atan_sparse_csr_out
@@ -1471,7 +1471,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: ceil_out
+    CPU, CUDA, PrivateUse1, MPS: ceil_out
     SparseCPU, SparseCUDA: ceil_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: ceil_sparse_csr_out
   tags: pointwise
@@ -1849,7 +1849,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: cosh_out
+    CPU, CUDA, PrivateUse1: cosh_out
     MPS: cosh_out_mps
   tags: pointwise
 
@@ -2067,13 +2067,14 @@
   dispatch:
     CPU: ctc_loss_cpu
     CUDA: ctc_loss_gpu
+    PrivateUse1: ctc_loss_gpu
     Meta: ctc_loss_meta
   autogen: _ctc_loss.out
   tags: dynamic_output_shape  # the shape of second output is data dependent
 
 - func: _ctc_loss.Tensor(Tensor log_probs, Tensor targets, Tensor input_lengths, Tensor target_lengths, int blank=0, bool zero_infinity=False) -> (Tensor, Tensor)
   dispatch:
-    CPU, CUDA: ctc_loss_tensor
+    CPU, CUDA, PrivateUse1: ctc_loss_tensor
   autogen: _ctc_loss.Tensor_out
   tags: dynamic_output_shape  # the shape of second output is data dependent
 
@@ -2081,11 +2082,12 @@
   dispatch:
     CPU: ctc_loss_backward_cpu
     CUDA: ctc_loss_backward_gpu
+    PrivateUse1: ctc_loss_backward_gpu
   autogen: _ctc_loss_backward.out
 
 - func: _ctc_loss_backward.Tensor(Tensor grad, Tensor log_probs, Tensor targets, Tensor input_lengths, Tensor target_lengths, Tensor neg_log_likelihood, Tensor log_alpha, int blank, bool zero_infinity=False) -> Tensor
   dispatch:
-    CPU, CUDA: ctc_loss_backward_tensor
+    CPU, CUDA, PrivateUse1: ctc_loss_backward_tensor
 
 - func: diag_embed(Tensor self, int offset=0, int dim1=-2, int dim2=-1) -> Tensor
   variants: function, method
@@ -2560,7 +2562,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: erf_out
+    CPU, CUDA, PrivateUse1: erf_out
     MPS: erf_out_mps
     SparseCPU, SparseCUDA: erf_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: erf_sparse_csr_out
@@ -2583,7 +2585,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: erfc_out
+    CPU, CUDA, PrivateUse1: erfc_out
   tags: pointwise
 
 - func: exp(Tensor self) -> Tensor
@@ -2620,7 +2622,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: exp2_out
+    CPU, CUDA, PrivateUse1: exp2_out
     MPS: exp2_out_mps
   tags: pointwise
 
@@ -2768,7 +2770,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: floor_out
+    CPU, CUDA, PrivateUse1, MPS: floor_out
     SparseCPU, SparseCUDA: floor_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: floor_sparse_csr_out
   tags: pointwise
@@ -2832,7 +2834,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: frac_out
+    CPU, CUDA, PrivateUse1: frac_out
     MPS: frac_out_mps
     SparseCPU, SparseCUDA: frac_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: frac_sparse_csr_out
@@ -3530,7 +3532,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: log_out
+    CPU, CUDA, PrivateUse1: log_out
     MPS: log_out_mps
   tags: pointwise
 
@@ -3551,7 +3553,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: log10_out
+    CPU, CUDA, PrivateUse1: log10_out
     MPS: log10_out_mps
   tags: pointwise
 
@@ -3578,7 +3580,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: log1p_out
+    CPU, CUDA, PrivateUse1: log1p_out
     MPS: log1p_out_mps
     SparseCPU, SparseCUDA: log1p_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: log1p_sparse_csr_out
@@ -3601,7 +3603,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: log2_out
+    CPU, CUDA, PrivateUse1: log2_out
     MPS: log2_out_mps
   tags: pointwise
 
@@ -3996,7 +3998,7 @@
   structured: True
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: mean_out
+    CPU, CUDA, PrivateUse1: mean_out
     MPS: mean_out_mps
     QuantizedCPU: mean_out_quantized_cpu
 
@@ -4394,12 +4396,14 @@
   dispatch:
     CPU: batch_norm_cpu
     CUDA: batch_norm_cuda
+    PrivateUse1: batch_norm_zoom
     MPS: batch_norm_mps
     MkldnnCPU: mkldnn_batch_norm
 
 - func: native_batch_norm.out(Tensor input, Tensor? weight, Tensor? bias, Tensor? running_mean, Tensor? running_var, bool training, float momentum, float eps, *, Tensor(a!) out, Tensor(b!) save_mean, Tensor(c!) save_invstd) -> (Tensor(a!), Tensor(b!), Tensor(c!))
   dispatch:
     CUDA: batch_norm_cuda_out
+    PrivateUse1: batch_norm_zoom_out
     MPS: batch_norm_mps_out
     CPU: batch_norm_cpu_out
 
@@ -4408,6 +4412,7 @@
   dispatch:
     CPU: _batch_norm_legit_cpu
     CUDA: _batch_norm_legit_cuda
+    PrivateUse1: _batch_norm_legit_zoom
     MPS: _batch_norm_legit_mps
     MkldnnCPU: _mkldnn_batch_norm_legit
   autogen: _native_batch_norm_legit_functional
@@ -4426,12 +4431,14 @@
   dispatch:
     CPU: _batch_norm_legit_cpu_out
     CUDA: _batch_norm_legit_cuda_out
+    PrivateUse1: _batch_norm_legit_zoom_out
     MPS: _batch_norm_legit_mps_out
 
 - func: _native_batch_norm_legit.no_stats(Tensor input, Tensor? weight, Tensor? bias, bool training, float momentum, float eps) -> (Tensor, Tensor, Tensor)
   dispatch:
     CPU: _batch_norm_legit_no_stats_cpu
     CUDA: _batch_norm_legit_no_stats_cuda
+    PrivateUse1: _batch_norm_legit_no_stats_zoom
     MPS: _batch_norm_legit_no_stats_mps
     MkldnnCPU: _mkldnn_batch_norm_legit_no_stats
   tags: core
@@ -4440,36 +4447,43 @@
   dispatch:
     CPU: _batch_norm_legit_no_stats_cpu_out
     CUDA: _batch_norm_legit_no_stats_cuda_out
+    PrivateUse1: _batch_norm_legit_no_stats_zoom_out
     MPS: _batch_norm_legit_no_stats_mps_out
 
 - func: batch_norm_stats(Tensor input, float eps) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_stats_cuda
+    PrivateUse1: batch_norm_stats_zoom
   autogen: batch_norm_stats.out
 
 - func: batch_norm_elemt(Tensor input, Tensor? weight, Tensor? bias, Tensor mean, Tensor invstd, float eps) -> Tensor
   dispatch:
     CUDA: batch_norm_elemt_cuda
+    PrivateUse1: batch_norm_elemt_zoom
 
 - func: batch_norm_elemt.out(Tensor input, Tensor? weight, Tensor? bias, Tensor mean, Tensor invstd, float eps, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
     CUDA: batch_norm_elemt_cuda_out
+    PrivateUse1: batch_norm_elemt_zoom_out
 
 # for backward compatibility
 - func: batch_norm_gather_stats(Tensor input, Tensor mean, Tensor invstd, Tensor? running_mean, Tensor? running_var, float momentum, float eps, int count) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_gather_stats_cuda
+    PrivateUse1: batch_norm_gather_stats_zoom
   autogen: batch_norm_gather_stats.out
 
 - func: batch_norm_gather_stats_with_counts(Tensor input, Tensor mean, Tensor invstd, Tensor? running_mean, Tensor? running_var, float momentum, float eps, Tensor counts) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_gather_stats_with_counts_cuda
+    PrivateUse1: batch_norm_gather_stats_with_counts_zoom
   autogen: batch_norm_gather_stats_with_counts.out
 
 - func: native_batch_norm_backward(Tensor grad_out, Tensor input, Tensor? weight, Tensor? running_mean, Tensor? running_var, Tensor? save_mean, Tensor? save_invstd, bool train, float eps, bool[3] output_mask) -> (Tensor, Tensor, Tensor)
   dispatch:
     CPU: batch_norm_backward_cpu
     CUDA: batch_norm_backward_cuda
+    PrivateUse1: batch_norm_backward_zoom
     MPS: batch_norm_backward_mps
     MkldnnCPU: mkldnn_batch_norm_backward
   autogen: native_batch_norm_backward.out
@@ -4477,17 +4491,20 @@
 - func: batch_norm_backward_reduce(Tensor grad_out, Tensor input, Tensor mean, Tensor invstd, Tensor? weight, bool input_g, bool weight_g, bool bias_g) -> (Tensor, Tensor, Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_backward_reduce_cuda
+    PrivateUse1: batch_norm_backward_reduce_zoom
   autogen: batch_norm_backward_reduce.out
 
 - func: batch_norm_backward_elemt(Tensor grad_out, Tensor input, Tensor mean, Tensor invstd, Tensor? weight, Tensor sum_dy, Tensor sum_dy_xmu, Tensor count) -> Tensor
   dispatch:
     CUDA: batch_norm_backward_elemt_cuda
+    PrivateUse1: batch_norm_backward_elemt_zoom
   autogen: batch_norm_backward_elemt.out
 
 - func: batch_norm_update_stats(Tensor input, Tensor? running_mean, Tensor? running_var, float momentum) -> (Tensor, Tensor)
   dispatch:
     CPU: batch_norm_update_stats_cpu
     CUDA: batch_norm_update_stats_cuda
+    PrivateUse1: batch_norm_update_stats_zoom
   autogen: batch_norm_update_stats.out
 
 - func: is_vulkan_available() -> bool
@@ -4912,7 +4929,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: reciprocal_out
+    CPU, CUDA, PrivateUse1: reciprocal_out
     MPS: reciprocal_out_mps
   tags: pointwise
 
@@ -5045,7 +5062,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: round_out
+    CPU, CUDA, PrivateUse1, MPS: round_out
     SparseCPU, SparseCUDA: round_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: round_sparse_csr_out
   tags: pointwise
@@ -5067,7 +5084,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: round_decimals_out
+    CPU, CUDA, MPS, PrivateUse1: round_decimals_out
   tags: pointwise
 
 - func: rrelu(Tensor self, Scalar lower=0.125, Scalar upper=0.3333333333333333, bool training=False, Generator? generator=None) -> Tensor
@@ -5364,26 +5381,26 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sigmoid_out
+    CPU, CUDA, PrivateUse1: sigmoid_out
     MPS: sigmoid_out_mps
   tags: pointwise
 
 - func: logit(Tensor self, float? eps=None) -> Tensor
   variants: function, method
   dispatch:
-    CPU, CUDA: logit
+    CPU, CUDA, PrivateUse1: logit
     MPS: logit_mps
   tags: pointwise
 
 - func: logit_(Tensor(a!) self, float? eps=None) -> Tensor(a!)
   variants: function, method
   dispatch:
-    CPU, CUDA: logit_
+    CPU, CUDA, PrivateUse1: logit_
   tags: pointwise
 
 - func: logit.out(Tensor self, float? eps=None, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, CUDA: logit_out
+    CPU, CUDA, PrivateUse1: logit_out
     MPS: logit_out_mps
   tags: pointwise
 
@@ -5431,7 +5448,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: sinc_out
+    CPU, CUDA, MPS, PrivateUse1: sinc_out
   tags: pointwise
 
 - func: sinh(Tensor self) -> Tensor
@@ -5457,7 +5474,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: sinh_out
+    CPU, CUDA, PrivateUse1: sinh_out
     MPS: sinh_out_mps
     SparseCPU, SparseCUDA: sinh_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: sinh_sparse_csr_out
@@ -5945,7 +5962,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: std
+    CPU, CUDA, PrivateUse1: std
     MPS: std_mps
     QuantizedCPU: std_quantized_cpu
 
@@ -5963,7 +5980,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA: std_mean
+    CPU, CUDA, PrivateUse1: std_mean
     MPS: std_mean_mps
   autogen: std_mean.correction_out
 
@@ -5983,7 +6000,7 @@
 - func: std.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: std_out
+    CPU, CUDA, PrivateUse1: std_out
     QuantizedCPU: std_out_quantized_cpu
 
 - func: std.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
@@ -6070,7 +6087,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: tan_out
+    CPU, CUDA, PrivateUse1: tan_out
     MPS: tan_out_mps
     SparseCPU, SparseCUDA: tan_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: tan_sparse_csr_out
@@ -6104,7 +6121,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: tanh_out
+    CPU, CUDA, PrivateUse1, MPS: tanh_out
     SparseCPU, SparseCUDA: tanh_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: tanh_sparse_csr_out
   tags: pointwise
@@ -6395,7 +6412,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MPS: trunc_out
+    CPU, CUDA, PrivateUse1, MPS: trunc_out
     SparseCPU, SparseCUDA: trunc_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: trunc_sparse_csr_out
   tags: pointwise
@@ -6502,7 +6519,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function, method
   dispatch:
-    CPU, CUDA: var
+    CPU, CUDA, PrivateUse1: var
     MPS: var_mps
   tags: core
 
@@ -6513,7 +6530,7 @@
 - func: var.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: var_out
+    CPU, CUDA, PrivateUse1: var_out
 
 - func: var.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
   device_check: NoCheck   # TensorIterator
@@ -6546,7 +6563,7 @@
   device_check: NoCheck   # TensorIterator
   variants: function
   dispatch:
-    CPU, CUDA: var_mean
+    CPU, CUDA, PrivateUse1: var_mean
     MPS: var_mean_mps
   autogen: var_mean.correction_out
 
@@ -6712,6 +6729,7 @@
   dispatch:
     CPU: _batch_norm_with_update_cpu
     CUDA: _batch_norm_with_update_cuda
+    PrivateUse1: _batch_norm_with_update_zoom
     MPS: _batch_norm_with_update_mps
     MkldnnCPU: _batch_norm_with_update_mkldnn
   autogen: _batch_norm_with_update_functional
@@ -6720,6 +6738,7 @@
   dispatch:
     CPU: _batch_norm_with_update_cpu_out
     CUDA: _batch_norm_with_update_cuda_out
+    PrivateUse1: _batch_norm_with_update_zoom_out
     MPS: _batch_norm_with_update_mps_out
 
 - func: _batch_norm_no_update(Tensor input, Tensor? weight, Tensor? bias, Tensor? running_mean, Tensor? running_var, float momentum, float eps) -> (Tensor, Tensor, Tensor, Tensor)
@@ -6731,6 +6750,7 @@
   dispatch:
     CPU: _new_batch_norm_backward_cpu
     CUDA: _new_batch_norm_backward_cuda
+    PrivateUse1: _new_batch_norm_backward_zoom
     MPS: _new_batch_norm_backward_mps
     MkldnnCPU: _new_batch_norm_backward_mkldnn
 
@@ -8122,6 +8142,7 @@
   dispatch:
     CPU: masked_scatter__cpu
     CUDA: masked_scatter__cuda
+    PrivateUse1: masked_scatter__zoom
     MPS: masked_scatter__mps
   autogen: masked_scatter.out
 
@@ -9329,6 +9350,7 @@
   dispatch:
     CPU: masked_select_out_cpu
     CUDA: masked_select_out_cuda
+    PrivateUse1: masked_select_out_zoom
     MPS: masked_select_out_mps
   tags: dynamic_output_shape
 
@@ -9337,6 +9359,7 @@
   dispatch:
     CPU: masked_select_cpu
     CUDA: masked_select_cuda
+    PrivateUse1: masked_select_zoom
     MPS: masked_select_mps
   tags: dynamic_output_shape
 
@@ -9349,6 +9372,7 @@
   dispatch:
     CPU: nonzero_out_cpu
     CUDA: nonzero_out_cuda
+    PrivateUse1: nonzero_out_zoom
     MPS: nonzero_out_mps
   tags: dynamic_output_shape
 
@@ -9357,6 +9381,7 @@
   dispatch:
     CPU: nonzero_cpu
     CUDA: nonzero_cuda
+    PrivateUse1: nonzero_zoom
     MPS: nonzero_mps
   tags: [dynamic_output_shape, core]
 
@@ -9406,7 +9431,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: addcmul_out
+    CPU, CUDA, PrivateUse1: addcmul_out
     MPS: addcmul_out_mps
   tags: pointwise
 
@@ -9427,7 +9452,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: addcdiv_out
+    CPU, CUDA, PrivateUse1: addcdiv_out
     MPS: addcdiv_out_mps
   tags: pointwise
 
@@ -9615,7 +9640,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: lgamma_out
+    CPU, CUDA, PrivateUse1: lgamma_out
     MPS: lgamma_out_mps
   tags: pointwise
 
@@ -9636,7 +9661,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: digamma_out
+    CPU, CUDA, PrivateUse1: digamma_out
     MPS: digamma_out_mps
   tags: pointwise
 
@@ -9651,7 +9676,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: polygamma_out
+    CPU, CUDA, PrivateUse1: polygamma_out
     MPS: polygamma_out_mps
   tags: pointwise
 
@@ -9691,7 +9716,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: erfinv_out
+    CPU, CUDA, PrivateUse1, MPS: erfinv_out
     SparseCPU, SparseCUDA: erfinv_sparse_out
     SparseCsrCPU, SparseCsrCUDA, SparseCsrMeta: erfinv_sparse_csr_out
   tags: pointwise
@@ -9710,7 +9735,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: i0_out
+    CPU, CUDA, MPS, PrivateUse1: i0_out
   tags: pointwise
 
 - func: sign(Tensor self) -> Tensor
@@ -9805,7 +9830,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: lerp_Scalar
+    CPU, CUDA, PrivateUse1: lerp_Scalar
     MPS: lerp_Scalar_mps
   tags: pointwise
 
@@ -9814,7 +9839,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: lerp_Tensor
+    CPU, CUDA, PrivateUse1: lerp_Tensor
     MPS: lerp_Tensor_mps
   tags: pointwise
 
@@ -10061,7 +10086,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MPS: fmin_out
+    CPU, CUDA, PrivateUse1, MPS: fmin_out
   tags: pointwise
 
 - func: max(Tensor self) -> Tensor
@@ -10083,7 +10108,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA, MPS: fmax_out
+    CPU, CUDA, PrivateUse1, MPS: fmax_out
   tags: pointwise
 
 - func: maximum(Tensor self, Tensor other) -> Tensor
@@ -10097,7 +10122,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: maximum_out
+    CPU, CUDA, PrivateUse1: maximum_out
     MPS: maximum_out_mps
   tags: pointwise
 
@@ -10129,7 +10154,7 @@
   structured_inherits: TensorIteratorBase
   device_check: NoCheck   # TensorIterator
   dispatch:
-    CPU, CUDA: minimum_out
+    CPU, CUDA, PrivateUse1: minimum_out
     MPS: minimum_out_mps
   tags: pointwise
 
@@ -10306,7 +10331,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: pow_Tensor_Tensor_out
+    CPU, CUDA, PrivateUse1: pow_Tensor_Tensor_out
     MPS: pow_tensor_tensor_out_mps
   tags: pointwise
 
@@ -10334,7 +10359,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: pow_Tensor_Scalar_out
+    CPU, CUDA, PrivateUse1: pow_Tensor_Scalar_out
     SparseCPU, SparseCUDA: pow_out_sparse_scalar
     MPS: pow_tensor_scalar_out_mps
   tags: pointwise
@@ -11823,25 +11848,29 @@
   python_module: nn
   dispatch:
     CPU: multi_margin_loss_cpu_out
-    CUDA: multi_margin_loss_cuda_out
+    CUDA: multi_margin_loss_cuda
+    PrivateUse1: multi_margin_loss_zoom_out
 
 - func: multi_margin_loss(Tensor self, Tensor target, Scalar p=1, Scalar margin=1, Tensor? weight=None, int reduction=Mean) -> Tensor
   python_module: nn
   dispatch:
     CPU: multi_margin_loss_cpu
     CUDA: multi_margin_loss_cuda
+    PrivateUse1: multi_margin_loss_zoom
 
 - func: multi_margin_loss_backward.grad_input(Tensor grad_output, Tensor self, Tensor target, Scalar p, Scalar margin, Tensor? weight=None, int reduction=Mean, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
   dispatch:
     CPU: multi_margin_loss_cpu_backward_out
-    CUDA: multi_margin_loss_cuda_backward_out
+    CUDA: multi_margin_loss_cuda
+    PrivateUse1: multi_margin_loss_zoom_backward_out
 
 - func: multi_margin_loss_backward(Tensor grad_output, Tensor self, Tensor target, Scalar p, Scalar margin, Tensor? weight=None, int reduction=Mean) -> Tensor
   python_module: nn
   dispatch:
     CPU: multi_margin_loss_cpu_backward
-    CUDA: multi_margin_loss_cuda_backward
+    CUDA: multi_margin_loss_cuda
+    PrivateUse1: multi_margin_loss_zoom_backward
 
 - func: multilabel_margin_loss.out(Tensor self, Tensor target, int reduction=Mean, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -11854,24 +11883,28 @@
   dispatch:
     CPU: multilabel_margin_loss_forward_out_cpu
     CUDA: multilabel_margin_loss_forward_out_cuda
+    PrivateUse1: multilabel_margin_loss_forward_out_zoom
 
 - func: multilabel_margin_loss_forward(Tensor self, Tensor target, int reduction) -> (Tensor output, Tensor is_target)
   python_module: nn
   dispatch:
     CPU: multilabel_margin_loss_forward_cpu
     CUDA: multilabel_margin_loss_forward_cuda
+    PrivateUse1: multilabel_margin_loss_forward_zoom
 
 - func: multilabel_margin_loss_backward.grad_input(Tensor grad_output, Tensor self, Tensor target, int reduction, Tensor is_target, *, Tensor(a!) grad_input) -> Tensor(a!)
   python_module: nn
   dispatch:
     CPU: multilabel_margin_loss_backward_cpu_out
-    CUDA: multilabel_margin_loss_backward_cuda_out
+    CUDA: multilabel_margin_loss_backward_cuda
+    PrivateUse1: multilabel_margin_loss_backward_zoom_out
 
 - func: multilabel_margin_loss_backward(Tensor grad_output, Tensor self, Tensor target, int reduction, Tensor is_target) -> Tensor
   python_module: nn
   dispatch:
     CPU: multilabel_margin_loss_backward_cpu
     CUDA: multilabel_margin_loss_backward_cuda
+    PrivateUse1: multilabel_margin_loss_backward_zoom
 
 - func: nll_loss.out(Tensor self, Tensor target, Tensor? weight=None, int reduction=Mean, SymInt ignore_index=-100, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -12690,24 +12723,28 @@
   dispatch:
     CPU: max_unpooling2d_forward_out_cpu
     CUDA: max_unpooling2d_forward_out_cuda
+    PrivateUse1: max_unpooling2d_forward_out_zoom
 
 - func: max_unpool2d(Tensor self, Tensor indices, SymInt[2] output_size) -> Tensor
   python_module: nn
   dispatch:
     CPU: max_unpooling2d_forward_cpu
     CUDA: max_unpooling2d_forward_cuda
+    PrivateUse1: max_unpooling2d_forward_zoom
 
 - func: max_unpool3d.out(Tensor self, Tensor indices, SymInt[3] output_size, int[3] stride, int[3] padding, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
   dispatch:
     CPU: max_unpooling3d_forward_out_cpu
     CUDA: max_unpooling3d_forward_out_cuda
+    PrivateUse1: max_unpooling3d_forward_out_zoom
 
 - func: max_unpool3d(Tensor self, Tensor indices, SymInt[3] output_size, int[3] stride, int[3] padding) -> Tensor
   python_module: nn
   dispatch:
     CPU: max_unpooling3d_forward_cpu
     CUDA: max_unpooling3d_forward_cuda
+    PrivateUse1: max_unpooling3d_forward_zoom
 
 - func: reflection_pad1d.out(Tensor self, SymInt[2] padding, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13290,6 +13327,7 @@
   dispatch:
     CPU: slow_conv_transpose2d_structured_cpu
     CUDA: slow_conv_transpose2d_structured_cuda
+    PrivateUse1: slow_conv_transpose2d_structured_zoom
 
 - func: slow_conv_transpose2d(Tensor self, Tensor weight, SymInt[2] kernel_size, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2] output_padding=0, SymInt[2] dilation=1) -> Tensor
   python_module: nn
@@ -13300,12 +13338,14 @@
   dispatch:
     CPU: slow_conv_transpose3d_out_cpu
     CUDA: slow_conv_transpose3d_out_cuda
+    PrivateUse1: slow_conv_transpose3d_out_zoom
 
 - func: slow_conv_transpose3d(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] output_padding=0, SymInt[3] dilation=1) -> Tensor
   python_module: nn
   dispatch:
     CPU: slow_conv_transpose3d_cpu
     CUDA: slow_conv_transpose3d_cuda
+    PrivateUse1: slow_conv_transpose3d_zoom
 
 - func: thnn_conv2d.out(Tensor self, Tensor weight, SymInt[2] kernel_size, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, *, Tensor(a!) out) -> Tensor(a!)
   python_module: nn
@@ -13382,6 +13422,7 @@
   dispatch:
     CPU: slow_conv_dilated2d_cpu
     CUDA: slow_conv_dilated2d_cuda
+    PrivateUse1: slow_conv_dilated2d_zoom
   autogen: slow_conv_dilated2d.out
 
 - func: slow_conv_dilated3d(Tensor self, Tensor weight, SymInt[3] kernel_size, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] dilation=1) -> Tensor
@@ -13389,6 +13430,7 @@
   dispatch:
     CPU: slow_conv_dilated3d_cpu
     CUDA: slow_conv_dilated3d_cuda
+    PrivateUse1: slow_conv_dilated3d_zoom
   autogen: slow_conv_dilated3d.out
 
 - func: col2im.out(Tensor self, SymInt[2] output_size, int[2] kernel_size, int[2] dilation, int[2] padding, int[2] stride, *, Tensor(a!) out) -> Tensor(a!)
@@ -13517,7 +13559,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA, MPS: special_entr_out
+    CPU, CUDA, MPS, PrivateUse1: special_entr_out
   tags: pointwise
 
 - func: special_ndtri(Tensor self) -> Tensor
@@ -13532,7 +13574,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA: special_ndtri_out
+    CPU, CUDA, PrivateUse1: special_ndtri_out
   tags: pointwise
 
 - func: special_log_ndtr(Tensor self) -> Tensor
@@ -13547,7 +13589,7 @@
   python_module: special
   variants: function
   dispatch:
-    CPU, CUDA: special_log_ndtr_out
+    CPU, CUDA, PrivateUse1: special_log_ndtr_out
   tags: pointwise
 
 - func: special_expm1(Tensor self) -> Tensor
@@ -13616,7 +13658,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: special_erfcx_out
+    CPU, CUDA, PrivateUse1: special_erfcx_out
   tags: pointwise
 
 - func: special_erfinv(Tensor self) -> Tensor
@@ -13781,7 +13823,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: special_i0e_out
+    CPU, CUDA, PrivateUse1: special_i0e_out
   tags: pointwise
 
 - func: special_i1(Tensor self) -> Tensor
@@ -13795,7 +13837,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA, MPS: special_i1_out
+    CPU, CUDA, MPS, PrivateUse1: special_i1_out
   tags: pointwise
 
 - func: special_i1e(Tensor self) -> Tensor
@@ -13809,7 +13851,7 @@
   structured: True
   structured_inherits: TensorIteratorBase
   dispatch:
-    CPU, CUDA: special_i1e_out
+    CPU, CUDA, PrivateUse1: special_i1e_out
   tags: pointwise
 
 - func: special_logit(Tensor self, float? eps=None) -> Tensor
