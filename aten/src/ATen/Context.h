@@ -127,6 +127,9 @@ class TORCH_API Context {
   static bool hasCuBLASLt() {
     return detail::getCUDAHooks().hasCuBLASLt();
   }
+  static bool hasZoom() {
+    return detail::getZoomHooks().hasROCM();
+  }
   static bool hasHIP() {
     return detail::getHIPHooks().hasHIP();
   }

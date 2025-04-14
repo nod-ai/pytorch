@@ -29,7 +29,13 @@ bool is_pinned(const Tensor& self, std::optional<at::Device> device) {
     return false;
   }
   // TODO: fetch scalar type from Tensor? But it doesn't really matter...
-  DispatchKeySet _dk = c10::DispatchKeySet(c10::computeDispatchKey(c10::nullopt, self.layout(), device.value_or(at::kCUDA)));
+  #ifdef USE_ZOOM
+  // TODO(Arham): exchange keys
+  auto default_device = at::kPrivateUse1;
+  #else
+  auto default_device = at::kCUDA;
+  #endif
+  DispatchKeySet _dk = c10::DispatchKeySet(c10::computeDispatchKey(c10::nullopt, self.layout(), device.value_or(default_device)));
   return at::_ops::is_pinned::redispatch(_dk, self, device);
 }
 

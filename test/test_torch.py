@@ -2983,7 +2983,7 @@ else:
 
     # if the given input arg is not a list, it returns a list of single element: [arg]
     def _wrap_to_list(self, input_array):
-        return input_array if isinstance(input_array, list) else [input_array]
+        return list(input_array) if isinstance(input_array, (list, tuple)) else [input_array]
 
     # To ensure inf, -inf, and nan values do not cause divergence between Numpy and PyTorch.
     # There are two types of possible divergence:
@@ -3121,7 +3121,7 @@ else:
                     # Result is given just as real number and all the imaginary parts to be equal to zero.
                     self.assertEqual(expected[i].imag, torch.zeros(actual[i].shape), exact_dtype=False)
             else:
-                actual, expected = self._inf_nan_preprocess(list(actual), expected)
+                actual, expected = self._inf_nan_preprocess(list(actual), list(expected))
                 self.assertEqual(actual, expected, equal_nan=True, exact_dtype=False)
 
     @onlyNativeDeviceTypes
@@ -5955,7 +5955,6 @@ else:
             if lazy_init_scale:
                 # Dummy scale() call to ensure the scale tensor is lazily initialized.
                 s1.scale(torch.full((1,), 4.0, dtype=torch.float32, device=device))
-                print(type(s1._scale), s1._scale.dtype)
                 if "cuda" == device.type:
                     self.assertTrue(isinstance(s1._scale, torch.cuda.FloatTensor))
                 else:
