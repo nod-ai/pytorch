@@ -17,6 +17,7 @@
 
 #include <hiprand.h>
 #include <hiprand_kernel.h>
+//#include <curand_philox4x32_x.h>
 #include <cstdint>
 #include <limits>
 #include <utility>
