@@ -8,7 +8,11 @@
 #include <c10/cuda/CUDAMathCompat.h>
 #define C10_COMPAT_COPYSIGN c10::cuda::compat::copysign
 #elif defined(__HIPCC__)
-#include <c10/hip/HIPMathCompat.h>
+  #ifdef USE_ZOOM
+    #include <c10/zoom/HIPMathCompat.h>
+  #else
+    #include <c10/hip/HIPMathCompat.h>
+  #endif
 #define C10_COMPAT_COPYSIGN c10::hip::compat::copysign
 #else
 #include <c10/util/copysign.h>

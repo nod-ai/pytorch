@@ -140,6 +140,10 @@ if(USE_ROCM)
   add_subdirectory(hip)
 endif()
 
+if(USE_ZOOM)
+  add_subdirectory(zoom)
+endif()
+
 if(USE_XPU)
   add_subdirectory(xpu)
 endif()

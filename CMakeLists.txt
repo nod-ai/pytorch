@@ -203,6 +203,7 @@ option(USE_CPP_CODE_COVERAGE "Compile C/C++ with code coverage flags" OFF)
 option(USE_COLORIZE_OUTPUT "Colorize output during compilation" ON)
 option(USE_ASAN "Use Address+Undefined Sanitizers" OFF)
 option(USE_TSAN "Use Thread Sanitizer" OFF)
+option(USE_ZOOM "Use ZOOM HIP Backend" OFF)
 option(USE_CUDA "Use CUDA" ON)
 cmake_dependent_option(
     USE_XPU "Use XPU. Only available on Linux." ON
@@ -231,12 +232,14 @@ option(USE_MAGMA "Use MAGMA" ON)
 option(USE_PYTORCH_METAL "Use Metal for PyTorch iOS build" OFF)
 option(USE_PYTORCH_METAL_EXPORT "Export Metal models on MacOSX desktop" OFF)
 option(USE_NATIVE_ARCH "Use -march=native" OFF)
+option(ENABLE_ZOOM_BLAS "Use HIPBlas Kernels in the ZOOM backend" ON)
+option(DISABLE_HIPBLASLT "Disable HIPBlasLt Kernels in the ZOOM backend" OFF)
 cmake_dependent_option(
     USE_MPS "Use MPS for macOS build" ON
     "MPS_FOUND" OFF)
 cmake_dependent_option(
     USE_NCCL "Use NCCL" ON
-    "USE_CUDA OR USE_ROCM;UNIX;NOT APPLE" OFF)
+    "USE_CUDA OR USE_ROCM OR USE_ZOOM;UNIX;NOT APPLE" OFF)
 cmake_dependent_option(USE_RCCL "Use RCCL" ON
     USE_NCCL OFF)
 cmake_dependent_option(

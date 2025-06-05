@@ -16,4 +16,5 @@ from .ufunc import (
     compute_ufunc_cpu as compute_ufunc_cpu,
     compute_ufunc_cpu_kernel as compute_ufunc_cpu_kernel,
     compute_ufunc_cuda as compute_ufunc_cuda,
+    compute_ufunc_zoom as compute_ufunc_zoom,
 )

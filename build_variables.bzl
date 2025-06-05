@@ -691,6 +691,23 @@ libtorch_cuda_sources = libtorch_cuda_core_sources + libtorch_cuda_distributed_s
     "torch/csrc/cuda/nccl.cpp",
 ]
 
+# Zoom Variants of distributed sources
+libtorch_zoom_distributed_base_sources = [
+    "torch/csrc/distributed/c10d/reducer_zoom.cpp",
+]
+
+libtorch_zoom_distributed_extra_sources = [
+    "torch/csrc/distributed/c10d/NCCLUtils.cpp",
+    "torch/csrc/distributed/c10d/ProcessGroupZoomNCCL.cpp",
+    "torch/csrc/distributed/c10d/ProcessGroupUCC.cpp",
+    "torch/csrc/distributed/c10d/UCCTracing.cpp",
+    "torch/csrc/distributed/c10d/UCCUtils.cpp",
+    "torch/csrc/distributed/c10d/intra_node_comm_zoom.cpp",
+    "torch/csrc/distributed/c10d/intra_node_comm_zoom.cu",
+    "torch/csrc/distributed/c10d/Utils.cu",
+    "torch/csrc/distributed/c10d/quantization/quantization_gpu.cu",
+]
+
 torch_cpp_srcs = [
     "torch/csrc/api/src/cuda.cpp",  # this just forwards stuff, no real CUDA
     "torch/csrc/api/src/data/datasets/mnist.cpp",
@@ -771,6 +788,22 @@ libtorch_python_cuda_sources = libtorch_python_cuda_core_sources + [
     "torch/csrc/cuda/python_nccl.cpp",
     "torch/csrc/cuda/shared/cudnn.cpp",
     "torch/csrc/cuda/Tensor.cpp",
+]
+
+libtorch_zoom_core_sources = [
+    "torch/csrc/zoom/comm.cpp",
+    "torch/csrc/zoom/memory_snapshot.cpp",
+]
+
+libtorch_python_zoom_sources = [
+    "torch/csrc/zoom/Module.cpp",
+    "torch/csrc/zoom/Event.cpp",
+    "torch/csrc/zoom/python_comm.cpp",
+    "torch/csrc/zoom/Stream.cpp",
+    "torch/csrc/zoom/Graph.cpp",
+    "torch/csrc/zoom/utils.cpp",
+    "torch/csrc/zoom/ZoomPluggableAllocator.cpp",
+    "torch/csrc/zoom/shared/hiprt.cpp",
 ]
 
 libtorch_python_xpu_sources = [
@@ -952,6 +985,7 @@ def glob_libtorch_python_sources(gencode_pattern = ":generate-code[{}]"):
 aten_cpu_non_globed_sources = [
     "aten/src/ATen/detail/CUDAHooksInterface.cpp",
     "aten/src/ATen/detail/HIPHooksInterface.cpp",
+    "aten/src/ATen/detail/ZoomHooksInterface.cpp",
     "aten/src/ATen/detail/MPSHooksInterface.cpp",
     "aten/src/ATen/detail/MAIAHooksInterface.cpp",
     "aten/src/ATen/detail/PrivateUse1HooksInterface.cpp",
@@ -970,6 +1004,7 @@ aten_cpu_non_globed_headers = [
     "aten/src/ATen/detail/CUDAHooksInterface.h",
     "aten/src/ATen/detail/MPSHooksInterface.h",
     "aten/src/ATen/detail/HIPHooksInterface.h",
+    "aten/src/ATen/detail/ZoomHooksInterface.h",
     "aten/src/ATen/detail/MAIAHooksInterface.h",
     "aten/src/ATen/detail/PrivateUse1HooksInterface.h",
     "aten/src/ATen/detail/XPUHooksInterface.h",

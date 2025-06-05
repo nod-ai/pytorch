@@ -1580,6 +1580,7 @@ def _assert(condition, message):
 # the public API. The "regular" import lines are there solely for the runtime
 # side effect of adding to the imported module's members for other users.
 from torch import cuda as cuda
+from torch import zoom as zoom
 from torch import cpu as cpu
 from torch import mps as mps
 from torch import xpu as xpu

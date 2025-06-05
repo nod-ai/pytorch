@@ -6,7 +6,12 @@
 #ifdef USE_C10D_NCCL
 #include <vector>
 
+#ifdef USE_ZOOM
+#include <hip/hip_runtime.h>
+#else
 #include <cuda_runtime.h>
+#endif
+
 #include <mutex>
 
 namespace {
@@ -107,7 +112,12 @@ size_t hashTensors(const std::vector<at::Tensor>& tensors) {
         char* dst = (char*)std::calloc(data_size, sizeof(char));
         // This is needed so that we trigger a device synchronization so we can
         // get the collective finished if launched on GPU and hash its output.
+        #ifdef USE_ZOOM
+        hipMemcpy(dst, src, data_size, hipMemcpyDeviceToHost);
+        #else
         cudaMemcpy(dst, src, data_size, cudaMemcpyDeviceToHost);
+        #endif
+
         for (size_t i = 0; i < data_size; ++i) {
           // Update the hash for each byte in the tensor
           hash = c10::hash_combine(

@@ -171,6 +171,7 @@ void Context::alertCuBLASConfigNotDeterministic() const {
     return;
   }
 
+  #ifndef USE_ZOOM
   auto msg = c10::str(
     "Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or ",
     "`at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because ",
@@ -180,6 +181,16 @@ void Context::alertCuBLASConfigNotDeterministic() const {
     cublas_config_var_name, "=", cublas_deterministic_configs[1], ". For more information, go to ",
     "https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility"
   );
+  #else
+  auto msg = c10::str(
+    "Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or ",
+    "`at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because ",
+    "it uses hipBLAS and you have atomic operations enabled. To enable deterministic behavior in this ",
+    "case, you must set an environment variable before running your PyTorch application: ",
+    "ROCBLAS_DEFAULT_ATOMICS_MODE = 0. For more information, go to ",
+    "https://github.com/ROCm/rocBLAS/blob/develop/docs/how-to/what-is-rocblas.rst#bitwise-reproducibility"
+  );
+  #endif
 
   if (deterministicAlgorithmsWarnOnly()) {
     TORCH_WARN(msg);

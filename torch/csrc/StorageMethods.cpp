@@ -31,6 +31,11 @@
 #include <cuda_runtime.h>
 #endif
 
+#ifdef USE_ZOOM
+#include <ATen/native/zoom/Resize.h>
+#include <hip/hip_runtime.h>
+#endif
+
 #include <ATen/detail/PrivateUse1HooksInterface.h>
 #include <ATen/native/Resize.h>
 
@@ -160,6 +165,21 @@ static PyObject* THPStorage_resize_(PyObject* self, PyObject* number_arg) {
     at::native::resize_bytes_cuda(storage.unsafeGetStorageImpl(), size_bytes);
 #else
     TORCH_CHECK(false, "built without USE_CUDA");
+#endif
+  } 
+  // TODO (Arham): replace with zoom key
+  else if(device_type == at::kPrivateUse1){
+#ifdef USE_ZOOM
+    ptrdiff_t size_bytes_i = newsize;
+    TORCH_CHECK(
+        !c10::overflows<size_t>(size_bytes_i),
+        "Requested storage size (",
+        size_bytes_i,
+        ") cannot be represented as a size_t");
+    const auto size_bytes = static_cast<size_t>(size_bytes_i);
+    at::native::resize_bytes_zoom(storage.unsafeGetStorageImpl(), size_bytes);
+#else
+    TORCH_CHECK(false, "built without USE_ZOOM");
 #endif
   } else {
     at::native::resize_bytes_nocuda(storage, newsize);
