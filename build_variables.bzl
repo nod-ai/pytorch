@@ -721,7 +721,7 @@ libtorch_zoom_distributed_extra_sources = [
     "torch/csrc/distributed/c10d/UCCUtils.cpp",
     "torch/csrc/distributed/c10d/intra_node_comm_zoom.cpp",
     "torch/csrc/distributed/c10d/intra_node_comm_zoom.cu",
-    "torch/csrc/distributed/c10d/Utils.cu",
+    "torch/csrc/distributed/c10d/NanCheck.cu",
     "torch/csrc/distributed/c10d/quantization/quantization_gpu.cu",
 ]
 

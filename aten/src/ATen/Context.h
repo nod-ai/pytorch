@@ -168,9 +168,6 @@ class TORCH_API Context {
   static bool hasROCM() {
     return detail::getCUDAHooks().hasROCM();
   }
-  static bool checkHIPBlasDeterministic() {
-    return detail::getZoomHooks().checkHIPBlasDeterministic();
-  }
   static bool hasZoom() {
     return detail::getZoomHooks().hasROCM();
   }

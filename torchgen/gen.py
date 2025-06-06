@@ -3046,13 +3046,8 @@ def main() -> None:
             aoti_fm=aoti_fm,
             core_fm=core_fm,
             cpu_vec_fm=cpu_vec_fm,
-<<<<<<< HEAD
             cpu_fm=cpu_fm,
             device_fms=device_fms,
-=======
-            zoom_fm=zoom_fm,
-            cuda_fm=cuda_fm,
->>>>>>> 53deb9560b6 (minimize, fix build, torchgen logic)
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,
             rocm=options.rocm,
@@ -3075,12 +3070,7 @@ def main() -> None:
             backend_indices=backend_indices,
             core_fm=core_fm,
             cpu_fm=cpu_fm,
-<<<<<<< HEAD
             device_fms=device_fms,
-=======
-            zoom_fm=zoom_fm,
-            cuda_fm=cuda_fm,
->>>>>>> 53deb9560b6 (minimize, fix build, torchgen logic)
             ops_fm=ops_fm,
             dispatch_keys=dispatch_keys,
             functions_keys=functions_keys,

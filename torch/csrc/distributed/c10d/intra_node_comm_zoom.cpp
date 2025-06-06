@@ -1,23 +1,12 @@
 #include <torch/csrc/distributed/c10d/intra_node_comm.hpp>
 
-#include <ATen/zoom/ZoomContext.h>
-#include <c10/zoom/ZoomGuard.h>
-#include <c10/util/Logging.h>
+#include <torch/csrc/distributed/c10d/DMAConnectivity.hpp>
 #include <torch/csrc/distributed/c10d/Utils.hpp>
 
-#include <iostream>
-#include <utility>
-
-#include <fcntl.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <hip/hip_runtime.h>
-
 namespace c10d::intra_node_comm {
+
+// NOLINTNEXTLINE(misc-use-internal-linkage)
+bool isIntraNodeCommSupported();
 
 static std::vector<std::string> ENABLE_INTRA_NODE_COMM = {
     "ENABLE_INTRA_NODE_COMM"};
@@ -26,72 +15,13 @@ static std::vector<std::string> ENABLE_INTRA_NODE_COMM = {
 // for testing purposes.
 static std::vector<std::string> TEST_INTRA_NODE_COMM = {"TEST_INTRA_NODE_COMM"};
 
-////////////////////////////////////////////////////////////////////////////////
-// HIP Functions
-////////////////////////////////////////////////////////////////////////////////
-
-bool isIntraNodeCommSupported();
-
-std::optional<HybridCubeMesh> getHybridCubeMesh(NvlMesh nvlMesh);
-
-void* initP2pState();
-
-void* initTopoInfo(Topology topology, NvlMesh nvlMesh, size_t rank);
-
-////////////////////////////////////////////////////////////////////////////////
-// Topology Detection
-////////////////////////////////////////////////////////////////////////////////
-
-static std::ostream& operator<<(std::ostream& os, const NvlMesh& nvlMesh) {
-  std::ostringstream oss;
-  for (size_t i = 0; i < kMaxDevices; ++i) {
-    for (size_t j = 0; j < kMaxDevices; ++j) {
-      oss << nvlMesh[i][j] << " ";
-    }
-    oss << '\n';
-  }
-  os << oss.str();
-  return os;
-}
-
-static bool isSame(NvlMesh lhs, NvlMesh rhs) {
-  for (size_t i = 0; i < kMaxDevices; ++i) {
-    for (size_t j = 0; j < kMaxDevices; ++j) {
-      if (lhs[i][j] != rhs[i][j]) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
+static int intraNodeCommIdx = 0;
 
 /**
  * Query the nvlink connection among devices.
  */
-static NvlMesh getNvlMesh(const std::vector<std::string>& rankToBusId) {
+static NvlMesh getNvlMesh(const std::vector<int>& rankToDeviceIdx) {
   return {};
-}
-
-/**
- * Determine if the devices form a hybrid cube mesh
- * topology given a NvlMesh.
- */
-static bool isHybridCubeMesh(const NvlMesh nvlMesh) {
-  std::array<size_t, kMaxDevices> numNeighbors = {};
-  for (size_t i = 0; i < kMaxDevices; ++i) {
-    for (size_t j = 0; j < kMaxDevices; ++j) {
-      if (nvlMesh[i][j] > 0) {
-        numNeighbors[i] += 1;
-      }
-    }
-  }
-  for (size_t i = 0; i < kMaxDevices; ++i) {
-    // TODO: this is insufficent and needs revisit
-    if (numNeighbors[i] != 4) {
-      return false;
-    }
-  }
-  return true;
 }
 
 /**
@@ -113,17 +43,9 @@ static Topology detectTopology(const NvlMesh nvlMesh, size_t worldSize) {
     LOG(INFO) << "IntraNodeComm: Topology::FULLY_CONNECTED";
     return Topology::FULLY_CONNECTED;
   }
-  if (worldSize == kMaxDevices && getHybridCubeMesh(nvlMesh) != std::nullopt) {
-    LOG(INFO) << "IntraNodeComm: Topology::HYBRID_CUBE_MESH";
-    return Topology::HYBRID_CUBE_MESH;
-  }
   LOG(INFO) << "IntraNodeComm: Topology::UNKNOWN";
   return Topology::UNKNOWN;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Rendezvous and Initialization
-////////////////////////////////////////////////////////////////////////////////
+}
 
 IntraNodeComm::IntraNodeComm(
     c10::intrusive_ptr<c10d::Store> store,
@@ -133,31 +55,14 @@ IntraNodeComm::IntraNodeComm(
     : store_(std::move(store)),
       rank_(rank),
       worldSize_(worldSize),
-      bufferSize_(bufferSize.has_value() ? *bufferSize : kDefaultBufferSize) {
-  rendezvous();
-}
+      bufferSize_(bufferSize.has_value() ? *bufferSize : kDefaultBufferSize) {}
 
 IntraNodeComm::~IntraNodeComm() {
   if (!isInitialized_) {
     return;
   }
-  // Intentionally releasing resources without synchronizing devices. The
-  // teardown logic is safe for propoerly sync'd user program. We don't want
-  // improperly sync'd user program to hang here.
-  for (size_t r = 0; r < worldSize_; ++r) {
-    if (r == rank_) {
-      continue;
-    }
-    C10_ZOOM_CHECK(hipIpcCloseMemHandle(p2pStates_[r]));
-    C10_ZOOM_CHECK(hipIpcCloseMemHandle(buffers_[r]));
-  }
-  C10_ZOOM_CHECK(hipFree(p2pStates_[rank_]));
-  C10_ZOOM_CHECK(hipFree(buffers_[rank_]));
-  if (topoInfo_ != nullptr) {
-    C10_ZOOM_CHECK(hipFree(topoInfo_));
-  }
-  C10_ZOOM_CHECK(hipFree(p2pStatesDev_));
-  C10_ZOOM_CHECK(hipFree(buffersDev_));
+  auto allocator = get_allocator(c10::DeviceType::PrivateUse1);
+  allocator->free(symmetricMemoryPtr_);
 }
 
 bool IntraNodeComm::isEnabled() {
@@ -168,7 +73,7 @@ bool IntraNodeComm::isEnabled() {
  * Use c10d::Store to perform allgather on a trivially copyable type.
  */
 template <typename T>
-std::vector<T> storeAllGather(
+static std::vector<T> storeAllGather(
     const c10::intrusive_ptr<c10d::Store>& store,
     const std::string& prefix,
     size_t rank,
@@ -210,6 +115,70 @@ bool IntraNodeComm::rendezvous() {
   if (isInitialized_) {
     return true;
   }
+#if !defined(USE_ROCM) && defined(PYTORCH_C10_DRIVER_API_SUPPORTED)
+  if (!isIntraNodeCommSupported() || worldSize_ < 2 ||
+      worldSize_ > kMaxDevices) {
+    return false;
+  }
+
+  // NOLINTNEXTLINE(bugprone-signed-char-misuse)
+  deviceIdx_ = c10::zoom::current_device();
+
+  // Exchange hostname and device bus ID
+  struct DevInfo {
+    // NOLINTNEXTLINE
+    char hostname[HOST_NAME_MAX + 1];
+    int deviceIdx;
+  };
+
+  DevInfo devInfo{};
+  gethostname(devInfo.hostname, sizeof(devInfo.hostname));
+  devInfo.deviceIdx = deviceIdx_;
+
+  auto peerDevInfos =
+      storeAllGather(store_, "handshake-0", rank_, worldSize_, devInfo);
+
+  std::vector<int> rankToDeviceIdx;
+  for (const auto& info : peerDevInfos) {
+    if (strcmp(info.hostname, peerDevInfos.front().hostname) != 0) {
+      LOG(WARNING) << "Aborting IntraNodeComm::rendezvous because some "
+                      "participants are not on the same host ("
+                   << info.hostname << ", " << devInfo.hostname << ")";
+      return false;
+    }
+    rankToDeviceIdx.emplace_back(info.deviceIdx);
+  }
+
+  {
+    std::unordered_set uniqueDeviceIdxs(
+        rankToDeviceIdx.begin(), rankToDeviceIdx.end());
+    if (uniqueDeviceIdxs.size() != worldSize_) {
+      LOG(WARNING)
+          << "Skipping IntraNodeComm::rendezvous() because participants have "
+             "overlapping devices. To resolve this, call torch.zoom.set_device() "
+             "before init_process_group().";
+      return false;
+    }
+  }
+
+  // Query nvlink connection
+  auto nvlMesh = getNvlMesh(rankToDeviceIdx);
+
+  // Detect topology
+  topology_ = detectTopology(nvlMesh, worldSize_);
+  if (topology_ != Topology::FULLY_CONNECTED) {
+    return false;
+  }
+
+  auto groupName = "IntraNodeComm" + std::to_string(intraNodeCommIdx++);
+  set_group_info(
+      groupName, static_cast<int>(rank_), static_cast<int>(worldSize_), store_);
+  auto allocator = get_allocator(c10::DeviceType::PrivateUse1);
+  symmetricMemoryPtr_ = allocator->alloc(bufferSize_, deviceIdx_, groupName);
+  symmetricMemory_ = allocator->rendezvous(symmetricMemoryPtr_, std::nullopt);
+  isInitialized_ = true;
+  return true;
+#endif
   return false;
 }
 

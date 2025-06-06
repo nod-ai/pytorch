@@ -15,10 +15,11 @@ namespace at::zoom::detail {
 struct ZoomHooks : public ZoomHooksInterface {
   ZoomHooks(ZoomHooksArgs) {}
   void initZoom() const override;
-  void initPrivateUse1() const override;
+  void init() const override;
   Device getDeviceFromPtr(void* data) const override;
   bool isPinnedPtr(const void* data) const override;
   const Generator& getDefaultZoomGenerator(DeviceIndex device_index = -1) const override;
+  Generator getNewZoomGenerator(DeviceIndex device_index = -1) const override;
   bool hasROCM() const override;
   const at::zoom::HIPRTC& hiprtc() const override;
   DeviceIndex current_device() const override;

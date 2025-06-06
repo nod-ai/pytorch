@@ -275,8 +275,8 @@ if(INTERN_BUILD_ATEN_OPS)
       ${CMAKE_BINARY_DIR}/aten/src/ATen/ops_generated_${gen_type}.cmake
       ${CMAKE_BINARY_DIR}/aten/src/ATen/core_generated_${gen_type}.cmake
       ${CMAKE_BINARY_DIR}/aten/src/ATen/cpu_vec_generated_${gen_type}.cmake
-      ${CMAKE_BINARY_DIR}/aten/src/ATen/cuda_generated_${gen_type}.cmake)
-      ${CMAKE_BINARY_DIR}/aten/src/ATen/zoom_generated_${gen_type}.cmake
+      ${CMAKE_BINARY_DIR}/aten/src/ATen/cuda_generated_${gen_type}.cmake
+      ${CMAKE_BINARY_DIR}/aten/src/ATen/zoom_generated_${gen_type}.cmake)
     if(USE_XPU)
       list(APPEND OUTPUT_LIST
         ${xpu_generated_${gen_type}}

@@ -1099,7 +1099,7 @@ if(USE_ROCM OR USE_ZOOM)
 
     if(USE_ZOOM)
       set(Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS
-        hip::amdhip64 MIOpen hiprtc::hiprtc hipcub::hipcub)
+        hip::amdhip64 MIOpen hiprtc::hiprtc ${hipcub_LIBRARIES})
       list(APPEND Caffe2_PUBLIC_HIP_DEPENDENCY_LIBS hip::hiprand)
       if(ENABLE_ZOOM_BLAS)
         if(NOT DISABLE_HIPBLASLT)
@@ -1259,7 +1259,7 @@ if(USE_GLOO)
       add_library(gloo SHARED IMPORTED)
       set_target_properties(gloo PROPERTIES IMPORTED_LOCATION ${Gloo_LIBRARY})
       # need to use Gloo_INCLUDE_DIRS over third_party/gloo to find Gloo's auto-generated config.h
-      include_directories(BEFORE SYSTEM ${Gloo_INCLUDE_DIRS})s
+      include_directories(BEFORE SYSTEM ${Gloo_INCLUDE_DIRS})
     endif()
     set(BUILD_TEST ${__BUILD_TEST})
     set(BUILD_BENCHMARK ${__BUILD_BENCHMARK})

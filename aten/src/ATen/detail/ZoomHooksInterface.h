@@ -69,21 +69,27 @@ struct TORCH_API ZoomHooksInterface : PrivateUse1HooksInterface {
     TORCH_CHECK(false, "Cannot initialize ZOOM without torch_zoom library. ", ZOOM_HELP);
   }
 
-  virtual void initPrivateUse1() const override {
+  virtual void init() const override {
     initZoom();
+  }
+
+  virtual Generator getNewZoomGenerator(C10_UNUSED DeviceIndex device_index = -1) const {
+    TORCH_CHECK(false, "Cannot get ZOOM generator without torch_zoom library. ", ZOOM_HELP);
   }
 
   virtual const Generator& getDefaultZoomGenerator(C10_UNUSED DeviceIndex device_index = -1) const {
     TORCH_CHECK(false, "Cannot get default ZOOM generator without torch_zoom library. ", ZOOM_HELP);
   }
 
-  virtual const Generator& getDefaultGenerator(DeviceIndex device_index) override { return getDefaultZoomGenerator(device_index); };
+  const Generator& getDefaultGenerator(DeviceIndex device_index) const override { return getDefaultZoomGenerator(device_index); };
+
+  Generator getNewGenerator([[maybe_unused]] DeviceIndex device_index = -1) const override { return getNewZoomGenerator(device_index); }
 
   virtual Device getDeviceFromPtr(void* /*data*/) const override {
     TORCH_CHECK(false, "Cannot get device of pointer on ZOOM without torch_zoom library. ", ZOOM_HELP);
   }
 
-  virtual bool isPinnedPtr(const void* /*data*/) const {
+  virtual bool isPinnedPtr(const void* /*data*/) const override {
     return false;
   }
 

@@ -437,26 +437,6 @@ if(USE_ZOOM)
   )
 endif()
 
-if(USE_ZOOM)
-  list(APPEND ATen_ZOOM_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/zoom)
-  list(APPEND ATen_ZOOM_SRCS
-    ${ATen_ZOOM_SRCS}
-    ${zoom_hip}
-    ${native_zoom_hip}
-    ${native_zoom_hip_h}
-    ${native_sparse_zoom_hip}
-  )
-  list(APPEND all_zoom_cpp
-    ${native_sparse_zoom_cpp}
-    ${zoom_cpp}
-    ${native_zoom_cpp}
-    ${native_zoom_linalg_cpp}
-    ${zoom_generated_sources}
-    ${ATen_ZOOM_SRCS}
-    ${all_zoom_cpp}
-  )
-endif()
-
 if(USE_XPU)
   list(APPEND ATen_XPU_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/xpu)
   list(APPEND ATen_XPU_SRCS ${xpu_cpp})

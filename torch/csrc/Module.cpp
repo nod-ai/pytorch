@@ -1752,6 +1752,10 @@ void initModule(PyObject* module);
 #endif
 
 #ifdef USE_ZOOM
+void THCPStream_init(PyObject* module);
+void THCPEvent_init(PyObject* module);
+void THCPGraph_init(PyObject* module);
+void THCPMemPool_init(PyObject* module);
 PyMethodDef* THCPModule_methods();
 namespace torch::zoom {
 void initModule(PyObject* module);
